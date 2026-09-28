@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2026 Federal Tax Estimator — Single Filer</title>
+<style>
+  :root{
+    --paper:#FAF6EE;
+    --paper-line:#E4DCC9;
+    --ink:#1F2A24;
+    --ink-soft:#5B6B60;
+    --ledger:#2E4034;
+    --ledger-soft:#4A6455;
+    --gold:#A9762F;
+    --band:#EFE7D3;
+    --owe:#8C3B2E;
+    --white:#FFFFFF;
+    --fs-headline:1.7rem;
+    --fs-total:1.05rem;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top, 0px);}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'Iowan Old Style','Georgia','Times New Roman',serif;
+    line-height:1.35;
+    padding:14px 18px 20px;
+    zoom:1.2;
+  }
+  .sheet{
+    max-width:1560px;
+    margin:0 auto;
+  }
+  .masthead{
+    border-bottom:2px solid var(--ledger);
+    padding-bottom:7px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .masthead h1{
+    font-size:1.55rem;
+    margin:0;
+    font-weight:700;
+    letter-spacing:0.2px;
+    color:var(--ledger);
+  }
+  .masthead .sub{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1.25fr 1fr;
+    gap:14px;
+    align-items:start;
+  }
+  @media(max-width:1200px){
+    .grid{grid-template-columns:1fr 1fr;}
+    .col-third{grid-column:1 / -1;}
+  }
+  @media(max-width:760px){
+    .grid{grid-template-columns:1fr;}
+    .col-third{grid-column:auto;}
+  }
+  .col-third{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    background:var(--white);
+    border:1px solid var(--paper-line);
+    border-radius:2px;
+    padding:12px 14px 14px;
+  }
+  .card h2{
+    font-size:1.08rem;
+    margin:0 0 9px;
+    color:var(--ledger);
+    font-weight:700;
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:5px;
+    letter-spacing:0.1px;
+  }
+  .field{
+    margin-bottom:7px;
+  }
+  .field label{
+    display:block;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    margin-bottom:2px;
+  }
+  .field .hint{
+    display:block;
+    font-size:0.65rem;
+    color:var(--ink-soft);
+    opacity:0.85;
+    margin-top:1px;
+    line-height:1.25;
+  }
+  .amount-wrap{
+    position:relative;
+  }
+  .amount-wrap .dollar{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:0.92rem;
+  }
+  input[type=number]{
+    width:100%;
+    padding:5px 10px 5px 22px;
+    border:1px solid #C9C0A9;
+    border-radius:2px;
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:0.88rem;
+    background:#FFFDF8;
+    color:var(--ink);
+  }
+  input[type=number]:focus{
+    outline:2px solid var(--ledger-soft);
+    outline-offset:1px;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .divgroup{
+    border-left:2px solid var(--band);
+    padding-left:9px;
+    margin-top:5px;
+  }
+  .divgroup .field:last-child{margin-bottom:0;}
+
+  .age-toggle, .withhold-toggle{
+    display:flex;
+    gap:6px;
+  }
+  .age-btn, .wtype-btn{
+    flex:1;
+    padding:5px 8px;
+    border:1px solid #C9C0A9;
+    border-radius:2px;
+    background:#FFFDF8;
+    color:var(--ink-soft);
+    font-family:'Iowan Old Style','Georgia',serif;
+    font-size:0.82rem;
+    cursor:pointer;
+  }
+  .age-btn.active, .wtype-btn.active{
+    background:var(--ledger);
+    border-color:var(--ledger);
+    color:#FFFDF8;
+    font-weight:600;
+  }
+
+  .withhold-type-container{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:6px;
+    margin-bottom:2px;
+  }
+  .withhold-type-container label{
+    margin-bottom:0 !important;
+  }
+
+  .result-total{
+    padding:4px 0 8px;
+    border-bottom:1px solid var(--paper-line);
+    margin-bottom:8px;
+  }
+  .result-total .row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .result-total .lbl{
+    font-size:0.84rem;
+    color:var(--ink-soft);
+  }
+  .result-total .val{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:var(--fs-headline);
+    color:var(--owe);
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .result-includes{
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    margin-top:3px;
+  }
+  .result-includes .part.inactive{
+    opacity:0.4;
+    text-decoration:line-through;
+  }
+  .summary-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.8rem;
+    padding:1px 0;
+    color:var(--ink-soft);
+  }
+  .summary-line .v{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    color:var(--ink);
+  }
+  .summary-block{
+    margin-bottom:8px;
+    padding-bottom:7px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.brackets{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.76rem;
+  }
+  table.brackets th{
+    text-align:left;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:0.66rem;
+    padding:2px 5px 4px 0;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.brackets td{
+    padding:3px 5px;
+    border-bottom:1px solid var(--paper-line);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    color:var(--ink);
+  }
+  table.brackets td.rate{
+    font-family:'Iowan Old Style','Georgia',serif;
+    font-weight:600;
+    color:var(--ledger);
+  }
+  table.brackets tr.zero td{
+    color:#B8AF98;
+  }
+  table.brackets tr.active-tier{
+    background:var(--band);
+  }
+  table.brackets tr.active-tier td{
+    font-weight:600;
+    color:var(--ledger);
+  }
+  table.brackets tfoot td{
+    border-bottom:none;
+    border-top:2px solid var(--ledger);
+    font-weight:600;
+    padding-top:5px;
+    font-size:0.7rem;
+    color:var(--ledger);
+    line-height:1.25;
+  }
+  table.brackets td.total-amount{
+    font-weight:700;
+    color:var(--owe);
+    font-size:var(--fs-total);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    white-space:nowrap;
+  }
+  .combo-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    margin-top:8px;
+    padding:6px 8px;
+    background:var(--band);
+    border-radius:2px;
+  }
+  .combo-total .lbl{
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--ledger);
+  }
+  .combo-total .amt{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:var(--fs-total);
+    font-weight:700;
+    color:var(--owe);
+    white-space:nowrap;
+  }
+  .tfoot-label small{
+    display:block;
+    font-weight:400;
+    text-transform:none;
+    color:var(--ink-soft);
+    font-size:0.68rem;
+    margin-top:1px;
+  }
+  .section-tag{
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--ledger);
+    margin:9px 0 4px;
+  }
+  .section-tag:first-of-type{margin-top:0;}
+  details.foot-note{
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin-top:8px;
+  }
+  details.foot-note summary{
+    cursor:pointer;
+    font-weight:600;
+    color:var(--ledger-soft);
+    list-style:none;
+  }
+  details.foot-note summary::-webkit-details-marker{display:none;}
+  details.foot-note summary::before{
+    content:'▸ ';
+  }
+  details.foot-note[open] summary::before{
+    content:'▾ ';
+  }
+  details.foot-note p{
+    margin:5px 0 0;
+  }
+  .foot-note a{color:var(--ledger-soft);}
+
+  .irmaa-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:4px 0 7px;
+    border-bottom:1px solid var(--paper-line);
+    margin-bottom:7px;
+  }
+  .irmaa-total .lbl{font-size:0.82rem;color:var(--ink-soft);}
+  .irmaa-total .val{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:var(--fs-headline);
+    color:var(--owe);
+    font-weight:700;
+    white-space:nowrap;
+  }
+  table.irmaa{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.74rem;
+  }
+  table.irmaa th{
+    text-align:left;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:0.64rem;
+    padding:2px 5px 4px 0;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.irmaa td{
+    padding:3px 5px;
+    border-bottom:1px solid var(--paper-line);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    color:var(--ink);
+  }
+  table.irmaa tr.active-tier{
+    background:var(--band);
+  }
+  table.irmaa tr.active-tier td{
+    font-weight:600;
+    color:var(--ledger);
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="masthead">
+    <h1>Federal Tax Estimator</h1>
+    <div class="sub" id="mastheadSub">Tax year 2026 · Single · Under 65 · Standard deduction</div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>Income</h2>
+
+      <div class="field">
+        <label>Age</label>
+        <div class="age-toggle" id="ageToggle">
+          <button type="button" class="age-btn active" data-age="under65">Under 65</button>
+          <button type="button" class="age-btn" data-age="over65">65 or older</button>
+        </div>
+        <span class="hint">Affects the standard deduction and the OBBBA senior bonus deduction</span>
+      </div>
+
+      <div class="field">
+        <label for="wages">Wages (W-2)</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="wages" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        
+        <div class="withhold-type-container">
+          <label id="wrateLabel" for="wrate">Wage withholding (optional)</label>
+          <div class="withhold-toggle" id="wtypeToggle" style="width: 110px;">
+            <button type="button" class="wtype-btn active" data-wtype="pct">%</button>
+            <button type="button" class="wtype-btn" data-wtype="amt">$</button>
+          </div>
+        </div>
+        
+        <div class="amount-wrap" id="wrateWrap">
+          <span class="dollar" id="wrateDollar" style="display:none;">$</span>
+          <input type="number" id="wrate" min="0" step="0.5" placeholder="auto" inputmode="decimal" style="padding-left:10px;">
+        </div>
+        <span class="hint">Blank = estimate from standard withholding. Enter custom rate or amount to override.</span>
+      </div>
+
+      <div class="field">
+        <label for="ira">Taxable IRA withdrawals</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="ira" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        <span class="hint">Distributions and Roth conversions — taxed as ordinary income</span>
+      </div>
+
+      <div class="field">
+        <label for="ssa">Social Security benefits</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="ssa" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        <span class="hint">0/50/85% taxable depending on combined income — see breakdown at right</span>
+      </div>
+
+      <div class="field">
+        <label>Dividends</label>
+        <div class="divgroup">
+          <div class="field">
+            <label for="qdiv">Qualified dividends</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="qdiv" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Taxed at long-term capital gains rates (0/15/20%)</span>
+          </div>
+          <div class="field">
+            <label for="ndiv">Ordinary (non-qualified) dividends</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="ndiv" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Taxed as ordinary income, same as wages</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Capital gains</label>
+        <div class="divgroup">
+          <div class="field">
+            <label for="ltcg">Long-term capital gains</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="ltcg" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Held over a year — taxed at long-term capital gains rates (0/15/20%)</span>
+          </div>
+          <div class="field">
+            <label for="stcg">Short-term capital gains</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="stcg" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Held a year or less — taxed as ordinary income, same as wages</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:8px; padding-top:7px; border-top:1px solid var(--paper-line);">
+        <label for="magi2yr">MAGI from 2024 (IRMAA lookback year)</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="magi2yr" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        <span class="hint">2024 MAGI (AGI + tax-exempt interest) sets 2026 Medicare premiums — see breakdown at right</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Estimated federal tax</h2>
+
+      <div class="result-total">
+        <div class="row">
+          <span class="lbl">Total tax owed</span>
+          <span class="val" id="totalTax">$0</span>
+        </div>
+        <div class="result-includes">
+          Includes:
+          <span class="part" id="incOrdinary">ordinary income tax</span> +
+          <span class="part" id="incQdiv">qualified dividend/LTCG tax</span> +
+          <span class="part" id="incNiit">NIIT</span>
+        </div>
+      </div>
+
+      <div class="summary-block">
+        <div class="summary-line"><span>Total income (incl. taxable SS)</span><span class="v" id="sTotalIncome">$0</span></div>
+        <div class="summary-line"><span>Standard deduction</span><span class="v" id="sDeduction">−$16,100</span></div>
+        <div class="summary-line"><span>Taxable income</span><span class="v" id="sTaxable">$0</span></div>
+        <div class="summary-line"><span>Effective rate</span><span class="v" id="sEffRate">0.0%</span></div>
+        <div class="summary-line"><span>Marginal rate (ordinary income)</span><span class="v" id="sMarginal">0%</span></div>
+      </div>
+
+      <div class="section-tag">Ordinary income brackets</div>
+      <table class="brackets" id="ordinaryTable">
+        <thead>
+          <tr><th>Rate</th><th>Bracket</th><th style="text-align:right">Taxed at this rate</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr><td colspan="3" class="tfoot-label">Ordinary income tax<small>Wages + IRA + ordinary dividends + short-term gains + taxable SS</small></td><td class="total-amount" style="text-align:right;vertical-align:top" id="ordinaryTotal">$0</td></tr>
+        </tfoot>
+      </table>
+
+      <div class="section-tag" id="qdivTag" style="display:none;">Qualified dividends & LTCG (0/15/20%)</div>
+      <table class="brackets" id="qdivTable" style="display:none;">
+        <thead>
+          <tr><th>Rate</th><th>Bracket</th><th style="text-align:right">Taxed at this rate</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr><td colspan="3" class="tfoot-label">Qualified dividend / LTCG tax<small>Qualified dividends + long-term capital gains</small></td><td class="total-amount" style="text-align:right;vertical-align:top" id="qdivTotal">$0</td></tr>
+        </tfoot>
+      </table>
+
+      <div class="section-tag" id="niitTag" style="display:none;">Net Investment Income Tax</div>
+      <table class="brackets" id="niitTable" style="display:none;">
+        <thead>
+          <tr><th>Rate</th><th>Basis</th><th style="text-align:right">Amount</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rate">3.8%</td>
+            <td>Lesser of (dividends+gains) or MAGI over $200,000</td>
+            <td style="text-align:right" id="niitBase">$0</td>
+            <td class="total-amount" style="text-align:right" id="niitTaxCell">$0</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="combo-total" id="comboTotal" style="display:none;">
+        <span class="lbl">Qualified div. / LTCG tax + NIIT combined</span>
+        <span class="amt" id="comboTotalAmt">$0</span>
+      </div>
+
+      <details class="foot-note" style="margin-top:10px;">
+        <summary>Assumptions & methodology</summary>
+        <p>2026 IRS figures (Rev. Proc. 2025-32): $16,100 single standard deduction; seven ordinary brackets (10/12/22/24/32/35/37%). Qualified dividends & LTCG stack on top of ordinary taxable income at 0/15/20%; short-term gains taxed as ordinary income. NIIT's $200,000 MAGI threshold is fixed by statute, not inflation-adjusted. "65 or older" adds the $2,050 age-65 deduction plus the temporary OBBBA senior bonus (up to $6,000, phased out 6%/dollar above $75,000 MAGI, gone by $175,000; 2025–2028 only). Federal-only estimate — excludes payroll tax, state tax, and credits.</p>
+      </details>
+    </div>
+
+    <div class="col-third">
+
+      <div class="card">
+        <h2>Tax by income source</h2>
+        <table class="brackets" id="srcTable">
+          <thead>
+            <tr><th>Source</th><th style="text-align:right">Income</th><th style="text-align:right">Tax</th><th style="text-align:right">Rate</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="rate">Wages</td><td style="text-align:right" id="srcWagesInc">$0</td><td style="text-align:right" id="srcWagesTax">$0</td><td style="text-align:right" id="srcWagesRate">—</td></tr>
+            <tr><td class="rate tfoot-label">IRA / Roth conv.<small>Added on top of everything else</small></td><td style="text-align:right" id="srcIraInc">$0</td><td style="text-align:right" id="srcIraTax">$0</td><td style="text-align:right" id="srcIraRate">—</td></tr>
+            <tr><td class="rate tfoot-label">Other<small>Taxable SS, dividends, gains</small></td><td style="text-align:right" id="srcOtherInc">$0</td><td style="text-align:right" id="srcOtherTax">$0</td><td style="text-align:right" id="srcOtherRate">—</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td class="tfoot-label">Total federal tax</td><td></td><td class="total-amount" style="text-align:right" id="srcTotal">$0</td><td></td></tr>
+          </tfoot>
+        </table>
+        <div class="summary-line" style="margin-top:7px;"><span id="srcEmployerLbl">Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only</small></span><span class="v" id="srcEmployer">$0</span></div>
+        <div class="summary-line"><span>Still owed after wage withholding<br><small style="font-size:0.66rem;">Negative = over-withheld</small></span><span class="v" id="srcStillOwed">$0</span></div>
+        <details class="foot-note" style="margin-top:6px;">
+          <summary>How this is calculated</summary>
+          <p>Wages are taxed on their own, so that figure never changes when you add dividends, gains, or an IRA withdrawal. Other income is layered on top of wages, and IRA withdrawals / Roth conversions go last, so the IRA figure is the true added cost of the conversion — including more Social Security becoming taxable, a smaller senior deduction, NIIT, or pushing gains into a higher rate. The employer estimate is tax on wages alone with the standard deduction; your actual withholding depends on your W-4, pay frequency, and bonuses.</p>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Social Security taxability</h2>
+        <div class="summary-block" style="margin-bottom:7px;padding-bottom:6px;">
+          <div class="summary-line"><span>Gross Social Security benefits</span><span class="v" id="ssGross">$0</span></div>
+          <div class="summary-line"><span>50% of benefits</span><span class="v" id="ssHalf">$0</span></div>
+          <div class="summary-line"><span>+ Other income (wages, IRA, div., gains)</span><span class="v" id="ssOther">$0</span></div>
+          <div class="summary-line" style="font-weight:700;color:var(--ink);"><span>= Combined income</span><span class="v" id="ssCombined">$0</span></div>
+        </div>
+        <table class="brackets" id="ssTierTable">
+          <thead>
+            <tr><th>Rate</th><th>Combined income band</th><th style="text-align:right">In this band</th><th style="text-align:right">Taxable SS</th></tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr><td colspan="3" class="tfoot-label">Taxable Social Security<small>Flows into ordinary income above — not a separate tax</small></td><td class="total-amount" style="text-align:right;vertical-align:top" id="ssTaxable">$0</td></tr>
+          </tfoot>
+        </table>
+        <details class="foot-note" style="margin-top:6px;">
+          <summary>How this is calculated</summary>
+          <p>Uses the standard IRS combined-income formula. "In this band" is how much of your combined income falls there; "Taxable SS" is how much of your benefit that band pulls into taxable income.</p>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Medicare IRMAA (2026)</h2>
+        <div class="irmaa-total">
+          <span class="lbl">Extra you'll pay in 2026, per year</span>
+          <span class="val" id="irmaaAnnual">$0</span>
+        </div>
+        <table class="irmaa" id="irmaaTable">
+          <thead>
+            <tr><th>2024 MAGI</th><th style="text-align:right">Part B / mo</th><th style="text-align:right">Part D sur. / mo</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <details class="foot-note" style="margin-top:6px;">
+          <summary>How this is calculated</summary>
+          <p>Standard 2026 Part B premium is $202.90/month with no IRMAA. Part D surcharge is paid on top of your plan's own premium, direct to Medicare. It's a cliff — one dollar over moves the whole year to the next tier. Uses the 2024 MAGI entered at left. Source: CMS 2026 Medicare Parts A & B premiums announcement.</p>
+        </details>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+const STD_DEDUCTION_BASE = 16100;
+const AGE_65_ADDON = 2050;
+const SENIOR_BONUS_MAX = 6000;
+const SENIOR_BONUS_PHASEOUT_START = 75000;
+const SENIOR_BONUS_PHASEOUT_RATE = 0.06;
+
+// 2026 ordinary income brackets, single filer
+const ORDINARY_BRACKETS = [
+  {rate:0.10, from:0,       to:12400},
+  {rate:0.12, from:12400,   to:50400},
+  {rate:0.22, from:50400,   to:105700},
+  {rate:0.24, from:105700,  to:201775},
+  {rate:0.32, from:201775,  to:256225},
+  {rate:0.35, from:256225,  to:640600},
+  {rate:0.37, from:640600,  to:Infinity},
+];
+
+// 2026 qualified dividend / LTCG brackets, single filer
+const QDIV_BRACKETS = [
+  {rate:0.00, from:0,      to:49450},
+  {rate:0.15, from:49450,  to:545500},
+  {rate:0.20, from:545500, to:Infinity},
+];
+
+function fmt(n){
+  const sign = n < 0 ? '−' : '';
+  n = Math.abs(Math.round(n));
+  return sign + '$' + n.toLocaleString('en-US');
+}
+
+// Compute how much of `amount` falls in each bracket, given the stack already
+// occupied by `base` amount of income below it.
+function bracketSplit(base, amount, brackets){
+  const rows = [];
+  let remaining = amount;
+  let cursor = base;
+  for(const b of brackets){
+    if(remaining <= 0){
+      rows.push({rate:b.rate, from:b.from, to:b.to, taxed:0, tax:0});
+      continue;
+    }
+    const bandFloor = Math.max(b.from, cursor);
+    const bandCeil = b.to;
+    const bandCapacity = Math.max(0, bandCeil - bandFloor);
+    if(cursor >= bandCeil){
+      rows.push({rate:b.rate, from:b.from, to:b.to, taxed:0, tax:0});
+      continue;
+    }
+    const taxedHere = Math.min(remaining, bandCapacity);
+    const tax = taxedHere * b.rate;
+    rows.push({rate:b.rate, from:b.from, to:b.to, taxed:taxedHere, tax:tax});
+    cursor += taxedHere;
+    remaining -= taxedHere;
+  }
+  return rows;
+}
+
+function bracketLabel(from, to){
+  if(to === Infinity) return fmt(from) + '+';
+  return fmt(from) + ' – ' + fmt(to);
+}
+
+function renderTable(tbodyId, footId, rows){
+  const tbody = document.querySelector('#' + tbodyId + ' tbody');
+  tbody.innerHTML = '';
+  let total = 0;
+  for(const r of rows){
+    total += r.tax;
+    const tr = document.createElement('tr');
+    if(r.taxed === 0) tr.className = 'zero';
+    tr.innerHTML = `
+      <td class="rate">${(r.rate*100).toFixed(0)}%</td>
+      <td>${bracketLabel(r.from, r.to)}</td>
+      <td style="text-align:right">${fmt(r.taxed)}</td>
+      <td style="text-align:right">${fmt(r.tax)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  document.getElementById(footId).textContent = fmt(total);
+  return total;
+}
+
+let ageOver65 = false;
+let withholdType = 'pct'; // 'pct' or 'amt'
+
+// Decomposes the IRS combined-income formula into the three underlying bands so
+// each can be shown as its own row, matching the other bracket-table breakdowns.
+function computeTaxableSocialSecurity(ssBenefits, otherIncome){
+  const combinedIncome = otherIncome + 0.5 * ssBenefits;
+
+  const inBand0 = Math.max(0, Math.min(combinedIncome, 25000));
+  const inBand50 = Math.max(0, Math.min(combinedIncome, 34000) - 25000);
+  const inBand85 = Math.max(0, combinedIncome - 34000);
+
+  const band50Taxable = Math.min(0.5 * inBand50, 0.5 * ssBenefits);
+  const band85TaxableRaw = 0.85 * inBand85;
+  const rawTotal = band50Taxable + band85TaxableRaw;
+  const taxable = ssBenefits > 0 ? Math.min(0.85 * ssBenefits, rawTotal) : 0;
+  const band85Taxable = Math.max(0, taxable - band50Taxable);
+
+  return {
+    taxable,
+    combinedIncome,
+    rows: [
+      {rateLabel:'0%',        from:0,     to:25000,     inBand:inBand0,  taxable:0},
+      {rateLabel:'up to 50%', from:25000, to:34000,     inBand:inBand50, taxable:band50Taxable},
+      {rateLabel:'up to 85%', from:34000, to:Infinity,  inBand:inBand85, taxable:band85Taxable},
+    ],
+  };
+}
+
+function computeStandardDeduction(magi){
+  if(!ageOver65) return STD_DEDUCTION_BASE;
+  const phaseOutReduction = Math.max(0, (magi - SENIOR_BONUS_PHASEOUT_START) * SENIOR_BONUS_PHASEOUT_RATE);
+  const seniorBonus = Math.max(0, SENIOR_BONUS_MAX - phaseOutReduction);
+  return STD_DEDUCTION_BASE + AGE_65_ADDON + seniorBonus;
+}
+
+function totalTaxFor(v){
+  const w=Math.max(0,v.wages), i=Math.max(0,v.ira), nd=Math.max(0,v.ndiv), qd=Math.max(0,v.qdiv),
+        st=Math.max(0,v.stcg), lt=Math.max(0,v.ltcg), ss=Math.max(0,v.ssa);
+  const other = w+i+nd+qd+st+lt;
+  const tss = computeTaxableSocialSecurity(ss, other).taxable;
+  const ord = w+i+nd+st+tss, qual = qd+lt, total = ord+qual;
+  const ded = computeStandardDeduction(total);
+  const ordT = Math.max(0, ord-ded);
+  const qualT = Math.max(0, qual - Math.max(0, ded-ord));
+  const sumTax = rows => rows.reduce((a,r)=>a+r.tax, 0);
+  const ordTax = sumTax(bracketSplit(0, ordT, ORDINARY_BRACKETS));
+  const qTax = qualT>0 ? sumTax(bracketSplit(ordT, qualT, QDIV_BRACKETS)) : 0;
+  const niit = Math.min(nd+qd+st+lt, Math.max(0, total-NIIT_THRESHOLD_SINGLE)) * NIIT_RATE;
+  return ordTax + qTax + niit;
+}
+
+function calculate(){
+  const wages = parseFloat(document.getElementById('wages').value) || 0;
+  const ira = parseFloat(document.getElementById('ira').value) || 0;
+  const ndiv = parseFloat(document.getElementById('ndiv').value) || 0;
+  const qdiv = parseFloat(document.getElementById('qdiv').value) || 0;
+  const stcg = parseFloat(document.getElementById('stcg').value) || 0;
+  const ltcg = parseFloat(document.getElementById('ltcg').value) || 0;
+  const ssa = parseFloat(document.getElementById('ssa').value) || 0;
+
+  const otherIncomeForSs = Math.max(0, wages) + Math.max(0, ira) + Math.max(0, ndiv) + Math.max(0, qdiv) + Math.max(0, stcg) + Math.max(0, ltcg);
+  const ssResult = computeTaxableSocialSecurity(Math.max(0, ssa), otherIncomeForSs);
+  const taxableSs = ssResult.taxable;
+
+  const ordinaryIncome = Math.max(0, wages) + Math.max(0, ira) + Math.max(0, ndiv) + Math.max(0, stcg) + taxableSs;
+  const qualifiedIncome = Math.max(0, qdiv) + Math.max(0, ltcg);
+  const totalIncome = ordinaryIncome + qualifiedIncome;
+
+  const stdDeduction = computeStandardDeduction(totalIncome);
+
+  const taxableIncome = Math.max(0, totalIncome - stdDeduction);
+
+  // Standard deduction is applied to ordinary income first
+  const ordinaryTaxable = Math.max(0, ordinaryIncome - stdDeduction);
+  const leftoverDeduction = Math.max(0, stdDeduction - ordinaryIncome);
+  const qualifiedTaxable = Math.max(0, qualifiedIncome - leftoverDeduction);
+
+  const ordinaryRows = bracketSplit(0, ordinaryTaxable, ORDINARY_BRACKETS);
+  const ordinaryTax = renderTable('ordinaryTable', 'ordinaryTotal', ordinaryRows);
+
+  let qdivTax = 0;
+  const qdivTableEl = document.getElementById('qdivTable');
+  const qdivTagEl = document.getElementById('qdivTag');
+  if(qualifiedTaxable > 0){
+    qdivTableEl.style.display = '';
+    qdivTagEl.style.display = '';
+    const qdivRows = bracketSplit(ordinaryTaxable, qualifiedTaxable, QDIV_BRACKETS);
+    qdivTax = renderTable('qdivTable', 'qdivTotal', qdivRows);
+  } else {
+    qdivTableEl.style.display = 'none';
+    qdivTagEl.style.display = 'none';
+  }
+
+  // NIIT: 3.8% of the lesser of net investment income (dividends+gains here) or
+  // the amount MAGI exceeds the $200,000 single-filer threshold (not inflation-adjusted).
+  const magiForNiit = totalIncome; // AGI ≈ total income here (pre-standard-deduction)
+  const netInvestmentIncome = ndiv + qdiv + stcg + ltcg;
+  const magiOverThreshold = Math.max(0, magiForNiit - NIIT_THRESHOLD_SINGLE);
+  const niitSubject = Math.min(netInvestmentIncome, magiOverThreshold);
+  const niitTax = niitSubject * NIIT_RATE;
+
+  const niitTableEl = document.getElementById('niitTable');
+  const niitTagEl = document.getElementById('niitTag');
+  if(niitTax > 0){
+    niitTableEl.style.display = '';
+    niitTagEl.style.display = '';
+    document.getElementById('niitBase').textContent = fmt(niitSubject);
+    document.getElementById('niitTaxCell').textContent = fmt(niitTax);
+  } else {
+    niitTableEl.style.display = 'none';
+    niitTagEl.style.display = 'none';
+  }
+
+  const comboTotalEl = document.getElementById('comboTotal');
+  const comboTax = qdivTax + niitTax;
+  if(comboTax > 0){
+    comboTotalEl.style.display = '';
+    document.getElementById('comboTotalAmt').textContent = fmt(comboTax);
+  } else {
+    comboTotalEl.style.display = 'none';
+  }
+
+  const totalTax = ordinaryTax + qdivTax + niitTax;
+
+  // Tax by income source. Layering order: wages alone, then other income on top, then IRA/Roth conversions last.
+  const vals = {wages, ira, ndiv, qdiv, stcg, ltcg, ssa};
+  const taxWagesOnly = totalTaxFor({wages, ira:0, ndiv:0, qdiv:0, stcg:0, ltcg:0, ssa:0});
+  const taxNoIra = totalTaxFor({...vals, ira:0});
+  const wagesTax = taxWagesOnly;
+  const otherTax = taxNoIra - taxWagesOnly;
+  const iraTax = totalTax - taxNoIra;
+  const wagesInc = Math.max(0, wages), iraInc = Math.max(0, ira);
+  const otherInc = Math.max(0, ndiv) + Math.max(0, qdiv) + Math.max(0, stcg) + Math.max(0, ltcg) + taxableSs;
+  const pct = (t, inc) => inc > 0 ? (t/inc*100).toFixed(1) + '%' : '—';
+  document.getElementById('srcWagesInc').textContent = fmt(wagesInc);
+  document.getElementById('srcWagesTax').textContent = fmt(wagesTax);
+  document.getElementById('srcWagesRate').textContent = pct(wagesTax, wagesInc);
+  document.getElementById('srcIraInc').textContent = fmt(iraInc);
+  document.getElementById('srcIraTax').textContent = fmt(iraTax);
+  document.getElementById('srcIraRate').textContent = pct(iraTax, iraInc);
+  document.getElementById('srcOtherInc').textContent = fmt(otherInc);
+  document.getElementById('srcOtherTax').textContent = fmt(otherTax);
+  document.getElementById('srcOtherRate').textContent = pct(otherTax, otherInc);
+  document.getElementById('srcTotal').textContent = fmt(totalTax);
+  const employerEst = bracketSplit(0, Math.max(0, wagesInc - STD_DEDUCTION_BASE), ORDINARY_BRACKETS).reduce((a,r)=>a+r.tax, 0);
+  
+  const wrateRaw = document.getElementById('wrate').value;
+  const wrate = parseFloat(wrateRaw);
+  const customVal = wrateRaw !== '' && !isNaN(wrate) && wrate >= 0;
+  
+  let withheld = employerEst;
+  if (customVal) {
+    if (withholdType === 'pct') {
+      withheld = wagesInc * wrate / 100;
+      document.getElementById('srcEmployerLbl').innerHTML = 'Wage withholding at ' + wrate + '%<br><small style="font-size:0.66rem;">Your specified rate</small>';
+    } else {
+      withheld = wrate;
+      document.getElementById('srcEmployerLbl').innerHTML = 'Wage withholding<br><small style="font-size:0.66rem;">Your specified amount</small>';
+    }
+  } else {
+    document.getElementById('srcEmployerLbl').innerHTML = 'Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only</small>';
+  }
+
+  document.getElementById('srcEmployer').textContent = fmt(withheld);
+  document.getElementById('srcStillOwed').textContent = fmt(totalTax - withheld);
+
+  document.getElementById('totalTax').textContent = fmt(totalTax);
+  document.getElementById('incOrdinary').className = 'part' + (ordinaryTax > 0 ? '' : ' inactive');
+  document.getElementById('incQdiv').className = 'part' + (qdivTax > 0 ? '' : ' inactive');
+  document.getElementById('incNiit').className = 'part' + (niitTax > 0 ? '' : ' inactive');
+  document.getElementById('sTotalIncome').textContent = fmt(totalIncome);
+  document.getElementById('sDeduction').textContent = '−' + fmt(stdDeduction);
+
+  // Social Security taxability card
+  document.getElementById('ssGross').textContent = fmt(ssa);
+  document.getElementById('ssHalf').textContent = fmt(0.5 * Math.max(0, ssa));
+  document.getElementById('ssOther').textContent = fmt(otherIncomeForSs);
+  document.getElementById('ssCombined').textContent = fmt(ssResult.combinedIncome);
+
+  const ssTbody = document.querySelector('#ssTierTable tbody');
+  ssTbody.innerHTML = '';
+  for(const r of ssResult.rows){
+    const tr = document.createElement('tr');
+    if(r.inBand === 0) tr.className = 'zero';
+    tr.innerHTML = `
+      <td class="rate">${r.rateLabel}</td>
+      <td>${bracketLabel(r.from, r.to)}</td>
+      <td style="text-align:right">${fmt(r.inBand)}</td>
+      <td style="text-align:right">${fmt(r.taxable)}</td>
+    `;
+    ssTbody.appendChild(tr);
+  }
+  document.getElementById('ssTaxable').textContent = fmt(taxableSs);
+
+  document.getElementById('sTaxable').textContent = fmt(taxableIncome);
+  document.getElementById('sEffRate').textContent = totalIncome > 0 ? ((totalTax/totalIncome)*100).toFixed(1) + '%' : '0.0%';
+
+  let marginal = 0;
+  for(const b of ORDINARY_BRACKETS){
+    if(ordinaryTaxable > b.from) marginal = b.rate;
+  }
+  document.getElementById('sMarginal').textContent = (marginal*100).toFixed(0) + '%';
+}
+
+// Net Investment Income Tax — 3.8%, MAGI threshold fixed by statute (not inflation-adjusted)
+const NIIT_RATE = 0.038;
+const NIIT_THRESHOLD_SINGLE = 200000;
+
+// 2026 IRMAA brackets, single filer, based on 2024 MAGI
+// Source: CMS 2026 Medicare Parts A & B Premiums and Deductibles (announced Nov 17, 2025)
+const IRMAA_BRACKETS = [
+  {from:0,       to:109000,   partB:202.90, partD:0.00},
+  {from:109000,  to:137000,   partB:284.10, partD:14.50},
+  {from:137000,  to:171000,   partB:405.80, partD:37.50},
+  {from:171000,  to:205000,   partB:527.50, partD:60.40},
+  {from:205000,  to:500000,   partB:649.20, partD:83.30},
+  {from:500000,  to:Infinity, partB:689.90, partD:91.00},
+];
+const STANDARD_PART_B = 202.90;
+
+function magiLabel(from, to){
+  if(from === 0) return 'Up to ' + fmt(to);
+  if(to === Infinity) return 'Above ' + fmt(from);
+  return fmt(from) + ' – ' + fmt(to);
+}
+
+function calculateIrmaa(){
+  const magi = parseFloat(document.getElementById('magi2yr').value) || 0;
+  let tierIndex = 0;
+  for(let i = 0; i < IRMAA_BRACKETS.length; i++){
+    if(magi > IRMAA_BRACKETS[i].from) tierIndex = i;
+  }
+  const tbody = document.querySelector('#irmaaTable tbody');
+  tbody.innerHTML = '';
+  IRMAA_BRACKETS.forEach((b, i) => {
+    const tr = document.createElement('tr');
+    if(i === tierIndex) tr.className = 'active-tier';
+    tr.innerHTML = `
+      <td>${magiLabel(b.from, b.to)}</td>
+      <td style="text-align:right">${fmt(b.partB)}</td>
+      <td style="text-align:right">${b.partD > 0 ? fmt(b.partD) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  const tier = IRMAA_BRACKETS[tierIndex];
+  const monthlySurcharge = (tier.partB - STANDARD_PART_B) + tier.partD;
+  const annualSurcharge = monthlySurcharge * 12;
+  document.getElementById('irmaaAnnual').textContent = fmt(annualSurcharge);
+}
+
+['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+document.getElementById('magi2yr').addEventListener('input', calculateIrmaa);
+
+document.querySelectorAll('.age-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ageOver65 = btn.dataset.age === 'over65';
+    document.getElementById('mastheadSub').textContent =
+      'Tax year 2026 · Single · ' + (ageOver65 ? '65 or older' : 'Under 65') + ' · Standard deduction';
+    calculate();
+  });
+});
+
+document.querySelectorAll('.wtype-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.wtype-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    withholdType = btn.dataset.wtype;
+    
+    const wrateInput = document.getElementById('wrate');
+    const dollarSign = document.getElementById('wrateDollar');
+    
+    if (withholdType === 'amt') {
+      dollarSign.style.display = '';
+      wrateInput.style.paddingLeft = '22px';
+      wrateInput.step = '100';
+    } else {
+      dollarSign.style.display = 'none';
+      wrateInput.style.paddingLeft = '10px';
+      wrateInput.step = '0.5';
+    }
+    calculate();
+  });
+});
+
+calculate();
+calculateIrmaa();
+</script>
+</body>
+</html>
