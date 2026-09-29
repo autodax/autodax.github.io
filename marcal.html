@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2026 Federal & California Tax Estimator — Married Filing Jointly</title>
+<style>
+  :root{
+    --paper:#EEF2F7;
+    --paper-line:#D3DCE8;
+    --ink:#1E2A38;
+    --ink-soft:#5A6B7E;
+    --ledger:#2F4B6B;
+    --ledger-soft:#4F6F94;
+    --band:#E1E9F3;
+    --owe:#8E4B4B;
+    --white:#FFFFFF;
+    --ca-color:#1B5E20;
+    --fs-headline:1.7rem;
+    --fs-total:1.05rem;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top, 0px);}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'Iowan Old Style','Georgia','Times New Roman',serif;
+    line-height:1.35;
+    padding:14px 18px 20px;
+    zoom:1.15;
+  }
+  .sheet{
+    max-width:1680px;
+    margin:0 auto;
+  }
+  .masthead{
+    border-bottom:2px solid var(--ledger);
+    padding-bottom:7px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .masthead h1{
+    font-size:1.55rem;
+    margin:0;
+    font-weight:700;
+    letter-spacing:0.2px;
+    color:var(--ledger);
+  }
+  .masthead .sub{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1.25fr 1.1fr;
+    gap:14px;
+    align-items:start;
+  }
+  @media(max-width:1300px){
+    .grid{grid-template-columns:1fr 1fr;}
+    .col-third{grid-column:1 / -1;}
+  }
+  @media(max-width:760px){
+    .grid{grid-template-columns:1fr;}
+    .col-third{grid-column:auto;}
+  }
+  .col-third{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    background:var(--white);
+    border:1px solid var(--paper-line);
+    border-radius:14px;
+    padding:12px 14px 14px;
+  }
+  .card h2{
+    font-size:1.08rem;
+    margin:0 0 9px;
+    color:var(--ledger);
+    font-weight:700;
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:5px;
+    letter-spacing:0.1px;
+  }
+  .field{
+    margin-bottom:7px;
+  }
+  .field label{
+    display:block;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    margin-bottom:2px;
+  }
+  .field .hint{
+    display:block;
+    font-size:0.65rem;
+    color:var(--ink-soft);
+    opacity:0.85;
+    margin-top:1px;
+    line-height:1.25;
+  }
+  .amount-wrap{
+    position:relative;
+  }
+  .amount-wrap .dollar{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:0.92rem;
+  }
+  input[type=number]{
+    width:100%;
+    padding:5px 10px 5px 22px;
+    border:1px solid #B9C6D8;
+    border-radius:9px;
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:0.88rem;
+    background:#F8FAFD;
+    color:var(--ink);
+  }
+  input[type=number]:focus{
+    outline:2px solid var(--ledger-soft);
+    outline-offset:1px;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .divgroup{
+    border-left:2px solid var(--band);
+    padding-left:9px;
+    margin-top:5px;
+  }
+  .divgroup .field:last-child{margin-bottom:0;}
+
+  .age-toggle, .withhold-toggle{
+    display:flex;
+    gap:6px;
+  }
+  .age-btn, .wtype-btn{
+    flex:1;
+    padding:4px 6px;
+    border:1px solid #B9C6D8;
+    border-radius:8px;
+    background:#F8FAFD;
+    color:var(--ink-soft);
+    font-family:'Iowan Old Style','Georgia',serif;
+    font-size:0.78rem;
+    cursor:pointer;
+  }
+  .age-btn.active, .wtype-btn.active{
+    background:var(--ledger);
+    border-color:var(--ledger);
+    color:#F8FAFD;
+    font-weight:600;
+  }
+
+  .withhold-type-container{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:6px;
+    margin-bottom:2px;
+  }
+  .withhold-type-container label{
+    margin-bottom:0 !important;
+  }
+
+  .result-total{
+    padding:4px 0 8px;
+    border-bottom:1px solid var(--paper-line);
+    margin-bottom:8px;
+  }
+  .result-total .row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .result-total .row.sub-row{
+    margin-top:3px;
+    padding-top:3px;
+    border-top:1px dashed var(--paper-line);
+  }
+  .result-total .lbl{
+    font-size:0.84rem;
+    color:var(--ink-soft);
+  }
+  .result-total .lbl.sub-lbl{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+  .result-total .val{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:var(--fs-headline);
+    color:var(--owe);
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .result-total .val.sub-val{
+    font-size:1.1rem;
+    color:var(--owe);
+    font-weight:600;
+  }
+  .result-includes{
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    margin-top:3px;
+  }
+  .result-includes .part.inactive{
+    opacity:0.4;
+    text-decoration:line-through;
+  }
+  .summary-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.8rem;
+    padding:1px 0;
+    color:var(--ink-soft);
+  }
+  .summary-line .v{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    color:var(--ink);
+  }
+  .summary-block{
+    margin-bottom:8px;
+    padding-bottom:7px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.brackets{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.76rem;
+  }
+  table.brackets th{
+    text-align:left;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:0.66rem;
+    padding:2px 5px 4px 0;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.brackets td{
+    padding:3px 5px;
+    border-bottom:1px solid var(--paper-line);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    color:var(--ink);
+  }
+  table.brackets td.rate{
+    font-family:'Iowan Old Style','Georgia',serif;
+    font-weight:600;
+    color:var(--ledger);
+  }
+  table.brackets tr.zero td{
+    color:#A9B6C7;
+  }
+  table.brackets tr.active-tier{
+    background:var(--band);
+  }
+  table.brackets tr.active-tier td{
+    font-weight:600;
+    color:var(--ledger);
+  }
+  table.brackets tfoot td{
+    border-bottom:none;
+    border-top:2px solid var(--ledger);
+    font-weight:600;
+    padding-top:5px;
+    font-size:0.7rem;
+    color:var(--ledger);
+    line-height:1.25;
+  }
+  table.brackets td.total-amount{
+    font-weight:700;
+    color:var(--owe);
+    font-size:var(--fs-total);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    white-space:nowrap;
+  }
+  table.brackets td.subtotal-amount{
+    font-weight:700;
+    color:var(--owe);
+    font-size:0.9rem;
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    white-space:nowrap;
+  }
+  .combo-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    margin-top:8px;
+    padding:6px 8px;
+    background:var(--band);
+    border-radius:9px;
+  }
+  .combo-total .lbl{
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--ledger);
+  }
+  .combo-total .amt{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:var(--fs-total);
+    font-weight:700;
+    color:var(--owe);
+    white-space:nowrap;
+  }
+  .tfoot-label small{
+    display:block;
+    font-weight:400;
+    text-transform:none;
+    color:var(--ink-soft);
+    font-size:0.68rem;
+    margin-top:1px;
+  }
+  .section-tag{
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--ledger);
+    margin:9px 0 4px;
+  }
+  .section-tag.ca-tag{
+    color:var(--ca-color);
+  }
+  .section-tag:first-of-type{margin-top:0;}
+  details.foot-note{
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin-top:8px;
+  }
+  details.foot-note summary{
+    cursor:pointer;
+    font-weight:600;
+    color:var(--ledger-soft);
+    list-style:none;
+  }
+  details.foot-note summary::-webkit-details-marker{display:none;}
+  details.foot-note summary::before{
+    content:'▸ ';
+  }
+  details.foot-note[open] summary::before{
+    content:'▾ ';
+  }
+  details.foot-note p{
+    margin:5px 0 0;
+  }
+
+  .irmaa-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:4px 0 7px;
+    border-bottom:1px solid var(--paper-line);
+    margin-bottom:7px;
+  }
+  .irmaa-total .lbl{font-size:0.82rem;color:var(--ink-soft);}
+  .irmaa-total .val{
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:var(--fs-headline);
+    color:var(--owe);
+    font-weight:700;
+    white-space:nowrap;
+  }
+  table.irmaa{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.74rem;
+  }
+  table.irmaa th{
+    text-align:left;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:0.64rem;
+    padding:2px 5px 4px 0;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.irmaa td{
+    padding:3px 5px;
+    border-bottom:1px solid var(--paper-line);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    color:var(--ink);
+  }
+  table.irmaa tr.active-tier{
+    background:var(--band);
+  }
+  table.irmaa tr.active-tier td{
+    font-weight:600;
+    color:var(--ledger);
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="masthead">
+    <h1>Federal & California Tax Estimator</h1>
+    <div class="sub" id="mastheadSub">Tax year 2026 · Married Filing Jointly · Both Under 65 · Standard Deduction</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- COLUMN 1: INCOME & DEDUCTIONS -->
+    <div class="card">
+      <h2>Income & Business Profits</h2>
+
+      <div class="field">
+        <label>Spouse 1 Age</label>
+        <div class="age-toggle" id="ageToggle1">
+          <button type="button" class="age-btn active" data-age="under65">Under 65</button>
+          <button type="button" class="age-btn" data-age="over65">65 or older</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Spouse 2 Age</label>
+        <div class="age-toggle" id="ageToggle2">
+          <button type="button" class="age-btn active" data-age="under65">Under 65</button>
+          <button type="button" class="age-btn" data-age="over65">65 or older</button>
+        </div>
+        <span class="hint">Adds $1,650/spouse 65+ to federal std. deduction + OBBBA Senior Bonus</span>
+      </div>
+
+      <div class="field" style="margin-top:10px;">
+        <label for="wages">Combined W-2 Wages</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="wages" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        
+        <div class="withhold-type-container">
+          <label id="wrateLabel" for="wrate">Federal Wage Withholding</label>
+          <div class="withhold-toggle" id="wtypeToggle" style="width: 100px;">
+            <button type="button" class="wtype-btn active" data-wtype="pct">%</button>
+            <button type="button" class="wtype-btn" data-wtype="amt">$</button>
+          </div>
+        </div>
+        
+        <div class="amount-wrap" id="wrateWrap">
+          <span class="dollar" id="wrateDollar" style="display:none;">$</span>
+          <input type="number" id="wrate" min="0" step="0.5" placeholder="auto" inputmode="decimal" style="padding-left:10px;">
+        </div>
+
+        <div class="field" style="margin-top:6px;">
+          <label for="caWithheld">California State Tax Withheld</label>
+          <div class="amount-wrap">
+            <span class="dollar">$</span>
+            <input type="number" id="caWithheld" min="0" step="100" placeholder="0" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Business & Rental Income</label>
+        <div class="divgroup">
+          <div class="field">
+            <label for="schedC">Schedule C Business Net Profit</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="schedC" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Subject to 15.3% Self-Employment Tax & QBI deduction</span>
+          </div>
+          <div class="field">
+            <label for="rental">Net Rental Income (Schedule E)</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="rental" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Net profits from rental properties (eligible for QBI)</span>
+          </div>
+          <div class="field">
+            <label for="otherBiz">Other Pass-Through / Biz Income</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="otherBiz" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">S-Corp/K-1 Ordinary Income (No SE Tax)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="ira">Taxable IRA withdrawals / Roth Conversions</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="ira" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="ssa">Social Security benefits (Combined)</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="ssa" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        <span class="hint">Taxable based on MFJ threshold bands ($32k/$44k)</span>
+      </div>
+
+      <div class="field">
+        <label>Capital gains & Investment Income</label>
+        <div class="divgroup">
+          <div class="field">
+            <label for="ltcg">Long-term capital gains</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="ltcg" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Fed: 0/15/20% rates. CA: Taxed as ordinary income</span>
+          </div>
+          <div class="field">
+            <label for="stcg">Short-term capital gains</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="stcg" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+          </div>
+          <div class="field">
+            <label for="qdiv">Qualified dividends</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="qdiv" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Fed: 0/15/20% rates. CA: Taxed as ordinary income</span>
+          </div>
+          <div class="field">
+            <label for="ndiv">Ordinary dividends</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="ndiv" min="0" step="100" placeholder="0" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:8px; padding-top:7px; border-top:1px solid var(--paper-line);">
+        <label for="magi2yr">2024 Joint MAGI (IRMAA lookback)</label>
+        <div class="amount-wrap">
+          <span class="dollar">$</span>
+          <input type="number" id="magi2yr" min="0" step="100" placeholder="0" inputmode="decimal">
+        </div>
+        <span class="hint">Sets 2026 Medicare surcharges for both spouses</span>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: FEDERAL & CA TAX BREAKDOWNS -->
+    <div class="card">
+      <h2>Combined Total Tax Liability</h2>
+
+      <div class="result-total">
+        <div class="row">
+          <span class="lbl" id="totalTaxLabel">Combined Total Tax (Fed + CA + SE)</span>
+          <span class="val" id="grandTotalTax">$0</span>
+        </div>
+        <div class="row sub-row">
+          <span class="lbl sub-lbl">Federal Tax (Incl. SE Tax)</span>
+          <span class="val sub-val" id="totalFedTax">$0</span>
+        </div>
+        <div class="row sub-row">
+          <span class="lbl sub-lbl">California State Tax</span>
+          <span class="val sub-val" style="color:var(--ca-color);" id="totalCaTax">$0</span>
+        </div>
+        <div class="row sub-row" id="totalWithIrmaaRow" style="display:none;">
+          <span class="lbl sub-lbl">Grand Total Including Medicare IRMAA</span>
+          <span class="val sub-val" id="totalWithIrmaa">$0</span>
+        </div>
+      </div>
+
+      <div class="summary-block">
+        <div class="summary-line"><span>Gross Combined Income</span><span class="v" id="sTotalIncome">$0</span></div>
+        <div class="summary-line"><span>1/2 SE Tax Deduction</span><span class="v" id="sSeDeduction">−$0</span></div>
+        <div class="summary-line"><span>QBI (§199A) Federal Deduction</span><span class="v" id="sQbiDeduction">−$0</span></div>
+        <div class="summary-line"><span>Federal Standard Deduction</span><span class="v" id="sDeduction">−$32,200</span></div>
+        <div class="summary-line"><span>Federal Taxable Income</span><span class="v" id="sTaxable">$0</span></div>
+        <div class="summary-line"><span>Effective Tax Rate (Fed + CA)</span><span class="v" id="sEffRate">0.0%</span></div>
+      </div>
+
+      <!-- SE TAX SECTION -->
+      <div class="section-tag" id="seTag" style="display:none;">Self-Employment Tax (Schedule SE)</div>
+      <table class="brackets" id="seTable" style="display:none; margin-bottom:10px;">
+        <thead>
+          <tr><th>Component</th><th>Rate</th><th style="text-align:right">Subject Amount</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Social Security (up to $181.2k)</td><td class="rate">12.4%</td><td style="text-align:right" id="seSsBase">$0</td><td style="text-align:right" id="seSsTax">$0</td></tr>
+          <tr><td>Medicare (Uncapped)</td><td class="rate">2.9%</td><td style="text-align:right" id="seMedBase">$0</td><td style="text-align:right" id="seMedTax">$0</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="3" class="tfoot-label">Total Self-Employment Tax</td><td class="subtotal-amount" style="text-align:right;" id="seTotal">$0</td></tr>
+        </tfoot>
+      </table>
+
+      <!-- FEDERAL ORDINARY TAX -->
+      <div class="section-tag">Federal Ordinary Income Brackets (MFJ)</div>
+      <table class="brackets" id="ordinaryTable">
+        <thead>
+          <tr><th>Rate</th><th>Bracket</th><th style="text-align:right">Taxed</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr><td colspan="3" class="tfoot-label">Federal Ordinary Income Tax</td><td class="total-amount" style="text-align:right;vertical-align:top" id="ordinaryTotal">$0</td></tr>
+        </tfoot>
+      </table>
+
+      <!-- QUALIFIED CAPITAL GAINS -->
+      <div class="section-tag" id="qdivTag" style="display:none;">Fed Qualified Dividends & LTCG (0/15/20%)</div>
+      <table class="brackets" id="qdivTable" style="display:none;">
+        <thead>
+          <tr><th>Rate</th><th>Bracket</th><th style="text-align:right">Taxed</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr><td colspan="3" class="tfoot-label">Qualified Dividend / LTCG Tax</td><td class="subtotal-amount" style="text-align:right;vertical-align:top" id="qdivTotal">$0</td></tr>
+        </tfoot>
+      </table>
+
+      <!-- NIIT -->
+      <div class="section-tag" id="niitTag" style="display:none;">Net Investment Income Tax (NIIT)</div>
+      <table class="brackets" id="niitTable" style="display:none;">
+        <thead>
+          <tr><th>Rate</th><th>Basis</th><th style="text-align:right">Amount</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rate">3.8%</td>
+            <td>Lesser of Inv. Income or MAGI over $250,000</td>
+            <td style="text-align:right" id="niitBase">$0</td>
+            <td class="subtotal-amount" style="text-align:right" id="niitTaxCell">$0</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- CALIFORNIA STATE TAX CARD -->
+      <div class="section-tag ca-tag" style="margin-top:14px;">California State Income Tax (MFJ)</div>
+      <div class="summary-block" style="margin-bottom:6px;">
+        <div class="summary-line"><span>California Gross Income</span><span class="v" id="caGross">$0</span></div>
+        <div class="summary-line"><span>CA Standard Deduction (MFJ)</span><span class="v">−$11,412</span></div>
+        <div class="summary-line"><span>CA Taxable Income</span><span class="v" id="caTaxable">$0</span></div>
+      </div>
+      <table class="brackets" id="caTable">
+        <thead>
+          <tr><th>Rate</th><th>CA Bracket</th><th style="text-align:right">Taxed</th><th style="text-align:right">Tax</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr><td colspan="3" class="tfoot-label">CA Tax Before Credits</td><td style="text-align:right; font-weight:600;" id="caTaxBeforeCredit">$0</td></tr>
+          <tr><td colspan="3" class="tfoot-label">CA Joint Exemption Credit</td><td style="text-align:right; color:#1B5E20;" id="caExemptionCredit">−$307</td></tr>
+          <tr><td colspan="3" class="tfoot-label" style="font-weight:700;">Net California Income Tax</td><td class="total-amount" style="text-align:right; color:var(--ca-color);" id="caTotalTax">$0</td></tr>
+        </tfoot>
+      </table>
+
+      <details class="foot-note" style="margin-top:10px;">
+        <summary>Assumptions & Methodology</summary>
+        <p><strong>Federal 2026:</strong> $32,200 MFJ standard deduction; QBI deduction calculated at 20% of net qualified business/rental profit (subject to taxable income limits). SE tax computes 15.3% on 92.35% of Schedule C profit with half deductible. NIIT applies 3.8% above $250,000 MFJ MAGI.<br>
+        <strong>California 2026:</strong> Standard deduction is $11,412. CA does not offer preferential rates for long-term gains or qualified dividends (taxed as ordinary income). Includes the 1% Mental Health Services surcharge above $1M taxable income and the $307 joint exemption credit. CA does not recognize the Federal QBI deduction.</p>
+      </details>
+    </div>
+
+    <!-- COLUMN 3: SOURCE BREAKDOWN & MEDICARE -->
+    <div class="col-third">
+
+      <div class="card">
+        <h2>Tax Owed vs Withholding</h2>
+        <div class="summary-block" style="margin-bottom:8px;">
+          <div class="summary-line"><span>Total Combined Tax Owed</span><span class="v" id="whTotalOwed">$0</span></div>
+          <div class="summary-line"><span>Federal Wage Withholding</span><span class="v" id="whFed">$0</span></div>
+          <div class="summary-line"><span>California State Withholding</span><span class="v" id="whCa">$0</span></div>
+          <div class="summary-line" style="font-weight:700; border-top:1px dashed var(--paper-line); padding-top:4px; margin-top:4px;">
+            <span>Net Tax Remaining Owed</span>
+            <span class="v" id="whRemaining">$0</span>
+          </div>
+        </div>
+        <span class="hint">Negative number indicates estimated tax refund.</span>
+      </div>
+
+      <div class="card">
+        <h2>Social Security Taxability (MFJ)</h2>
+        <div class="summary-block" style="margin-bottom:7px;padding-bottom:6px;">
+          <div class="summary-line"><span>Gross Social Security Benefits</span><span class="v" id="ssGross">$0</span></div>
+          <div class="summary-line"><span>50% of Benefits</span><span class="v" id="ssHalf">$0</span></div>
+          <div class="summary-line"><span>+ Other Combined Income</span><span class="v" id="ssOther">$0</span></div>
+          <div class="summary-line" style="font-weight:700;color:var(--ink);"><span>= Combined Income</span><span class="v" id="ssCombined">$0</span></div>
+        </div>
+        <table class="brackets" id="ssTierTable">
+          <thead>
+            <tr><th>Rate</th><th>Band (MFJ)</th><th style="text-align:right">In Band</th><th style="text-align:right">Taxable SS</th></tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr><td colspan="3" class="tfoot-label">Taxable Social Security</td><td class="total-amount" style="text-align:right;vertical-align:top" id="ssTaxable">$0</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Medicare IRMAA Surcharges (2026 MFJ)</h2>
+        <div class="irmaa-total">
+          <span class="lbl">Extra Annual Surcharge (Both Spouses)</span>
+          <span class="val" id="irmaaAnnual">$0</span>
+        </div>
+        <table class="irmaa" id="irmaaTable">
+          <thead>
+            <tr><th>2024 Joint MAGI</th><th style="text-align:right">Part B / mo (ea)</th><th style="text-align:right">Part D / mo (ea)</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+// CONSTANTS - 2026 FEDERAL MFJ
+const STD_DEDUCTION_FED_MFJ = 32200;
+const AGE_65_ADDON_MFJ = 1650;
+const SENIOR_BONUS_MAX_PER_SPOUSE = 6000;
+const SENIOR_BONUS_PHASEOUT_START_MFJ = 150000;
+const SENIOR_BONUS_PHASEOUT_RATE = 0.06;
+
+const ORDINARY_BRACKETS_FED_MFJ = [
+  {rate:0.10, from:0,       to:24800},
+  {rate:0.12, from:24800,   to:100800},
+  {rate:0.22, from:100800,  to:211400},
+  {rate:0.24, from:211400,  to:403550},
+  {rate:0.32, from:403550,  to:512450},
+  {rate:0.35, from:512450,  to:768700},
+  {rate:0.37, from:768700,  to:Infinity},
+];
+
+const QDIV_BRACKETS_FED_MFJ = [
+  {rate:0.00, from:0,      to:98900},
+  {rate:0.15, from:98900,  to:613700},
+  {rate:0.20, from:613700, to:Infinity},
+];
+
+const NIIT_RATE = 0.038;
+const NIIT_THRESHOLD_MFJ = 250000;
+const SS_CAP_2026 = 181200;
+
+// CONSTANTS - CALIFORNIA MFJ 2026
+const STD_DEDUCTION_CA_MFJ = 11412;
+const CA_EXEMPTION_CREDIT_MFJ = 307;
+
+const ORDINARY_BRACKETS_CA_MFJ = [
+  {rate:0.010, from:0,       to:22158},
+  {rate:0.020, from:22158,   to:52528},
+  {rate:0.040, from:52528,   to:82904},
+  {rate:0.060, from:82904,   to:115084},
+  {rate:0.080, from:115084,  to:145448},
+  {rate:0.093, from:145448,  to:742958},
+  {rate:0.103, from:742958,  to:891542},
+  {rate:0.113, from:891542,  to:1485906},
+  {rate:0.123, from:1485906, to:Infinity},
+];
+
+const IRMAA_BRACKETS_MFJ = [
+  {from:0,       to:218000,   partB:202.90, partD:0.00},
+  {from:218000,  to:274000,   partB:284.10, partD:14.50},
+  {from:274000,  to:342000,   partB:405.80, partD:37.50},
+  {from:342000,  to:410000,   partB:527.50, partD:60.40},
+  {from:410000,  to:750000,   partB:649.20, partD:83.30},
+  {from:750000,  to:Infinity, partB:689.90, partD:91.00},
+];
+const STANDARD_PART_B = 202.90;
+
+function fmt(n){
+  const sign = n < 0 ? '−' : '';
+  n = Math.abs(Math.round(n));
+  return sign + '$' + n.toLocaleString('en-US');
+}
+
+function bracketSplit(base, amount, brackets){
+  const rows = [];
+  let remaining = amount;
+  let cursor = base;
+  for(const b of brackets){
+    if(remaining <= 0){
+      rows.push({rate:b.rate, from:b.from, to:b.to, taxed:0, tax:0});
+      continue;
+    }
+    const bandFloor = Math.max(b.from, cursor);
+    const bandCeil = b.to;
+    const bandCapacity = Math.max(0, bandCeil - bandFloor);
+    if(cursor >= bandCeil){
+      rows.push({rate:b.rate, from:b.from, to:b.to, taxed:0, tax:0});
+      continue;
+    }
+    const taxedHere = Math.min(remaining, bandCapacity);
+    const tax = taxedHere * b.rate;
+    rows.push({rate:b.rate, from:b.from, to:b.to, taxed:taxedHere, tax:tax});
+    cursor += taxedHere;
+    remaining -= taxedHere;
+  }
+  return rows;
+}
+
+function bracketLabel(from, to){
+  if(to === Infinity) return fmt(from) + '+';
+  return fmt(from) + ' – ' + fmt(to);
+}
+
+function renderTable(tbodySelector, footId, rows){
+  const tbody = document.querySelector(tbodySelector);
+  tbody.innerHTML = '';
+  let total = 0;
+  for(const r of rows){
+    total += r.tax;
+    const tr = document.createElement('tr');
+    if(r.taxed === 0) tr.className = 'zero';
+    tr.innerHTML = `
+      <td class="rate">${(r.rate*100).toFixed(1)}%</td>
+      <td>${bracketLabel(r.from, r.to)}</td>
+      <td style="text-align:right">${fmt(r.taxed)}</td>
+      <td style="text-align:right">${fmt(r.tax)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  if(footId) document.getElementById(footId).textContent = fmt(total);
+  return total;
+}
+
+let spouse1Over65 = false;
+let spouse2Over65 = false;
+let withholdType = 'pct';
+
+function computeTaxableSocialSecurity(ssBenefits, otherIncome){
+  const combinedIncome = otherIncome + 0.5 * ssBenefits;
+
+  const inBand0 = Math.max(0, Math.min(combinedIncome, 32000));
+  const inBand50 = Math.max(0, Math.min(combinedIncome, 44000) - 32000);
+  const inBand85 = Math.max(0, combinedIncome - 44000);
+
+  const band50Taxable = Math.min(0.5 * inBand50, 0.5 * ssBenefits);
+  const band85TaxableRaw = 0.85 * inBand85;
+  const rawTotal = band50Taxable + band85TaxableRaw;
+  const taxable = ssBenefits > 0 ? Math.min(0.85 * ssBenefits, rawTotal) : 0;
+
+  return {
+    taxable,
+    combinedIncome,
+    rows: [
+      {rateLabel:'0%',        from:0,     to:32000,    inBand:inBand0,  taxable:0},
+      {rateLabel:'up to 50%', from:32000, to:44000,    inBand:inBand50, taxable:band50Taxable},
+      {rateLabel:'up to 85%', from:44000, to:Infinity, inBand:inBand85, taxable:Math.max(0, taxable - band50Taxable)},
+    ],
+  };
+}
+
+function computeFedStandardDeduction(magi){
+  let count = (spouse1Over65 ? 1 : 0) + (spouse2Over65 ? 1 : 0);
+  let baseDeduction = STD_DEDUCTION_FED_MFJ + (count * AGE_65_ADDON_MFJ);
+  
+  if (count === 0) return baseDeduction;
+
+  const phaseOutReduction = Math.max(0, (magi - SENIOR_BONUS_PHASEOUT_START_MFJ) * SENIOR_BONUS_PHASEOUT_RATE);
+  const maxBonus = count * SENIOR_BONUS_MAX_PER_SPOUSE;
+  const seniorBonus = Math.max(0, maxBonus - phaseOutReduction);
+
+  return baseDeduction + seniorBonus;
+}
+
+function getIrmaaAnnual(){
+  const magi = parseFloat(document.getElementById('magi2yr').value) || 0;
+  let tierIndex = 0;
+  for(let i = 0; i < IRMAA_BRACKETS_MFJ.length; i++){
+    if(magi > IRMAA_BRACKETS_MFJ[i].from) tierIndex = i;
+  }
+  const tier = IRMAA_BRACKETS_MFJ[tierIndex];
+  const monthlySurchargePerPerson = (tier.partB - STANDARD_PART_B) + tier.partD;
+  return monthlySurchargePerPerson * 12 * 2; // For both spouses
+}
+
+function calculate(){
+  const wages = parseFloat(document.getElementById('wages').value) || 0;
+  const schedC = parseFloat(document.getElementById('schedC').value) || 0;
+  const rental = parseFloat(document.getElementById('rental').value) || 0;
+  const otherBiz = parseFloat(document.getElementById('otherBiz').value) || 0;
+  const ira = parseFloat(document.getElementById('ira').value) || 0;
+  const ndiv = parseFloat(document.getElementById('ndiv').value) || 0;
+  const qdiv = parseFloat(document.getElementById('qdiv').value) || 0;
+  const stcg = parseFloat(document.getElementById('stcg').value) || 0;
+  const ltcg = parseFloat(document.getElementById('ltcg').value) || 0;
+  const ssa = parseFloat(document.getElementById('ssa').value) || 0;
+  const caWithheld = parseFloat(document.getElementById('caWithheld').value) || 0;
+
+  // 1. SELF-EMPLOYMENT TAX (SE TAX)
+  const seEarnings = schedC * 0.9235;
+  const ssSubject = Math.min(seEarnings, Math.max(0, SS_CAP_2026 - wages));
+  const seSsTax = ssSubject * 0.124;
+  const seMedTax = seEarnings * 0.029;
+  const totalSeTax = seSsTax + seMedTax;
+  const halfSeDeduction = totalSeTax * 0.5;
+
+  const seTableEl = document.getElementById('seTable');
+  const seTagEl = document.getElementById('seTag');
+  if (schedC > 0) {
+    seTableEl.style.display = '';
+    seTagEl.style.display = '';
+    document.getElementById('seSsBase').textContent = fmt(ssSubject);
+    document.getElementById('seSsTax').textContent = fmt(seSsTax);
+    document.getElementById('seMedBase').textContent = fmt(seEarnings);
+    document.getElementById('seMedTax').textContent = fmt(seMedTax);
+    document.getElementById('seTotal').textContent = fmt(totalSeTax);
+  } else {
+    seTableEl.style.display = 'none';
+    seTagEl.style.display = 'none';
+  }
+
+  // 2. SOCIAL SECURITY TAXABILITY
+  const nonSsIncome = wages + schedC + rental + otherBiz + ira + ndiv + qdiv + stcg + ltcg - halfSeDeduction;
+  const ssResult = computeTaxableSocialSecurity(ssa, Math.max(0, nonSsIncome));
+  const taxableSs = ssResult.taxable;
+
+  // 3. GROSS COMBINED INCOME & QBI DEDUCTION (§199A)
+  const grossTotalIncome = wages + schedC + rental + otherBiz + ira + ndiv + qdiv + stcg + ltcg + taxableSs;
+  const qualifiedBizIncome = Math.max(0, schedC + rental + otherBiz);
+  
+  // QBI limit: 20% of net biz profit, capped at 20% of taxable income before QBI
+  const qbiMaxDeduction = qualifiedBizIncome * 0.20;
+  const fedStdDeduction = computeFedStandardDeduction(grossTotalIncome);
+  const incomeBeforeQbi = Math.max(0, grossTotalIncome - halfSeDeduction - fedStdDeduction);
+  const qbiDeduction = Math.min(qbiMaxDeduction, incomeBeforeQbi * 0.20);
+
+  // 4. FEDERAL TAXABLE INCOME BREAKDOWN
+  const ordinaryIncomeFed = wages + schedC + rental + otherBiz + ira + ndiv + stcg + taxableSs - halfSeDeduction;
+  const qualifiedIncomeFed = qdiv + ltcg;
+  const totalFedDeductions = fedStdDeduction + qbiDeduction;
+
+  const ordinaryTaxableFed = Math.max(0, ordinaryIncomeFed - totalFedDeductions);
+  const leftoverDeduction = Math.max(0, totalFedDeductions - ordinaryIncomeFed);
+  const qualifiedTaxableFed = Math.max(0, qualifiedIncomeFed - leftoverDeduction);
+
+  // 5. FEDERAL ORDINARY & CAPITAL GAINS TAX
+  const ordinaryRowsFed = bracketSplit(0, ordinaryTaxableFed, ORDINARY_BRACKETS_FED_MFJ);
+  const ordinaryTaxFed = renderTable('#ordinaryTable', 'ordinaryTotal', ordinaryRowsFed);
+
+  let qdivTaxFed = 0;
+  const qdivTableEl = document.getElementById('qdivTable');
+  const qdivTagEl = document.getElementById('qdivTag');
+  if (qualifiedTaxableFed > 0) {
+    qdivTableEl.style.display = '';
+    qdivTagEl.style.display = '';
+    const qdivRowsFed = bracketSplit(ordinaryTaxableFed, qualifiedTaxableFed, QDIV_BRACKETS_FED_MFJ);
+    qdivTaxFed = renderTable('#qdivTable', 'qdivTotal', qdivRowsFed);
+  } else {
+    qdivTableEl.style.display = 'none';
+    qdivTagEl.style.display = 'none';
+  }
+
+  // 6. NET INVESTMENT INCOME TAX (NIIT)
+  const netInvIncome = ndiv + qdiv + stcg + ltcg + rental;
+  const niitSubject = Math.min(netInvIncome, Math.max(0, grossTotalIncome - NIIT_THRESHOLD_MFJ));
+  const niitTax = niitSubject * NIIT_RATE;
+
+  const niitTableEl = document.getElementById('niitTable');
+  const niitTagEl = document.getElementById('niitTag');
+  if (niitTax > 0) {
+    niitTableEl.style.display = '';
+    niitTagEl.style.display = '';
+    document.getElementById('niitBase').textContent = fmt(niitSubject);
+    document.getElementById('niitTaxCell').textContent = fmt(niitTax);
+  } else {
+    niitTableEl.style.display = 'none';
+    niitTagEl.style.display = 'none';
+  }
+
+  const grandFedIncomeTax = ordinaryTaxFed + qdivTaxFed + niitTax + totalSeTax;
+
+  // 7. CALIFORNIA STATE TAX CALCULATIONS
+  // CA does not allow QBI deduction and taxes Capital Gains as Ordinary Income
+  const caGrossIncome = grossTotalIncome - halfSeDeduction;
+  const caTaxableIncome = Math.max(0, caGrossIncome - STD_DEDUCTION_CA_MFJ);
+  const caRows = bracketSplit(0, caTaxableIncome, ORDINARY_BRACKETS_CA_MFJ);
+  const caTaxBeforeCredit = renderTable('#caTable', null, caRows);
+  
+  // CA 1% Surcharge over $1M
+  const caSurcharge = caTaxableIncome > 1000000 ? (caTaxableIncome - 1000000) * 0.01 : 0;
+  const caTaxAfterSurcharge = caTaxBeforeCredit + caSurcharge;
+  const caFinalTax = Math.max(0, caTaxAfterSurcharge - CA_EXEMPTION_CREDIT_MFJ);
+
+  document.getElementById('caGross').textContent = fmt(caGrossIncome);
+  document.getElementById('caTaxable').textContent = fmt(caTaxableIncome);
+  document.getElementById('caTaxBeforeCredit').textContent = fmt(caTaxAfterSurcharge);
+  document.getElementById('caTotalTax').textContent = fmt(caFinalTax);
+
+  // 8. TOTALS & SUMMARY UPDATE
+  const combinedTotalTax = grandFedIncomeTax + caFinalTax;
+  const irmaaAnnual = getIrmaaAnnual();
+  const grandTotalWithIrmaa = combinedTotalTax + irmaaAnnual;
+
+  document.getElementById('grandTotalTax').textContent = fmt(combinedTotalTax);
+  document.getElementById('totalFedTax').textContent = fmt(grandFedIncomeTax);
+  document.getElementById('totalCaTax').textContent = fmt(caFinalTax);
+
+  const totalWithIrmaaRow = document.getElementById('totalWithIrmaaRow');
+  if(irmaaAnnual > 0){
+    totalWithIrmaaRow.style.display = 'flex';
+    document.getElementById('totalWithIrmaa').textContent = fmt(grandTotalWithIrmaa);
+  } else {
+    totalWithIrmaaRow.style.display = 'none';
+  }
+
+  document.getElementById('sTotalIncome').textContent = fmt(grossTotalIncome);
+  document.getElementById('sSeDeduction').textContent = '−' + fmt(halfSeDeduction);
+  document.getElementById('sQbiDeduction').textContent = '−' + fmt(qbiDeduction);
+  document.getElementById('sDeduction').textContent = '−' + fmt(fedStdDeduction);
+  document.getElementById('sTaxable').textContent = fmt(ordinaryTaxableFed + qualifiedTaxableFed);
+  document.getElementById('sEffRate').textContent = grossTotalIncome > 0 ? ((combinedTotalTax / grossTotalIncome) * 100).toFixed(1) + '%' : '0.0%';
+
+  // 9. WITHHOLDING vs OWED
+  const employerFedEst = bracketSplit(0, Math.max(0, wages - STD_DEDUCTION_FED_MFJ), ORDINARY_BRACKETS_FED_MFJ).reduce((a,r)=>a+r.tax, 0);
+  const wrateRaw = document.getElementById('wrate').value;
+  const wrate = parseFloat(wrateRaw);
+  const customVal = wrateRaw !== '' && !isNaN(wrate) && wrate >= 0;
+
+  let fedWithheld = employerFedEst;
+  if (customVal) {
+    fedWithheld = withholdType === 'pct' ? (wages * wrate / 100) : wrate;
+  }
+
+  const netRemaining = grandTotalWithIrmaa - fedWithheld - caWithheld;
+  document.getElementById('whTotalOwed').textContent = fmt(grandTotalWithIrmaa);
+  document.getElementById('whFed').textContent = fmt(fedWithheld);
+  document.getElementById('whCa').textContent = fmt(caWithheld);
+  document.getElementById('whRemaining').textContent = fmt(netRemaining);
+
+  // 10. SOCIAL SECURITY CARD
+  document.getElementById('ssGross').textContent = fmt(ssa);
+  document.getElementById('ssHalf').textContent = fmt(0.5 * ssa);
+  document.getElementById('ssOther').textContent = fmt(nonSsIncome);
+  document.getElementById('ssCombined').textContent = fmt(ssResult.combinedIncome);
+
+  const ssTbody = document.querySelector('#ssTierTable tbody');
+  ssTbody.innerHTML = '';
+  for(const r of ssResult.rows){
+    const tr = document.createElement('tr');
+    if(r.inBand === 0) tr.className = 'zero';
+    tr.innerHTML = `
+      <td class="rate">${r.rateLabel}</td>
+      <td>${bracketLabel(r.from, r.to)}</td>
+      <td style="text-align:right">${fmt(r.inBand)}</td>
+      <td style="text-align:right">${fmt(r.taxable)}</td>
+    `;
+    ssTbody.appendChild(tr);
+  }
+  document.getElementById('ssTaxable').textContent = fmt(taxableSs);
+}
+
+function calculateIrmaa(){
+  const magi = parseFloat(document.getElementById('magi2yr').value) || 0;
+  let tierIndex = 0;
+  for(let i = 0; i < IRMAA_BRACKETS_MFJ.length; i++){
+    if(magi > IRMAA_BRACKETS_MFJ[i].from) tierIndex = i;
+  }
+  const tbody = document.querySelector('#irmaaTable tbody');
+  tbody.innerHTML = '';
+  IRMAA_BRACKETS_MFJ.forEach((b, i) => {
+    const tr = document.createElement('tr');
+    if(i === tierIndex) tr.className = 'active-tier';
+    tr.innerHTML = `
+      <td>${bracketLabel(b.from, b.to)}</td>
+      <td style="text-align:right">${fmt(b.partB)}</td>
+      <td style="text-align:right">${b.partD > 0 ? fmt(b.partD) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('irmaaAnnual').textContent = fmt(getIrmaaAnnual());
+  calculate();
+}
+
+// EVENT LISTENERS
+['wages','wrate','caWithheld','schedC','rental','otherBiz','ira','ssa','ndiv','qdiv','stcg','ltcg'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+document.getElementById('magi2yr').addEventListener('input', calculateIrmaa);
+
+function setupAgeToggle(containerId, spouseKey) {
+  document.querySelectorAll(`#${containerId} .age-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll(`#${containerId} .age-btn`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (spouseKey === 1) spouse1Over65 = btn.dataset.age === 'over65';
+      if (spouseKey === 2) spouse2Over65 = btn.dataset.age === 'over65';
+      calculate();
+    });
+  });
+}
+setupAgeToggle('ageToggle1', 1);
+setupAgeToggle('ageToggle2', 2);
+
+document.querySelectorAll('.wtype-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.wtype-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    withholdType = btn.dataset.wtype;
+    const wrateInput = document.getElementById('wrate');
+    const dollarSign = document.getElementById('wrateDollar');
+    if (withholdType === 'amt') {
+      dollarSign.style.display = '';
+      wrateInput.style.paddingLeft = '22px';
+      wrateInput.step = '100';
+    } else {
+      dollarSign.style.display = 'none';
+      wrateInput.style.paddingLeft = '10px';
+      wrateInput.step = '0.5';
+    }
+    calculate();
+  });
+});
+
+calculate();
+calculateIrmaa();
+</script>
+</body>
+</html>
