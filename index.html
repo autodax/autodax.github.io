@@ -73,6 +73,13 @@
     .grid{grid-template-columns:1fr;}
     .col-third{grid-column:auto;}
   }
+  @media(max-width:600px){
+    body{
+      padding:8px max(4px, env(safe-area-inset-right, 0px)) 12px max(4px, env(safe-area-inset-left, 0px));
+    }
+    .grid, .grid .col-third{gap:8px;}
+    .masthead{margin-bottom:8px;padding:0 4px 7px;}
+  }
   .col-third{
     display:flex;
     flex-direction:column;
