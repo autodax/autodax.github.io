@@ -411,6 +411,37 @@
     font-weight:600;
     color:var(--ledger);
   }
+
+  .spin{
+    position:absolute;
+    right:4px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+  }
+  .spin button{
+    width:18px;
+    height:11px;
+    padding:0;
+    margin:0;
+    border:1px solid var(--paper-line);
+    background:var(--band);
+    color:var(--ink-soft);
+    font-size:0.42rem;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .spin button:first-child{border-radius:5px 5px 2px 2px;}
+  .spin button:last-child{border-radius:2px 2px 5px 5px;}
+  .spin button:hover{background:var(--btn-brown);color:var(--btn-brown-ink);}
+  .spin button:active{background:var(--btn-brown-line);}
+  .amount-wrap.has-spin input[type=number]{padding-right:28px;}
 </style>
 </head>
 <body>
@@ -439,7 +470,7 @@
         <label for="wages">Wages (W-2)</label>
         <div class="amount-wrap">
           <span class="dollar">$</span>
-          <input type="number" id="wages" min="0" step="100" placeholder="0" inputmode="decimal">
+          <input type="number" id="wages" min="0" step="500" placeholder="0" inputmode="decimal">
         </div>
         
         <div class="withhold-type-container">
@@ -461,7 +492,7 @@
         <label for="ira">Taxable IRA withdrawals</label>
         <div class="amount-wrap">
           <span class="dollar">$</span>
-          <input type="number" id="ira" min="0" step="100" placeholder="0" inputmode="decimal">
+          <input type="number" id="ira" min="0" step="500" placeholder="0" inputmode="decimal">
         </div>
         <span class="hint">Distributions and Roth conversions — taxed as ordinary income</span>
       </div>
@@ -470,7 +501,7 @@
         <label for="ssa">Social Security benefits</label>
         <div class="amount-wrap">
           <span class="dollar">$</span>
-          <input type="number" id="ssa" min="0" step="100" placeholder="0" inputmode="decimal">
+          <input type="number" id="ssa" min="0" step="500" placeholder="0" inputmode="decimal">
         </div>
         <span class="hint">0/50/85% taxable depending on combined income — see breakdown at right</span>
       </div>
@@ -482,7 +513,7 @@
             <label for="ltcg">Long-term capital gains</label>
             <div class="amount-wrap">
               <span class="dollar">$</span>
-              <input type="number" id="ltcg" min="0" step="100" placeholder="0" inputmode="decimal">
+              <input type="number" id="ltcg" min="0" step="500" placeholder="0" inputmode="decimal">
             </div>
             <span class="hint">Held over a year — taxed at long-term capital gains rates (0/15/20%)</span>
           </div>
@@ -490,7 +521,7 @@
             <label for="stcg">Short-term capital gains</label>
             <div class="amount-wrap">
               <span class="dollar">$</span>
-              <input type="number" id="stcg" min="0" step="100" placeholder="0" inputmode="decimal">
+              <input type="number" id="stcg" min="0" step="500" placeholder="0" inputmode="decimal">
             </div>
             <span class="hint">Held a year or less — taxed as ordinary income, same as wages</span>
           </div>
@@ -504,7 +535,7 @@
             <label for="qdiv">Qualified dividends</label>
             <div class="amount-wrap">
               <span class="dollar">$</span>
-              <input type="number" id="qdiv" min="0" step="100" placeholder="0" inputmode="decimal">
+              <input type="number" id="qdiv" min="0" step="500" placeholder="0" inputmode="decimal">
             </div>
             <span class="hint">Taxed at long-term capital gains rates (0/15/20%)</span>
           </div>
@@ -512,7 +543,7 @@
             <label for="ndiv">Ordinary (non-qualified) dividends</label>
             <div class="amount-wrap">
               <span class="dollar">$</span>
-              <input type="number" id="ndiv" min="0" step="100" placeholder="0" inputmode="decimal">
+              <input type="number" id="ndiv" min="0" step="500" placeholder="0" inputmode="decimal">
             </div>
             <span class="hint">Taxed as ordinary income, same as wages</span>
           </div>
@@ -523,7 +554,7 @@
         <label for="magi2yr">MAGI from 2024 (IRMAA lookback year)</label>
         <div class="amount-wrap">
           <span class="dollar">$</span>
-          <input type="number" id="magi2yr" min="0" step="100" placeholder="0" inputmode="decimal">
+          <input type="number" id="magi2yr" min="0" step="500" placeholder="0" inputmode="decimal">
         </div>
         <span class="hint">2024 MAGI (AGI + tax-exempt interest) sets 2026 Medicare premiums — see breakdown at right</span>
       </div>
@@ -1052,7 +1083,7 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
     if (withholdType === 'amt') {
       dollarSign.style.display = '';
       wrateInput.style.paddingLeft = '22px';
-      wrateInput.step = '100';
+      wrateInput.step = '500';
     } else {
       dollarSign.style.display = 'none';
       wrateInput.style.paddingLeft = '10px';
@@ -1061,6 +1092,31 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
     calculate();
   });
 });
+
+// +/- $500 spinner buttons on dollar inputs
+(function(){
+  const STEP = 500;
+  ['wages','ira','ssa','ltcg','stcg','qdiv','ndiv','magi2yr'].forEach(id => {
+    const input = document.getElementById(id);
+    const wrap = input.closest('.amount-wrap');
+    wrap.classList.add('has-spin');
+    const spin = document.createElement('div');
+    spin.className = 'spin';
+    spin.innerHTML =
+      '<button type="button" tabindex="-1" aria-label="Increase by $500">▲</button>' +
+      '<button type="button" tabindex="-1" aria-label="Decrease by $500">▼</button>';
+    wrap.appendChild(spin);
+    const [up, down] = spin.querySelectorAll('button');
+    const bump = dir => {
+      const cur = parseFloat(input.value) || 0;
+      const next = Math.max(0, cur + dir * STEP);
+      input.value = next === 0 && !input.value && dir < 0 ? '' : String(next);
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+    };
+    up.addEventListener('click', () => bump(1));
+    down.addEventListener('click', () => bump(-1));
+  });
+})();
 
 calculate();
 calculateIrmaa();
