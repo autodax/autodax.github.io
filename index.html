@@ -413,6 +413,7 @@
   }
 
   .spin{
+    touch-action:manipulation;
     position:absolute;
     right:4px;
     top:50%;
@@ -436,6 +437,10 @@
     align-items:center;
     justify-content:center;
     -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
   }
   .spin button:first-child{border-radius:5px 5px 2px 2px;}
   .spin button:last-child{border-radius:2px 2px 5px 5px;}
@@ -1113,8 +1118,26 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
       input.value = next === 0 && !input.value && dir < 0 ? '' : String(next);
       input.dispatchEvent(new Event('input', {bubbles:true}));
     };
-    up.addEventListener('click', () => bump(1));
-    down.addEventListener('click', () => bump(-1));
+    // Press-and-hold repeat (pointer events cover mouse, touch and pen)
+    const hold = (btn, dir) => {
+      let delay = null, timer = null;
+      const stop = () => {
+        clearTimeout(delay); clearInterval(timer);
+        delay = timer = null;
+      };
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();               // no focus, text selection or double-tap zoom
+        try { btn.setPointerCapture(e.pointerId); } catch(_){}
+        stop();
+        bump(dir);
+        delay = setTimeout(() => { timer = setInterval(() => bump(dir), 70); }, 400);
+      });
+      ['pointerup','pointercancel','lostpointercapture'].forEach(ev => btn.addEventListener(ev, stop));
+      btn.addEventListener('contextmenu', e => e.preventDefault());
+      btn.addEventListener('dblclick', e => e.preventDefault());
+    };
+    hold(up, 1);
+    hold(down, -1);
   });
 })();
 
