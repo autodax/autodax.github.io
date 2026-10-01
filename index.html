@@ -707,6 +707,24 @@
         </details>
       </div>
 
+      <div class="card">
+        <h2>Medicare IRMAA (2028 estimate)</h2>
+        <div class="irmaa-total">
+          <span class="lbl">Estimated extra in 2028, per year</span>
+          <span class="val" id="irmaaAnnual2">$0</span>
+        </div>
+        <table class="irmaa" id="irmaaTable2">
+          <thead>
+            <tr><th>2026 MAGI</th><th style="text-align:right">Part B / mo</th><th style="text-align:right">Part D sur. / mo</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <details class="foot-note" style="margin-top:6px;">
+          <summary>How this is calculated</summary>
+          <p>IRMAA for 2028 is set by your 2026 MAGI, which here is your total income above (AGI, including the taxable part of Social Security; tax-exempt interest isn't tracked). Medicare hasn't published 2028 thresholds or premiums yet, so this uses the 2026 tier table and premiums as a stand-in. Thresholds are normally indexed upward each year, so the actual tier may be the same or lower. Not included in the 2026 tax totals.</p>
+        </details>
+      </div>
+
     </div>
 
   </div>
@@ -844,15 +862,38 @@ function totalTaxFor(v){
   return ordTax + qTax + niit;
 }
 
-function getIrmaaAnnual(){
-  const magi = parseFloat(document.getElementById('magi2yr').value) || 0;
+function irmaaTierIndex(magi){
   let tierIndex = 0;
   for(let i = 0; i < IRMAA_BRACKETS.length; i++){
     if(magi > IRMAA_BRACKETS[i].from) tierIndex = i;
   }
-  const tier = IRMAA_BRACKETS[tierIndex];
+  return tierIndex;
+}
+
+function irmaaAnnualFor(magi){
+  const tier = IRMAA_BRACKETS[irmaaTierIndex(magi)];
   const monthlySurcharge = (tier.partB - STANDARD_PART_B) + tier.partD;
   return monthlySurcharge * 12;
+}
+
+function getIrmaaAnnual(){
+  return irmaaAnnualFor(parseFloat(document.getElementById('magi2yr').value) || 0);
+}
+
+function renderIrmaaTable(tableId, magi){
+  const tierIndex = irmaaTierIndex(magi);
+  const tbody = document.querySelector('#' + tableId + ' tbody');
+  tbody.innerHTML = '';
+  IRMAA_BRACKETS.forEach((b, i) => {
+    const tr = document.createElement('tr');
+    if(i === tierIndex) tr.className = 'active-tier';
+    tr.innerHTML = `
+      <td>${magiLabel(b.from, b.to)}</td>
+      <td style="text-align:right">${fmt(b.partB)}</td>
+      <td style="text-align:right">${b.partD > 0 ? fmt(b.partD) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 function calculate(){
@@ -922,6 +963,10 @@ function calculate(){
   } else {
     comboTotalEl.style.display = 'none';
   }
+
+  // 2028 IRMAA estimate, driven by this year's MAGI
+  renderIrmaaTable('irmaaTable2', totalIncome);
+  document.getElementById('irmaaAnnual2').textContent = fmt(irmaaAnnualFor(totalIncome));
 
   const irmaaAnnual = getIrmaaAnnual();
   const baseTax = ordinaryTax + qdivTax + niitTax;
@@ -1039,24 +1084,8 @@ function magiLabel(from, to){
 
 function calculateIrmaa(){
   const magi = parseFloat(document.getElementById('magi2yr').value) || 0;
-  let tierIndex = 0;
-  for(let i = 0; i < IRMAA_BRACKETS.length; i++){
-    if(magi > IRMAA_BRACKETS[i].from) tierIndex = i;
-  }
-  const tbody = document.querySelector('#irmaaTable tbody');
-  tbody.innerHTML = '';
-  IRMAA_BRACKETS.forEach((b, i) => {
-    const tr = document.createElement('tr');
-    if(i === tierIndex) tr.className = 'active-tier';
-    tr.innerHTML = `
-      <td>${magiLabel(b.from, b.to)}</td>
-      <td style="text-align:right">${fmt(b.partB)}</td>
-      <td style="text-align:right">${b.partD > 0 ? fmt(b.partD) : '—'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-  const annualSurcharge = getIrmaaAnnual();
-  document.getElementById('irmaaAnnual').textContent = fmt(annualSurcharge);
+  renderIrmaaTable('irmaaTable', magi);
+  document.getElementById('irmaaAnnual').textContent = fmt(getIrmaaAnnual());
   calculate();
 }
 
