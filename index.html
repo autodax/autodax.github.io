@@ -6,15 +6,18 @@
 <title>2026 Federal Tax Estimator — Single Filer</title>
 <style>
   :root{
-    --paper:#EEF2F7;
-    --paper-line:#D3DCE8;
-    --ink:#1E2A38;
-    --ink-soft:#5A6B7E;
-    --ledger:#2F4B6B;
-    --ledger-soft:#4F6F94;
-    --gold:#6E8FB5;
-    --band:#E1E9F3;
-    --owe:#8E4B4B;
+    --paper:#FAF6EE;
+    --paper-line:#E4DCC9;
+    --ink:#1F2A24;
+    --ink-soft:#5B6B60;
+    --ledger:#2E4034;
+    --ledger-soft:#4A6455;
+    --gold:#A9762F;
+    --btn-brown:#E3D2B6;
+    --btn-brown-line:#C4A97F;
+    --btn-brown-ink:#4A3622;
+    --band:#EFE7D3;
+    --owe:#8C3B2E;
     --white:#FFFFFF;
     --fs-headline:1.7rem;
     --fs-total:1.05rem;
@@ -132,11 +135,11 @@
   input[type=number]{
     width:100%;
     padding:5px 10px 5px 22px;
-    border:1px solid #B9C6D8;
+    border:1px solid #C9C0A9;
     border-radius:9px;
     font-family:'IBM Plex Mono','Menlo',monospace;
     font-size:0.88rem;
-    background:#F8FAFD;
+    background:#FFFDF8;
     color:var(--ink);
   }
   input[type=number]:focus{
@@ -162,18 +165,18 @@
   .age-btn, .wtype-btn{
     flex:1;
     padding:5px 8px;
-    border:1px solid #B9C6D8;
+    border:1px solid #C9C0A9;
     border-radius:9px;
-    background:#F8FAFD;
+    background:#FFFDF8;
     color:var(--ink-soft);
     font-family:'Iowan Old Style','Georgia',serif;
     font-size:0.82rem;
     cursor:pointer;
   }
   .age-btn.active, .wtype-btn.active{
-    background:var(--ledger);
-    border-color:var(--ledger);
-    color:#F8FAFD;
+    background:var(--btn-brown);
+    border-color:var(--btn-brown-line);
+    color:var(--btn-brown-ink);
     font-weight:600;
   }
 
@@ -273,7 +276,7 @@
     color:var(--ledger);
   }
   table.brackets tr.zero td{
-    color:#A9B6C7;
+    color:#B8AF98;
   }
   table.brackets tr.active-tier{
     background:var(--band);
