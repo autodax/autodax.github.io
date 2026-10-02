@@ -46,10 +46,10 @@ summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
 <div class="card"><h2 id="ttl">Year by year (today's 2026 dollars)</h2><div class="scroll"><table id="tbl"></table></div>
 <p class="sub" style="margin:6px 0 0">Shaded = conversion year · bold = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
 <div class="card"><details><summary>Assumptions & method</summary><ul>
-<li>Conversions: in every year from the first to the last conversion year (and before 75), the planner converts enough to fill your total income up to your chosen limit, then stops. The limit is either the top of a marginal bracket (taxable ordinary income) or an effective federal tax rate (federal tax ÷ AGI). If your income is already above the limit that year, nothing is converted. Years from 75 on are not targeted; the result is whatever your RMDs and spending produce.</li>
+<li>Conversion modes: bracket/rate modes fill the selected tax limit. RMD-target mode searches conversion schedules that keep the age-75 RMD at or below the target while maximizing sustainable spending. Optimize spending + security does the same while treating the age-95 real portfolio cushion as a hard floor.</li>
 <li>Balances are entered as of Jan 1 of the start year, which is the first projected year. Growth and inflation compound once a year; results are shown in start-year dollars. Brackets, deductions and the age-65 extra deduction are 2026 IRS figures inflated at your inflation rate; Social Security thresholds and the $200k NIIT threshold do not inflate. The temporary senior bonus deduction (2025–2028) is not modeled.</li>
 <li>Living expenses and Social Security are entered in start-year dollars and inflate. Wages are taxable and entered before Roth contributions; Roth contributions come from after-tax cash. IRMAA starts the November you turn 65 and is based on AGI from two years earlier, so it is left out for any Medicare year whose income two years back is before your start year.</li>
-<li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) (tax is withheld out of the conversion), and from the Roth only if the 403(b) runs out.</li>
+<li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) (tax is withheld out of the conversion), and from the Roth only if the 403(b) runs out. The optimizer does not minimize lifetime taxes; it maximizes sustainable spending subject to the RMD target and age-95 cushion.</li>
 <li>Dividends are qualified, reinvested and taxed each year; the growth rate is total return. RMDs use the IRS Uniform Lifetime Table. Same rules as the tax estimator. IRMAA is paid from SS (or cash) and is not deducted for tax.</li></ul></details></div>
 </div>
 <script>
@@ -59,7 +59,7 @@ function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y
 function renderWork(){saveWork();const g=id=>+document.getElementById(id).value||0,s=g('start'),l=Math.min(g('lw'),s+9);let h='';
 if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label>${y} wages (taxable, before Roth, nominal)</label><input type="number" data-y="${y}" data-k="0" value="${a[0]}" step="500"></div><div><label>${y} Roth contribution (nominal)</label><input type="number" data-y="${y}" data-k="1" value="${a[1]}" step="500"></div>`}
 document.getElementById('work').innerHTML=h}
-const TGT='<div><label for="ttype">Fill conversions up to (before 75)</label><select id="ttype"><option value="brk" selected>Top of a marginal bracket</option><option value="eff">An effective tax rate</option></select></div><div><label for="tval">Bracket or rate (%)</label><input type="number" id="tval" value="22" step="1" inputmode="decimal"></div>';
+const TGT=`<div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="brk" selected>Fill a marginal bracket</option><option value="eff">Fill to an effective tax rate</option><option value="rmd">Target age-75 RMD</option><option value="spend">Optimize spending + security</option></select></div><div><label for="tval">Bracket / rate / RMD target ($, today's $)</label><input type="number" id="tval" value="22" step="1" inputmode="decimal"></div><div><label for="cushion">Minimum age-95 portfolio cushion ($, today's $)</label><input type="number" id="cushion" value="500000" step="25000" inputmode="decimal"></div><div><label for="step">Optimizer conversion step ($)</label><input type="number" id="step" value="10000" step="5000" inputmode="decimal"></div>`;
 document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="${v}" step="${s}" inputmode="decimal"></div>`).join('')+TGT;
 const IR=[[109000,95.7],[137000,240.4],[171000,385],[205000,529.6],[500000,578]];
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
@@ -77,54 +77,228 @@ for(let i=0;i<22;i++){r=taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss);X
 const need=c.L+c.K+c.irm+X-c.w-c.ss-c.rmd;
 if(need<=0){S=0;sp=-need;W=0;Xc=0;RW=0;sh=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,X,C);const wn=R-Xc;W=Math.min(wn,Math.max(0,c.T-c.rmd-C));RW=Math.min(wn-W,c.Rav);sh=wn-W-RW}}
 return{X,S,W,Xc,sp,RW,sh,ot:r.ot,st:r.st,agi:r.agi}}
-function sim(tau,p){let T=p.t403,R=p.roth,B=p.brk,bs=B*p.basis,rows=[];
-for(let yr=p.start;yr<=p.by+100;yr++){const age=yr-p.by,f=Math.pow(1+p.infl,yr-2026),u=Math.pow(1+p.infl,yr-p.start);
-const q=rows[rows.length-2];let irm=0;if(yr>=p.by+65&&q){const t=IR.filter(([th])=>q.agi>th*f);irm=t.length?12*(yr==p.by+65?2/12:1)*t[t.length-1][1]*f:0}
-const wk=yr<=p.lw&&p.wk[yr]?p.wk[yr]:[0,0];
-const c={f,age,w:wk[0],K:wk[1],ss:age>=p.ssage?p.ss*12*u:0,
-rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*u,irm,T,Rav:R,B,bf:B>0?bs/B:1};
-let C=0;
-if(yr>=p.firstc&&yr<=p.lastc&&age<75&&T>0&&tau>0){const brk=p.ttype=='brk',lim=brk?p.lim*f:p.lim,e=brk?r=>yc(c,r).ot:r=>{const y=yc(c,r);return y.agi>0?y.X/y.agi:0};if(e(0)<lim){let lo=0,hi=T;for(let i=0;i<24;i++){const m=(lo+hi)/2;e(m)<lim?lo=m:hi=m}C=lo}}
-const y=yc(c,C),W=y.W,short=y.sh;
-const t0=T,r0=R;
-rows.push({yr,age,f,u,br:mr(y.ot,f),w:c.w,ss:c.ss,st:y.st,agi:y.agi,eff:y.agi>0?y.X/y.agi:0,irm,net:Math.max(0,c.ss-irm),S:y.S,dist:W+c.rmd,RW:y.RW,rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B});
-bs=B-y.S<1?0:bs-y.S*c.bf+y.sp+c.div;B=B-y.S+y.sp<1?0:(B-y.S+y.sp)*(1+p.gb);if(B==0)bs=0;
-T=Math.max(0,T-c.rmd-C-W)*(1+p.g);R=(R+c.K+C-y.Xc-y.RW)*(1+p.g);
-Object.assign(rows[rows.length-1],{T,B,R})}
-return rows}
+function sim(tau,p,schedule){
+  let T=p.t403,R=p.roth,B=p.brk,bs=B*p.basis,rows=[];
+  const sched=schedule||null;
+  for(let yr=p.start;yr<=p.by+100;yr++){
+    const age=yr-p.by,f=Math.pow(1+p.infl,yr-2026),u=Math.pow(1+p.infl,yr-p.start);
+    const q=rows[rows.length-2];let irm=0;
+    if(yr>=p.by+65&&q){
+      const t=IR.filter(([th])=>q.agi>th*f);
+      irm=t.length?12*(yr==p.by+65?2/12:1)*t[t.length-1][1]*f:0
+    }
+    const wk=yr<=p.lw&&p.wk[yr]?p.wk[yr]:[0,0];
+    const c={f,age,w:wk[0],K:wk[1],ss:age>=p.ssage?p.ss*12*u:0,
+      rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*u,irm,T,Rav:R,B,bf:B>0?bs/B:1};
+    let C=0;
+    if(sched){
+      C=Math.max(0,Math.min(T,sched[yr]||0));
+    }else if(yr>=p.firstc&&yr<=p.lastc&&age<75&&T>0&&tau>0){
+      const brk=p.ttype=='brk',lim=brk?p.lim*f:p.lim;
+      const e=brk?r=>yc(c,r).ot:r=>{const y=yc(c,r);return y.agi>0?y.X/y.agi:0};
+      if(e(0)<lim){
+        let lo=0,hi=T;
+        for(let i=0;i<24;i++){const m=(lo+hi)/2;e(m)<lim?lo=m:hi=m}
+        C=lo
+      }
+    }
+    const y=yc(c,C),W=y.W,short=y.sh;
+    const t0=T,r0=R;
+    rows.push({yr,age,f,u,br:mr(y.ot,f),w:c.w,ss:c.ss,st:y.st,agi:y.agi,
+      eff:y.agi>0?y.X/y.agi:0,irm,net:Math.max(0,c.ss-irm),S:y.S,dist:W+c.rmd,RW:y.RW,
+      rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B});
+    bs=B-y.S<1?0:bs-y.S*c.bf+y.sp+c.div;
+    B=B-y.S+y.sp<1?0:(B-y.S+y.sp)*(1+p.gb);if(B==0)bs=0;
+    T=Math.max(0,T-c.rmd-C-W)*(1+p.g);
+    R=(R+c.K+C-y.Xc-y.RW)*(1+p.g);
+    Object.assign(rows[rows.length-1],{T,B,R})
+  }
+  return rows
+}
+
+function maxSpendForSchedule(p,schedule,cushion){
+  let lo=20000,hi=200000;
+  const feasible=sp=>{
+    const r=sim(0,{...p,living:sp},schedule);
+    const last=r[r.length-1],r95=r.find(x=>x.age==95)||last;
+    const exhausted=r.some(x=>x.short>1);
+    return !exhausted && (r95.T+r95.R+r95.B)>=cushion;
+  };
+  while(feasible(hi)&&hi<2000000)hi*=1.5;
+  for(let i=0;i<24;i++){
+    const m=(lo+hi)/2;
+    feasible(m)?lo=m:hi=m;
+  }
+  return lo;
+}
+
+function scheduleRmd(schedule,p){
+  const r=sim(0,p,schedule),x=r.find(x=>x.age==75);
+  return x?x.rmd:Infinity;
+}
+
+function optimizeSchedule(p){
+  const cushion=p.cushion;
+  const target=p.rmdTarget;
+  let sched={};
+  for(let y=p.firstc;y<=Math.min(p.lastc,p.by+74);y++)sched[y]=0;
+
+  // First, find a feasible schedule that reaches the RMD target.
+  // Allocate conversions in the years with the lowest current marginal
+  // spending opportunity, using a coarse-to-fine coordinate search.
+  const years=Object.keys(sched).map(Number);
+  const step=Math.max(5000,p.optStep||10000);
+  const rmdFeasible=()=>scheduleRmd(sched,p)<=target;
+
+  let guard=0;
+  while(!rmdFeasible() && guard++<250){
+    let bestY=null,bestR=Infinity;
+    for(const y of years){
+      const trial={...sched,[y]:sched[y]+step};
+      const rr=scheduleRmd(trial,p);
+      if(rr<bestR && trial[y]<=p.t403) {bestR=rr;bestY=y}
+    }
+    if(bestY===null)break;
+    sched[bestY]+=step;
+  }
+
+  // Now improve sustainable spending while keeping the RMD ceiling.
+  // Coordinate descent: test removing and adding conversion in each year.
+  let improved=true,passes=0;
+  while(improved && passes++<6){
+    improved=false;
+    for(const y of years){
+      const base=sched[y]||0;
+      const candidates=[Math.max(0,base-step),base,base+step];
+      let best=sched, bestSpend=maxSpendForSchedule(p,sched,cushion);
+      for(const c of candidates){
+        if(c===base)continue;
+        const trial={...sched,[y]:c};
+        if(scheduleRmd(trial,p)>target+1)continue;
+        const sp=maxSpendForSchedule(p,trial,cushion);
+        if(sp>bestSpend+25){bestSpend=sp;best=trial}
+      }
+      if(best!==sched){sched=best;improved=true}
+    }
+  }
+
+  // Final fine pass around the current solution.
+  const fine=Math.max(1000,Math.round(step/5));
+  for(const y of years){
+    const base=sched[y]||0;
+    let best=sched,bestSpend=maxSpendForSchedule(p,sched,cushion);
+    for(let d=-2;d<=2;d++){
+      const c=Math.max(0,base+d*fine);
+      const trial={...sched,[y]:c};
+      if(scheduleRmd(trial,p)>target+1)continue;
+      const sp=maxSpendForSchedule(p,trial,cushion);
+      if(sp>bestSpend+5){bestSpend=sp;best=trial}
+    }
+    sched=best;
+  }
+  return sched;
+}
+
 const mr=(ot,f)=>{if(ot<=0)return'—';const o=OB.find(([r,lo,hi])=>ot/f>=lo&&ot/f<hi);return Math.round(o[0]*100)+'%'};
-function run(){saveWork();const v=id=>+document.getElementById(id).value||0;
-const p={wk:WK,start:v('start'),by:v('by'),lw:v('lw'),firstc:v('firstc'),living:v('living'),infl:v('infl')/100,t403:v('t403'),g:v('g')/100,roth:v('roth'),brk:v('brk'),gb:v('gb')/100,yld:v('brk')>0?v('div')/v('brk'):0,basis:v('basis')/100,ss:v('ss'),ssage:v('ssage'),lastc:v('lastc')};
-if(!(p.start>=2000&&p.start<=p.by+75&&p.by>=1900)){document.getElementById('warn').textContent='Start year must be between 2000 and the year you turn 75.';return}
-const tt=document.getElementById('ttype').value,tv=v('tval');p.ttype=tt;
-let brRate=0;if(tt=='brk'){const bb=OB.filter(x=>x[0]*100<=tv+.01),o=bb.length?bb[bb.length-1]:OB[0];brRate=o[0];p.lim=o[2]===Infinity?1e9:o[2]}else p.lim=tv/100;
-const pk=r=>Math.max(...r.filter(x=>x.age>=75).map(x=>x.eff));
-const re=rs=>rs.map(x=>{const y={...x};['w','ss','st','agi','irm','net','S','dist','RW','rmd','C','X','ot','t0','r0','T','B','R','B0','short'].forEach(k=>y[k]=x[k]/x.u);return y});
-const A=re(sim(1,p)),Z=re(sim(0,p)),a75=A.find(x=>x.age==75),z75=Z.find(x=>x.age==75);
-const avg=r=>{const q=r.filter(x=>x.yr>p.lw),t=q.reduce((s,x)=>s+x.X,0),i=q.reduce((s,x)=>s+x.agi,0);return i>0?(t/i*100).toFixed(1)+'%':'—'};
-const sus=t=>{let a=20000,b=2e6;for(let i=0;i<22;i++){const mid=(a+b)/2;sim(t,{...p,living:mid}).some(x=>x.short>1)?b=mid:a=mid}return a};
-const Y0=p.start,Y1=p.by+100,Y75=p.by+75,lA=A[A.length-1],lZ=Z[Z.length-1];
-document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · Medicare IRMAA is taken out of your Social Security payment`;
-document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
-const tot=(r,k)=>r.reduce((s,x)=>s+x[k],0),dep=r=>{const x=r.find(x=>x.B<1);return x?x.yr:'after '+Y1};
-const row=(l,a,b)=>`<tr><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
-document.getElementById('sum').innerHTML='<tr><th></th><th>With conversions</th><th>No conversions</th></tr>'+
-row('Conversions fill each year up to',p.ttype=='brk'?'Top of the '+Math.round(brRate*100)+'% bracket':(p.lim*100).toFixed(1)+'% effective rate','—')+
-row('Total converted',fmt(tot(A,'C')),'$0')+
-row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
-row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
-row('Age-75 RMD ('+Y75+')',fmt(a75.rmd),fmt(z75.rmd))+
-row('Age-75 effective rate · marginal bracket',(a75.eff*100).toFixed(1)+'% · '+a75.br,(z75.eff*100).toFixed(1)+'% · '+z75.br)+
-row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
-row('Brokerage runs out',dep(A),dep(Z))+
-row('<b>Average effective tax rate in retirement ('+(p.lw+1)+'–'+Y1+')</b>','<b>'+avg(A)+'</b>','<b>'+avg(Z)+'</b>')+
-row('<b>Ending portfolio, '+Y1+' (403(b) + Roth + brokerage)</b>','<b>'+fmt(lA.T+lA.R+lA.B)+'</b>','<b>'+fmt(lZ.T+lZ.R+lZ.B)+'</b>')+
-row('Same, after 24% tax on any remaining 403(b)',fmt(lA.R+lA.B+.76*lA.T),fmt(lZ.R+lZ.B+.76*lZ.T))+
-row('Max living expenses that last to '+Y1+' ('+Y0+' $ / yr, conversion rule applied each year)',fmt(sus(1)),fmt(sus(0)));
-document.getElementById('warn').textContent=A.some(x=>x.short>1)||Z.some(x=>x.short>1)?'Note: the 403(b), Roth and brokerage together cannot fully fund living costs in some years.':'';
-document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Total tax','IRMAA','Brokerage sold','403(b) start','RMD','Other 403(b) withdrawals','Roth paid out','403(b) end','Brokerage end','Roth end'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+
-A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td></tr>`).join('');}
-let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value=='brk';t.step=b?1:.5;t.value=b?22:15}clearTimeout(tm);tm=setTimeout(run,150)});
+function run(){
+  saveWork();
+  const v=id=>+document.getElementById(id).value||0;
+  const p={wk:WK,start:v('start'),by:v('by'),lw:v('lw'),firstc:v('firstc'),living:v('living'),
+    infl:v('infl')/100,t403:v('t403'),g:v('g')/100,roth:v('roth'),brk:v('brk'),gb:v('gb')/100,
+    yld:v('brk')>0?v('div')/v('brk'):0,basis:v('basis')/100,ss:v('ss'),ssage:v('ssage'),lastc:v('lastc'),
+    cushion:v('cushion'),optStep:v('step')};
+
+  if(!(p.start>=2000&&p.start<=p.by+75&&p.by>=1900)){
+    document.getElementById('warn').textContent='Start year must be between 2000 and the year you turn 75.';return
+  }
+
+  const tt=document.getElementById('ttype').value,tv=v('tval');p.ttype=tt;
+  let brRate=0;
+  if(tt=='brk'){
+    const bb=OB.filter(x=>x[0]*100<=tv+.01),o=bb.length?bb[bb.length-1]:OB[0];
+    brRate=o[0];p.lim=o[2]===Infinity?1e9:o[2];
+  }else if(tt=='eff') p.lim=tv/100;
+  else if(tt=='rmd'||tt=='spend') p.rmdTarget=tv;
+
+  const pk=r=>Math.max(...r.filter(x=>x.age>=75).map(x=>x.eff));
+  const re=rs=>rs.map(x=>{const y={...x};['w','ss','st','agi','irm','net','S','dist','RW','rmd','C','X','ot','t0','r0','T','B','R','B0','short'].forEach(k=>y[k]=x[k]/x.u);return y});
+  const avg=r=>{const q=r.filter(x=>x.yr>p.lw),t=q.reduce((s,x)=>s+x.X,0),i=q.reduce((s,x)=>s+x.agi,0);return i>0?(t/i*100).toFixed(1)+'%':'—'};
+  const Y0=p.start,Y1=p.by+100,Y75=p.by+75;
+
+  let schedule=null, A, Z, optSpend=null;
+  if(tt=='spend'){
+    schedule=optimizeSchedule(p);
+    const raw=sim(0,p,schedule);
+    optSpend=maxSpendForSchedule(p,schedule,p.cushion);
+    A=re(sim(0,{...p,living:optSpend},schedule));
+  }else if(tt=='rmd'){
+    // Find a simple balanced schedule that reaches the RMD target,
+    // then maximize spending subject to that ceiling.
+    schedule=optimizeSchedule({...p,rmdTarget:tv});
+    const sp=maxSpendForSchedule(p,schedule,p.cushion);
+    A=re(sim(0,{...p,living:sp},schedule));
+    optSpend=sp;
+  }else{
+    A=re(sim(1,p));
+  }
+  Z=re(sim(0,p));
+  const a75=A.find(x=>x.age==75),z75=Z.find(x=>x.age==75);
+  const lA=A[A.length-1],lZ=Z[Z.length-1];
+  const tot=(r,k)=>r.reduce((s,x)=>s+x[k],0);
+  const dep=r=>{const x=r.find(x=>x.B<1);return x?x.yr:'after '+Y1};
+  const sus=t=>{
+    let a=20000,b=200000;
+    const feasible=sp=>{
+      const r=sim(0,{...p,living:sp});
+      const last=r[r.length-1],r95=r.find(x=>x.age==95)||last;
+      return !r.some(x=>x.short>1)&&(r95.T+r95.R+r95.B)>=p.cushion;
+    };
+    while(feasible(b)&&b<2000000)b*=1.5;
+    for(let i=0;i<22;i++){const mid=(a+b)/2;feasible(mid)?a=mid:b=mid}
+    return a
+  };
+
+  const row=(l,a,b)=>`<tr><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
+  let headline='';
+  if(tt=='spend') headline=`Optimized for spending with a ${fmt(p.cushion)} age-95 cushion and an age-75 RMD ceiling of ${fmt(p.rmdTarget)}.`;
+  else if(tt=='rmd') headline=`Conversions are chosen to keep the age-75 RMD at or below ${fmt(p.rmdTarget)} while maximizing spending with a ${fmt(p.cushion)} age-95 cushion.`;
+  else headline=`Conversions fill each year up to the selected tax limit.`;
+  document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars`;
+  document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
+
+  let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>';
+  if(tt=='spend'||tt=='rmd'){
+    sum+=row('Strategy',headline,'—')+
+      row('Sustainable annual spending',fmt(optSpend),fmt(sus(0)))+
+      row('Age-95 minimum cushion',fmt(p.cushion),fmt(p.cushion))+
+      row('Total converted',fmt(tot(A,'C')),'$0')+
+      row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
+      row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
+      row('Age-75 RMD ('+Y75+')',fmt(a75.rmd),fmt(z75.rmd))+
+      row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
+      row('Brokerage runs out',dep(A),dep(Z))+
+      row('Ending portfolio, '+Y1+' (403(b) + Roth + brokerage)',fmt(lA.T+lA.R+lA.B),fmt(lZ.T+lZ.R+lZ.B));
+  }else{
+    sum+=row('Conversions fill each year up to',p.ttype=='brk'?'Top of the '+Math.round(brRate*100)+'% bracket':(p.lim*100).toFixed(1)+'% effective rate','—')+
+      row('Total converted',fmt(tot(A,'C')),'$0')+
+      row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
+      row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
+      row('Age-75 RMD ('+Y75+')',fmt(a75.rmd),fmt(z75.rmd))+
+      row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
+      row('Brokerage runs out',dep(A),dep(Z))+
+      row('<b>Sustainable annual spending</b>',fmt(sus(1)),fmt(sus(0)))+
+      row('Ending portfolio, '+Y1+' (403(b) + Roth + brokerage)',fmt(lA.T+lA.R+lA.B),fmt(lZ.T+lZ.R+lZ.B));
+  }
+  document.getElementById('sum').innerHTML=sum;
+
+  const schedRows=tt=='spend'||tt=='rmd'?Object.keys(schedule).map(Number):[];
+  const convNote=schedRows.length?` Optimized conversion years: ${schedRows.filter(y=>(schedule[y]||0)>0).map(y=>y+': '+fmt(schedule[y])).join(' · ')||'none'}`:'';
+  document.getElementById('warn').textContent=headline+convNote+(A.some(x=>x.short>1)?' Warning: assets are insufficient under this scenario.':'');
+
+  document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Total tax','IRMAA','Brokerage sold','403(b) start','RMD','Other 403(b) withdrawals','Roth paid out','403(b) end','Brokerage end','Roth end'].map(h=>`<th>${h}</th>`).join('')+
+    '</tr>'+A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td></tr>`).join('');
+}
+let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value=='brk';t.step=b?1:(e.target.value=='rmd'||e.target.value=='spend'?5000:.5);t.value=b?22:(e.target.value=='rmd'||e.target.value=='spend'?80000:15)}clearTimeout(tm);tm=setTimeout(run,150)});
 renderWork();
 run();
 </script>
