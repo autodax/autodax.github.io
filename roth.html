@@ -40,16 +40,15 @@ summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
 <div class="card"><h2>Year by year (nominal dollars)</h2><div class="scroll"><table id="tbl"></table></div>
 <p class="sub" style="margin:6px 0 0">Shaded = conversion year · bold = RMD year. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts Nov 2031 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
 <div class="card"><details><summary>Assumptions & method</summary><ul>
-<li>Each conversion year (2027 through the last conversion year, before 75) converts enough to fill taxable ordinary income up to a target. The planner solves that target so your age-75 taxable income lands at the top of the chosen bracket.</li>
+<li>Tax ceiling = effective federal rate (federal income tax ÷ AGI, so it counts all your income: wages, taxable Social Security, withdrawals, dividends and gains). Each conversion year before 75 converts until that year's effective rate reaches a fill rate. The planner finds the lowest fill rate, never above your ceiling, that keeps your effective rate at or below the ceiling in every year from age 75 on. IRMAA is not part of this rate.</li>
 <li>Balances are treated as the start of 2027. Growth and inflation compound once a year. Brackets, deductions and the age-65 extra deduction ($2,050 in 2026) rise with inflation; Social Security thresholds and the $200k NIIT threshold do not.</li>
 <li>Social Security and living expenses are entered in today's dollars and inflate. Wages are taxable; Roth contributions come from after-tax cash.</li>
 <li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) and the tax is withheld out of the conversion.</li>
 <li>Dividends are qualified, reinvested and taxed each year; the growth rate is total return. RMDs use the IRS Uniform Lifetime Table. 2026 IRS brackets, same rules as the tax estimator. IRMAA is paid from SS (or cash) and is not deducted for tax.</li></ul></details></div>
 </div>
 <script>
-const IN=[['living',"Living expenses / yr (today's $, total incl. SS)",80000,500],['infl','Inflation %',2.5,.1],['t403','403(b) balance',1300000,5000],['g','403(b) / Roth growth %',8,.1],['roth','Roth balance, start of 2027',70000,500],['brk','Brokerage balance',300000,5000],['gb','Brokerage growth %',6,.1],['div','Dividends / yr (on today\'s balance)',4000,100],['basis','Brokerage cost basis %',50,1],['w27','2027 wages',138000,500],['w28','2028 wages',70000,500],['k27','2027 Roth contribution',70000,500],['k28','2028 Roth contribution',70000,500],['ss',"Social Security / month (today's $)",4648,10],['ssage','Claim age',70,1],['lastc','Last conversion year',2040,1]];
-document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="${v}" step="${s}" inputmode="decimal"></div>`).join('')+
-'<div><label for="tb">Keep age-75 income within</label><select id="tb"><option value="1">12% bracket</option><option value="2">22% bracket</option><option value="3" selected>24% bracket</option><option value="4">32% bracket</option></select></div>';
+const IN=[['living',"Living expenses / yr (today's $, total incl. SS)",80000,500],['infl','Inflation %',2.5,.1],['t403','403(b) balance',1300000,5000],['g','403(b) / Roth growth %',8,.1],['roth','Roth balance, start of 2027',70000,500],['brk','Brokerage balance',300000,5000],['gb','Brokerage growth %',6,.1],['div','Dividends / yr (on today\'s balance)',4000,100],['basis','Brokerage cost basis %',50,1],['w27','2027 wages',138000,500],['w28','2028 wages',70000,500],['k27','2027 Roth contribution',70000,500],['k28','2028 Roth contribution',70000,500],['ss',"Social Security / month (today's $)",4648,10],['ssage','Claim age',70,1],['lastc','Last conversion year',2040,1],['ceil','Tax ceiling: max effective federal rate % (all income, age 75+)',15,.5]];
+document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="${v}" step="${s}" inputmode="decimal"></div>`).join('');
 const IR=[[109000,95.7],[137000,240.4],[171000,385],[205000,529.6],[500000,578]];
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2};
 const OB=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
@@ -72,10 +71,10 @@ const q=rows[rows.length-2];let irm=0;if(yr>=2031&&q){const t=IR.filter(([th])=>
 const c={f,age,w:yr==2027?p.w27:yr==2028?p.w28:0,K:yr==2027?p.k27:yr==2028?p.k28:0,ss:age>=p.ssage?p.ss*12*f:0,
 rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*f,irm,B,bf:B>0?bs/B:1};
 let C=0;
-if(yr<=p.lastc&&age<75&&T>0&&tau>0){const g=tau*f;if(yc(c,0).ot<g){let lo=0,hi=T;for(let i=0;i<24;i++){const m=(lo+hi)/2;yc(c,m).ot<g?lo=m:hi=m}C=lo}}
+if(yr<=p.lastc&&age<75&&T>0&&tau>0){const e=r=>{const y=yc(c,r);return y.agi>0?y.X/y.agi:0};if(e(0)<tau){let lo=0,hi=T;for(let i=0;i<24;i++){const m=(lo+hi)/2;e(m)<tau?lo=m:hi=m}C=lo}}
 const y=yc(c,C),W=Math.min(y.W,Math.max(0,T-c.rmd-C)),short=y.W-W;
 const t0=T,r0=R;
-rows.push({yr,age,f,w:c.w,ss:c.ss,st:y.st,agi:y.agi,irm,net:Math.max(0,c.ss-irm),S:y.S,dist:W+c.rmd,rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B});
+rows.push({yr,age,f,w:c.w,ss:c.ss,st:y.st,agi:y.agi,eff:y.agi>0?y.X/y.agi:0,irm,net:Math.max(0,c.ss-irm),S:y.S,dist:W+c.rmd,rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B});
 bs=B-y.S<1?0:bs-y.S*c.bf+y.sp+c.div;B=B-y.S+y.sp<1?0:(B-y.S+y.sp)*(1+p.gb);if(B==0)bs=0;
 T=Math.max(0,T-c.rmd-C-W)*(1+p.g);R=(R+c.K+C-y.Xc)*(1+p.g);
 Object.assign(rows[rows.length-1],{T,B,R})}
@@ -83,26 +82,30 @@ return rows}
 const mr=(ot,f)=>{if(ot<=0)return'—';const o=OB.find(([r,lo,hi])=>ot/f>=lo&&ot/f<hi);return Math.round(o[0]*100)+'%'};
 function run(){const v=id=>+document.getElementById(id).value||0;
 const p={living:v('living'),infl:v('infl')/100,t403:v('t403'),g:v('g')/100,roth:v('roth'),brk:v('brk'),gb:v('gb')/100,yld:v('brk')>0?v('div')/v('brk'):0,basis:v('basis')/100,w27:v('w27'),w28:v('w28'),k27:v('k27'),k28:v('k28'),ss:v('ss'),ssage:v('ssage'),lastc:v('lastc')};
-const goal=OB[+document.getElementById('tb').value][2];
-const m=t=>{const r=sim(t,p).find(x=>x.age==75);return r.ot/r.f};
+const goal=v('ceil')/100;
+const pk=r=>Math.max(...r.filter(x=>x.age>=75).map(x=>x.eff));
+const m=t=>pk(sim(t,p));
 let tau=0,maxed=false;
-if(m(0)>goal){let lo=0,hi=500000;if(m(hi)>goal){tau=hi;maxed=true}else{for(let i=0;i<22;i++){const mid=(lo+hi)/2;m(mid)>goal?lo=mid:hi=mid}tau=hi}}
+if(m(0)>goal){let lo=0,hi=goal;if(m(hi)>goal){tau=hi;maxed=true}else{for(let i=0;i<20;i++){const mid=(lo+hi)/2;m(mid)>goal?lo=mid:hi=mid}tau=hi}}
 const A=sim(tau,p),Z=sim(0,p),a75=A.find(x=>x.age==75),z75=Z.find(x=>x.age==75);
 const tot=(r,k)=>r.reduce((s,x)=>s+x[k],0),dep=r=>{const x=r.find(x=>x.B<1);return x?x.yr:'after 2056'};
 const row=(l,a,b)=>`<tr><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
 document.getElementById('sum').innerHTML='<tr><th></th><th>With conversions</th><th>No conversions</th></tr>'+
-row('Annual income fill target (today\'s $)',fmt(tau),'—')+
+row('Conversion fill rate (effective rate each year)',(tau*100).toFixed(1)+'%','—')+
 row('Total converted',fmt(tot(A,'C')),'$0')+
 row('403(b) at start of 2041',fmt(a75.t0),fmt(z75.t0))+
 row('Roth at start of 2041',fmt(a75.r0),fmt(z75.r0))+
 row('Age-75 RMD (2041)',fmt(a75.rmd),fmt(z75.rmd))+
-row('Age-75 taxable income / bracket',fmt(a75.ot)+' · '+mr(a75.ot,a75.f),fmt(z75.ot)+' · '+mr(z75.ot,z75.f))+
+row('Age-75 effective rate · marginal bracket',(a75.eff*100).toFixed(1)+'% · '+mr(a75.ot,a75.f),(z75.eff*100).toFixed(1)+'% · '+mr(z75.ot,z75.f))+
+row('Peak effective rate, ages 75–90',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
 row('Brokerage runs out',dep(A),dep(Z))+
 row('Federal tax, 2027–2056',fmt(tot(A,'X')),fmt(tot(Z,'X')))+
-row('Medicare IRMAA, 2027–2056 (paid from SS / cash)',fmt(tot(A,'irm')),fmt(tot(Z,'irm')));
-document.getElementById('warn').textContent=maxed?'Even converting heavily, the age-75 target can’t be met with these inputs.':(A.some(x=>x.short>1)||Z.some(x=>x.short>1)?'Note: the 403(b) runs out in some years, so living costs there are not fully funded.':'');
-document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Conversion','Total tax','IRMAA','Brokerage sold','403(b) paid out','403(b) end','Brokerage end','Roth end'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+
-A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${mr(x.ot,x.f)}</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.dist)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td></tr>`).join('');}
+row('Medicare IRMAA, 2027–2056 (paid from SS / cash)',fmt(tot(A,'irm')),fmt(tot(Z,'irm')))+
+row('<b>Total tax paid, 2027–2056 (federal + IRMAA)</b>','<b>'+fmt(tot(A,'X')+tot(A,'irm'))+'</b>','<b>'+fmt(tot(Z,'X')+tot(Z,'irm'))+'</b>');
+document.getElementById('warn').textContent=maxed?'Even converting up to your ceiling, your effective rate stays above it in some years from age 75 on.':(A.some(x=>x.short>1)||Z.some(x=>x.short>1)?'Note: the 403(b) runs out in some years, so living costs there are not fully funded.':'');
+let cum=0;
+document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Total tax','IRMAA','Cumulative tax','Brokerage sold','403(b) paid out','403(b) end','Brokerage end','Roth end'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+
+A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${mr(x.ot,x.f)}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(cum+=x.X+x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.dist)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td></tr>`).join('');}
 let tm;document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(run,150)}));
 run();
 </script>
