@@ -34,17 +34,17 @@ summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
 <body>
 <div class="wrap">
 <h1>Roth Conversion Planner</h1>
-<p class="sub">Born Nov 1966 · Single · Florida · federal tax only · RMDs start at 75 (2041)</p>
+<p class="sub">Born Nov 1966 · Single · Florida · federal tax only · RMDs start at 75 (2041) · Medicare IRMAA is taken out of your Social Security payment</p>
 <div class="card"><h2>Inputs</h2><div class="grid" id="inputs"></div></div>
 <div class="card"><h2>Result</h2><div class="scroll"><table class="sum" id="sum"></table></div><p class="warn" id="warn"></p></div>
 <div class="card"><h2>Year by year (nominal dollars)</h2><div class="scroll"><table id="tbl"></table></div>
-<p class="sub" style="margin:6px 0 0">Shaded = conversion year · bold = RMD year. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA is shown for information only: Medicare starts Nov 2031, each year's surcharge is based on MAGI (AGI) from two years earlier, and 2026 tiers and surcharges are inflated at your inflation rate.</p></div>
+<p class="sub" style="margin:6px 0 0">Shaded = conversion year · bold = RMD year. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts Nov 2031 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
 <div class="card"><details><summary>Assumptions & method</summary><ul>
 <li>Each conversion year (2027 through the last conversion year, before 75) converts enough to fill taxable ordinary income up to a target. The planner solves that target so your age-75 taxable income lands at the top of the chosen bracket.</li>
 <li>Balances are treated as the start of 2027. Growth and inflation compound once a year. Brackets, deductions and the age-65 extra deduction ($2,050 in 2026) rise with inflation; Social Security thresholds and the $200k NIIT threshold do not.</li>
 <li>Social Security and living expenses are entered in today's dollars and inflate. Wages are taxable; Roth contributions come from after-tax cash.</li>
 <li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) and the tax is withheld out of the conversion.</li>
-<li>Dividends are qualified, reinvested and taxed each year; the growth rate is total return. RMDs use the IRS Uniform Lifetime Table. 2026 IRS brackets, same rules as the tax estimator. IRMAA is not modeled.</li></ul></details></div>
+<li>Dividends are qualified, reinvested and taxed each year; the growth rate is total return. RMDs use the IRS Uniform Lifetime Table. 2026 IRS brackets, same rules as the tax estimator. IRMAA is paid from SS (or cash) and is not deducted for tax.</li></ul></details></div>
 </div>
 <script>
 const IN=[['living',"Living expenses / yr (today's $, total incl. SS)",80000,500],['infl','Inflation %',2.5,.1],['t403','403(b) balance',1300000,5000],['g','403(b) / Roth growth %',8,.1],['roth','Roth balance, start of 2027',70000,500],['brk','Brokerage balance',300000,5000],['gb','Brokerage growth %',6,.1],['div','Dividends / yr (on today\'s balance)',4000,100],['basis','Brokerage cost basis %',50,1],['w27','2027 wages',138000,500],['w28','2028 wages',70000,500],['k27','2027 Roth contribution',70000,500],['k28','2028 Roth contribution',70000,500],['ss',"Social Security / month (today's $)",4648,10],['ssage','Claim age',70,1],['lastc','Last conversion year',2040,1]];
@@ -63,19 +63,19 @@ return{tax:prog(ot,0,OB,f)+prog(pt,ot,QB,f)+.038*Math.min(pref,Math.max(0,agi-20
 // one year's cash flow given conversion C
 function yc(c,C){let X=0,S=0,W=0,Xc=0,sp=0,r;
 for(let i=0;i<22;i++){r=taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss);X=r.tax;
-const need=c.L+c.K+X-c.w-c.ss-c.rmd;
+const need=c.L+c.K+c.irm+X-c.w-c.ss-c.rmd;
 if(need<=0){S=0;sp=-need;W=0;Xc=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,X,C);W=R-Xc}}
 return{X,S,W,Xc,sp,ot:r.ot,st:r.st,agi:r.agi}}
 function sim(tau,p){let T=p.t403,R=p.roth,B=p.brk,bs=B*p.basis,rows=[];
 for(let yr=2027;yr<=2056;yr++){const age=yr-1966,f=Math.pow(1+p.infl,yr-2026);
+const q=rows[rows.length-2];let irm=0;if(yr>=2031&&q){const t=IR.filter(([th])=>q.agi>th*f);irm=t.length?12*(yr==2031?2/12:1)*t[t.length-1][1]*f:0}
 const c={f,age,w:yr==2027?p.w27:yr==2028?p.w28:0,K:yr==2027?p.k27:yr==2028?p.k28:0,ss:age>=p.ssage?p.ss*12*f:0,
-rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*f,B,bf:B>0?bs/B:1};
+rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*f,irm,B,bf:B>0?bs/B:1};
 let C=0;
 if(yr<=p.lastc&&age<75&&T>0&&tau>0){const g=tau*f;if(yc(c,0).ot<g){let lo=0,hi=T;for(let i=0;i<24;i++){const m=(lo+hi)/2;yc(c,m).ot<g?lo=m:hi=m}C=lo}}
 const y=yc(c,C),W=Math.min(y.W,Math.max(0,T-c.rmd-C)),short=y.W-W;
 const t0=T,r0=R;
-const q=rows[rows.length-2];let irm=0;if(yr>=2031&&q){const t=IR.filter(([th])=>q.agi>th*f);irm=t.length?12*(yr==2031?2/12:1)*t[t.length-1][1]*f:0}
-rows.push({yr,age,f,w:c.w,ss:c.ss,st:y.st,agi:y.agi,irm,S:y.S,dist:W+c.rmd,rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B});
+rows.push({yr,age,f,w:c.w,ss:c.ss,st:y.st,agi:y.agi,irm,net:Math.max(0,c.ss-irm),S:y.S,dist:W+c.rmd,rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B});
 bs=B-y.S<1?0:bs-y.S*c.bf+y.sp+c.div;B=B-y.S+y.sp<1?0:(B-y.S+y.sp)*(1+p.gb);if(B==0)bs=0;
 T=Math.max(0,T-c.rmd-C-W)*(1+p.g);R=(R+c.K+C-y.Xc)*(1+p.g);
 Object.assign(rows[rows.length-1],{T,B,R})}
@@ -99,10 +99,10 @@ row('Age-75 RMD (2041)',fmt(a75.rmd),fmt(z75.rmd))+
 row('Age-75 taxable income / bracket',fmt(a75.ot)+' · '+mr(a75.ot,a75.f),fmt(z75.ot)+' · '+mr(z75.ot,z75.f))+
 row('Brokerage runs out',dep(A),dep(Z))+
 row('Federal tax, 2027–2056',fmt(tot(A,'X')),fmt(tot(Z,'X')))+
-row('Medicare IRMAA, 2027–2056 (not in tax totals)',fmt(tot(A,'irm')),fmt(tot(Z,'irm')));
+row('Medicare IRMAA, 2027–2056 (paid from SS / cash)',fmt(tot(A,'irm')),fmt(tot(Z,'irm')));
 document.getElementById('warn').textContent=maxed?'Even converting heavily, the age-75 target can’t be met with these inputs.':(A.some(x=>x.short>1)||Z.some(x=>x.short>1)?'Note: the 403(b) runs out in some years, so living costs there are not fully funded.':'');
-document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','Taxable SS','Taxable inc.','Brkt','Conversion','Total tax','IRMAA','Brokerage sold','403(b) paid out','403(b) end','Brokerage end','Roth end'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+
-A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${mr(x.ot,x.f)}</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.dist)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td></tr>`).join('');}
+document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Conversion','Total tax','IRMAA','Brokerage sold','403(b) paid out','403(b) end','Brokerage end','Roth end'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+
+A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${mr(x.ot,x.f)}</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.dist)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td></tr>`).join('');}
 let tm;document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(run,150)}));
 run();
 </script>
