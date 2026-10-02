@@ -50,7 +50,7 @@ summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
 </div>
 <script>
 const IN=[['living',"Living expenses / yr (start-year $, incl. SS)",100000,500],['infl','Inflation %',2.5,.1],['t403','403(b) balance at start',1480000,5000],['g','403(b) / Roth growth %',8,.1],['roth','Roth balance at start',258000,500],['brk','Brokerage balance at start',344000,5000],['gb','Brokerage growth %',8,.1],['div','Dividends / yr (on starting balance)',4000,100],['basis','Brokerage cost basis %',50,1],['start','Start year (balances as of Jan 1)',2026,1],['by','Birth year (Nov birthday)',1966,1],['lw','Last working year',2028,1],['ss',"Social Security / month (start-year $)",4648,10],['ssage','Claim age',70,1],['firstc','First conversion year',2027,1],['lastc','Last conversion year',2040,1],['ceil','Tax ceiling: max effective federal rate % (all income, age 75+)',15,.5]];
-const WK={2026:[210000,70000],2027:[210000,70000],2028:[110000,70000]};
+const WK={2026:[210000,70000],2027:[138000,70000],2028:[110000,70000]};
 function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y=+e.dataset.y;(WK[y]=WK[y]||[0,0])[+e.dataset.k]=+e.value||0})}
 function renderWork(){saveWork();const g=id=>+document.getElementById(id).value||0,s=g('start'),l=Math.min(g('lw'),s+9);let h='';
 if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label>${y} wages (taxable, before Roth, nominal)</label><input type="number" data-y="${y}" data-k="0" value="${a[0]}" step="500"></div><div><label>${y} Roth contribution (nominal)</label><input type="number" data-y="${y}" data-k="1" value="${a[1]}" step="500"></div>`}
