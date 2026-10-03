@@ -650,9 +650,12 @@
             <tr><th>Source</th><th style="text-align:right">Income</th><th style="text-align:right">Tax</th><th style="text-align:right">Rate</th></tr>
           </thead>
           <tbody>
-            <tr><td class="rate">Wages</td><td style="text-align:right" id="srcWagesInc">$0</td><td style="text-align:right" id="srcWagesTax">$0</td><td style="text-align:right" id="srcWagesRate">—</td></tr>
-            <tr><td class="rate tfoot-label">IRA / Roth conv.<small>Added on top of everything else</small></td><td style="text-align:right" id="srcIraInc">$0</td><td style="text-align:right" id="srcIraTax">$0</td><td style="text-align:right" id="srcIraRate">—</td></tr>
-            <tr><td class="rate tfoot-label">Other<small>Taxable SS, dividends, gains</small></td><td style="text-align:right" id="srcOtherInc">$0</td><td style="text-align:right" id="srcOtherTax">$0</td><td style="text-align:right" id="srcOtherRate">—</td></tr>
+            <tr id="srcWagesRow"><td class="rate tfoot-label">Wages<small>Taxed first</small></td><td style="text-align:right" id="srcWagesInc">$0</td><td style="text-align:right" id="srcWagesTax">$0</td><td style="text-align:right" id="srcWagesRate">—</td></tr>
+            <tr id="srcSsRow"><td class="rate">Taxable Social Security</td><td style="text-align:right" id="srcSsInc">$0</td><td style="text-align:right" id="srcSsTax">$0</td><td style="text-align:right" id="srcSsRate">—</td></tr>
+            <tr id="srcIraRow"><td class="rate tfoot-label">IRA / Roth conv.<small>Stacked on top of other ordinary income</small></td><td style="text-align:right" id="srcIraInc">$0</td><td style="text-align:right" id="srcIraTax">$0</td><td style="text-align:right" id="srcIraRate">—</td></tr>
+            <tr id="srcDivRow"><td class="rate tfoot-label">Dividends<small>Ordinary + qualified, incl. NIIT</small></td><td style="text-align:right" id="srcDivInc">$0</td><td style="text-align:right" id="srcDivTax">$0</td><td style="text-align:right" id="srcDivRate">—</td></tr>
+            <tr id="srcGainRow"><td class="rate tfoot-label">Capital gains<small>Short + long term, incl. NIIT</small></td><td style="text-align:right" id="srcGainInc">$0</td><td style="text-align:right" id="srcGainTax">$0</td><td style="text-align:right" id="srcGainRate">—</td></tr>
+            <tr id="srcIrmaaRow"><td class="rate tfoot-label">Medicare IRMAA (est.)<small>From your 2-years-prior MAGI</small></td><td style="text-align:right" id="srcIrmaaInc">$0</td><td style="text-align:right" id="srcIrmaaTax">$0</td><td style="text-align:right" id="srcIrmaaRate">—</td></tr>
           </tbody>
           <tfoot>
             <tr><td class="tfoot-label" id="srcTotalLabel">Total federal tax</td><td></td><td class="total-amount" style="text-align:right" id="srcTotal">$0</td><td></td></tr>
@@ -662,7 +665,7 @@
         <div class="summary-line"><span>Still owed after wage withholding<br><small style="font-size:0.66rem;">Negative = over-withheld</small></span><span class="v" id="srcStillOwed">$0</span></div>
         <details class="foot-note" style="margin-top:6px;">
           <summary>How this is calculated</summary>
-          <p>Wages are taxed on their own, so that figure never changes when you add dividends, gains, or an IRA withdrawal. Other income is layered on top of wages, and IRA withdrawals / Roth conversions go last, so the IRA figure is the true added cost of the conversion — including more Social Security becoming taxable, a smaller senior deduction, NIIT, or pushing gains into a higher rate. The employer estimate is tax on wages alone with the standard deduction; your actual withholding depends on your W-4, pay frequency, and bonuses.</p>
+          <p>This splits the same taxes shown elsewhere on the page, so the rows add up to the total. Ordinary tax is layered through the brackets from the bottom: wages first, then taxable Social Security, ordinary dividends, short-term gains, and the IRA withdrawal / Roth conversion last, so it carries the highest ordinary bracket rate. The standard deduction is applied to the lowest layers first. Qualified dividends and long-term gains are taxed at 0/15/20% on top of ordinary taxable income, and the 3.8% NIIT is shared across dividends and gains in proportion to each. The employer estimate is tax on wages alone with the standard deduction; your actual withholding depends on your W-4, pay frequency, and bonuses.</p>
         </details>
       </div>
 
@@ -981,26 +984,52 @@ function calculate(){
     totalWithIrmaaRow.style.display = 'none';
   }
 
-  // Tax by income source breakdown
-  const vals = {wages, ira, ndiv, qdiv, stcg, ltcg, ssa};
-  const taxWagesOnly = totalTaxFor({wages, ira:0, ndiv:0, qdiv:0, stcg:0, ltcg:0, ssa:0});
-  const taxNoIra = totalTaxFor({...vals, ira:0});
-  const wagesTax = taxWagesOnly;
-  const otherTax = (taxNoIra - taxWagesOnly) + irmaaAnnual; // include IRMAA in other/overall
-  const iraTax = baseTax - taxNoIra;
-  const wagesInc = Math.max(0, wages), iraInc = Math.max(0, ira);
-  const otherInc = Math.max(0, ndiv) + Math.max(0, qdiv) + Math.max(0, stcg) + Math.max(0, ltcg) + taxableSs;
+  // Tax by income source breakdown — splits the same taxes shown above, so rows add up to the total
+  const pos = x => Math.max(0, x);
+  const sumTax = (base, amt, br) => amt > 0 ? bracketSplit(base, amt, br).reduce((t,r)=>t+r.tax, 0) : 0;
+
+  // Ordinary tax: stack layers (wages, taxable SS, ordinary dividends, short-term gains, IRA last)
+  const ordLayers = [pos(wages), taxableSs, pos(ndiv), pos(stcg), pos(ira)];
+  const ordTaxAt = cum => sumTax(0, pos(cum - stdDeduction), ORDINARY_BRACKETS);
+  const ordLayerTax = [];
+  let cumOrd = 0, prevOrdTax = 0;
+  for(const L of ordLayers){
+    cumOrd += L;
+    const t = ordTaxAt(cumOrd);
+    ordLayerTax.push(t - prevOrdTax);
+    prevOrdTax = t;
+  }
+
+  // Qualified dividends and LTCG sit on top of ordinary taxable income (qualified dividends first)
+  const leftover = pos(stdDeduction - ordinaryIncome);
+  const qdivTaxable = pos(pos(qdiv) - leftover);
+  const ltcgTaxable = pos(pos(ltcg) - pos(leftover - pos(qdiv)));
+  const qdivOnlyTax = sumTax(ordinaryTaxable, qdivTaxable, QDIV_BRACKETS);
+  const ltcgOnlyTax = sumTax(ordinaryTaxable + qdivTaxable, ltcgTaxable, QDIV_BRACKETS);
+
+  // NIIT is shared across investment income in proportion to each piece
+  const niitDivShare = netInvestmentIncome > 0 ? niitTax * (pos(ndiv) + pos(qdiv)) / netInvestmentIncome : 0;
+  const niitGainShare = netInvestmentIncome > 0 ? niitTax * (pos(stcg) + pos(ltcg)) / netInvestmentIncome : 0;
+
+  const srcRows = {
+    srcWages: {inc: pos(wages),             tax: ordLayerTax[0]},
+    srcSs:    {inc: taxableSs,              tax: ordLayerTax[1]},
+    srcIra:   {inc: pos(ira),               tax: ordLayerTax[4]},
+    srcDiv:   {inc: pos(ndiv) + pos(qdiv),  tax: ordLayerTax[2] + qdivOnlyTax + niitDivShare},
+    srcGain:  {inc: pos(stcg) + pos(ltcg),  tax: ordLayerTax[3] + ltcgOnlyTax + niitGainShare}
+  };
   const pct = (t, inc) => inc > 0 ? (t/inc*100).toFixed(1) + '%' : '—';
-  
-  document.getElementById('srcWagesInc').textContent = fmt(wagesInc);
-  document.getElementById('srcWagesTax').textContent = fmt(wagesTax);
-  document.getElementById('srcWagesRate').textContent = pct(wagesTax, wagesInc);
-  document.getElementById('srcIraInc').textContent = fmt(iraInc);
-  document.getElementById('srcIraTax').textContent = fmt(iraTax);
-  document.getElementById('srcIraRate').textContent = pct(iraTax, iraInc);
-  document.getElementById('srcOtherInc').textContent = fmt(otherInc);
-  document.getElementById('srcOtherTax').textContent = fmt(otherTax);
-  document.getElementById('srcOtherRate').textContent = pct(otherTax, otherInc);
+  for(const [id, r] of Object.entries(srcRows)){
+    document.getElementById(id + 'Inc').textContent = fmt(r.inc);
+    document.getElementById(id + 'Tax').textContent = fmt(r.tax);
+    document.getElementById(id + 'Rate').textContent = pct(r.tax, r.inc);
+    document.getElementById(id + 'Row').style.display = (r.inc > 0 || r.tax > 0 || id === 'srcWages') ? '' : 'none';
+  }
+  document.getElementById('srcIrmaaInc').textContent = '—';
+  document.getElementById('srcIrmaaTax').textContent = fmt(irmaaAnnual);
+  document.getElementById('srcIrmaaRate').textContent = '';
+  document.getElementById('srcIrmaaRow').style.display = irmaaAnnual > 0 ? '' : 'none';
+  const wagesInc = pos(wages);
   document.getElementById('srcTotal').textContent = fmt(totalTaxWithIrmaa);
 
   const employerEst = bracketSplit(0, Math.max(0, wagesInc - STD_DEDUCTION_BASE), ORDINARY_BRACKETS).reduce((a,r)=>a+r.tax, 0);
