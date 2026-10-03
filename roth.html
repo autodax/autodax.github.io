@@ -185,6 +185,7 @@ function run(){
       row('Total federal income tax, retirement ('+(p.lw+1)+'–'+(p.by+100)+')',fmt(tot(A.filter(x=>x.yr>p.lw),'X')),fmt(tot(Z.filter(x=>x.yr>p.lw),'X')))+
       row('<b>Avg effective rate on all retirement income</b> (AGI + untaxed SS + Roth withdrawals)',(ar2(A)*100).toFixed(1)+'%',(ar2(Z)*100).toFixed(1)+'%')+
       row('Avg effective rate on AGI only (low-income years carry little weight)',(ar(A)*100).toFixed(1)+'%',(ar(Z)*100).toFixed(1)+'%')+
+      row('Total IRMAA surcharges, lifetime',fmt(tot(A,'irm')),fmt(tot(Z,'irm')))+
       row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
       row('Brokerage runs out',dep(A),dep(Z))+
       row('<b>Sustainable annual spending</b>',fmt(sus(1)),fmt(sus(0)))+
