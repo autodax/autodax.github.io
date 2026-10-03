@@ -29,6 +29,7 @@ td{padding:3px 4px;border-bottom:1px solid var(--line);text-align:right;white-sp
 th:first-child,td:first-child{text-align:left}
 .scroll{overflow-x:auto}
 tr.conv td{background:var(--band)}
+#tbl td:nth-child(10),#tbl th:nth-child(10){background:var(--brown);color:var(--brown-ink);font-weight:700;border-left:2px solid var(--brown-line);border-right:2px solid var(--brown-line)}
 tr.rmd td{font-weight:600;color:var(--green)}
 .sum td:first-child,.sum th:first-child{white-space:normal}
 .sum td{font-size:.78rem}
@@ -145,6 +146,8 @@ function run(){
     else if(rm(Infinity)>rt){p.Lv=null;Lnote='Ceiling not reachable inside the bracket and window; converting the maximum allowed each year.'}
     else{let lo=0,hi=2e6;for(let i=0;i<30;i++){const m=(lo+hi)/2;rm(m)>rt?lo=m:hi=m}p.Lv=Math.ceil(hi/500)*500}}
 
+  const ar=r=>{const q=r.filter(x=>x.yr>p.lw),a=tot(q,'agi');return a>0?tot(q,'X')/a:0};
+  const ar2=r=>{const q=r.filter(x=>x.yr>p.lw),a=tot(q,'agi')+tot(q,'RW')+q.reduce((s,x)=>s+x.ss-x.st,0);return a>0?tot(q,'X')/a:0};
   const pk=r=>Math.max(...r.filter(x=>x.age>=75).map(x=>x.eff));
   const re=rs=>rs.map(x=>{const y={...x};['w','ss','st','agi','irm','net','S','dist','RW','rmd','C','X','ot','t0','r0','T','B','R','B0','short'].forEach(k=>y[k]=x[k]/x.u);['T','B','R'].forEach(k=>y[k]=x[k]/(x.u*(1+p.infl)));return y});
   const Y0=p.start,Y1=p.by+100,Y75=p.by+75;
@@ -179,6 +182,9 @@ function run(){
       row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
       row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
       row('Age-75 RMD ('+Y75+')',fmt(a75.rmd),fmt(z75.rmd))+
+      row('Total federal income tax, retirement ('+(p.lw+1)+'–'+(p.by+100)+')',fmt(tot(A.filter(x=>x.yr>p.lw),'X')),fmt(tot(Z.filter(x=>x.yr>p.lw),'X')))+
+      row('<b>Avg effective rate on all retirement income</b> (AGI + untaxed SS + Roth withdrawals)',(ar2(A)*100).toFixed(1)+'%',(ar2(Z)*100).toFixed(1)+'%')+
+      row('Avg effective rate on AGI only (low-income years carry little weight)',(ar(A)*100).toFixed(1)+'%',(ar(Z)*100).toFixed(1)+'%')+
       row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
       row('Brokerage runs out',dep(A),dep(Z))+
       row('<b>Sustainable annual spending</b>',fmt(sus(1)),fmt(sus(0)))+
