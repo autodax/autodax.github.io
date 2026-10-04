@@ -75,6 +75,48 @@
     color:var(--ink-soft);
     font-family:'IBM Plex Mono','Menlo',monospace;
   }
+  .toolbar{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:0 0 10px;
+  }
+  .url-field{
+    flex:1 1 240px;
+    min-width:0;
+    font-family:'IBM Plex Mono','Menlo',monospace;
+    font-size:0.74rem;
+    padding:6px 10px;
+    border:1px solid var(--paper-line);
+    border-radius:9px;
+    background:#FFFDF8;
+    color:var(--ink);
+  }
+  .tool-status{
+    flex-basis:100%;
+    min-height:1em;
+    text-align:right;
+  }
+  .tool-btn{
+    font-family:inherit;
+    font-size:0.78rem;
+    padding:6px 12px;
+    border:1px solid var(--btn-brown-line);
+    background:var(--btn-brown);
+    color:var(--btn-brown-ink);
+    border-radius:9px;
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tool-btn:hover{background:#DCC8A6;}
+  .tool-btn:active{background:var(--btn-brown-line);}
+  .tool-status{
+    font-size:0.74rem;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono','Menlo',monospace;
+  }
   .grid{
     display:grid;
     grid-template-columns: 1fr 1.25fr 1fr;
@@ -468,6 +510,12 @@
   <div class="masthead">
     <h1>Federal Tax Estimator<span class="year-badge">2026</span></h1>
     <div class="sub" id="mastheadSub">Tax year 2026 · Single · Under 65 · Standard deduction</div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" class="url-field" id="urlField" readonly placeholder="Saved link will appear here" aria-label="Saved link">
+    <button type="button" class="tool-btn" id="saveUrlBtn">Save values to URL</button>
+    <span class="tool-status" id="toolStatus"></span>
   </div>
 
   <div class="grid">
@@ -1213,9 +1261,8 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
   });
 })();
 
-// ---- Keep the entered values in the page URL (after the #) ----
-// The address updates as you type. Bookmark the page (or keep the URL) and opening it
-// again refills the form.
+// ---- Save the entered values to the page URL (after the #) on request ----
+// Click "Save values to URL", then bookmark the page; opening it again refills the form.
 const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr'];
 let lastHash = location.hash;
 
@@ -1250,30 +1297,48 @@ function applyState(p){
 
 function writeHash(){
   const hash = '#' + collectState().toString();
-  if(hash === lastHash) return;
   lastHash = hash;
   try {
     history.replaceState(null, '', hash);
   } catch(e) {
-    try { location.replace(hash); } catch(e2) {}
+    try { location.replace(hash); } catch(e2) { location.hash = hash; }
   }
 }
-let hashTimer = null;
-function scheduleHashWrite(){
-  clearTimeout(hashTimer);
-  hashTimer = setTimeout(writeHash, 300);   // debounce: browsers limit how often the URL can be changed
+
+function setToolStatus(msg){
+  const el = document.getElementById('toolStatus');
+  el.textContent = msg;
+  clearTimeout(setToolStatus.t);
+  if(msg) setToolStatus.t = setTimeout(() => { el.textContent = ''; }, 8000);
 }
+
+// One click writes all current values to the URL at once, shows the link in the field, and copies it
+document.getElementById('saveUrlBtn').addEventListener('click', () => {
+  writeHash();
+  const field = document.getElementById('urlField');
+  field.value = location.href;
+  field.focus();
+  field.select();
+  field.setSelectionRange(0, field.value.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) {}
+  if(ok){
+    setToolStatus('Saved to the address bar and link copied. Bookmark this page to keep it.');
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(field.value).then(
+      () => setToolStatus('Saved to the address bar and link copied. Bookmark this page to keep it.'),
+      () => setToolStatus('Saved to the address bar. The link is selected, so press Cmd+C (or Ctrl+C) to copy it.')
+    );
+  } else {
+    setToolStatus('Saved to the address bar. The link is selected, so press Cmd+C (or Ctrl+C) to copy it.');
+  }
+});
+document.getElementById('urlField').addEventListener('focus', e => e.target.select());
 
 // Fill the form from the URL when the page opens
 if(location.hash.length > 1){
   applyState(new URLSearchParams(location.hash.slice(1)));
 }
-
-// Update the URL as values change
-document.addEventListener('input', scheduleHashWrite);
-document.addEventListener('click', e => {
-  if(e.target.closest('.age-btn, .wtype-btn, .spin')) scheduleHashWrite();
-});
 
 // Pasting a saved link into a tab that already shows this page only changes the #, so refill then too
 window.addEventListener('hashchange', () => {
