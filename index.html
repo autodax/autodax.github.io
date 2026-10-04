@@ -1175,6 +1175,7 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
   ['wages','ira','ssa','ltcg','stcg','qdiv','ndiv','magi2yr'].forEach(id => {
     const input = document.getElementById(id);
     const wrap = input.closest('.amount-wrap');
+    wrap.querySelectorAll('.spin').forEach(n => n.remove());
     wrap.classList.add('has-spin');
     const spin = document.createElement('div');
     spin.className = 'spin';
@@ -1211,6 +1212,79 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
     hold(down, -1);
   });
 })();
+
+// ---- Keep the entered values in the page URL (after the #) ----
+// The address updates as you type. Bookmark the page (or keep the URL) and opening it
+// again refills the form.
+const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr'];
+let lastHash = location.hash;
+
+function collectState(){
+  const p = new URLSearchParams();
+  FIELD_IDS.forEach(id => {
+    const v = document.getElementById(id).value.trim();
+    if(v !== '') p.set(id, v);
+  });
+  p.set('age', ageOver65 ? 'over65' : 'under65');
+  p.set('wtype', withholdType);
+  return p;
+}
+
+function applyState(p){
+  FIELD_IDS.forEach(id => {
+    if(!p.has(id)) return;
+    const n = parseFloat(p.get(id));
+    if(isFinite(n)) document.getElementById(id).value = String(n);
+  });
+  const age = p.get('age');
+  if(age === 'over65' || age === 'under65'){
+    const b = document.querySelector('.age-btn[data-age="' + age + '"]');
+    if(b) b.click();
+  }
+  const wt = p.get('wtype');
+  if(wt === 'pct' || wt === 'amt'){
+    const b = document.querySelector('.wtype-btn[data-wtype="' + wt + '"]');
+    if(b) b.click();
+  }
+}
+
+function writeHash(){
+  const hash = '#' + collectState().toString();
+  if(hash === lastHash) return;
+  lastHash = hash;
+  try {
+    history.replaceState(null, '', hash);
+  } catch(e) {
+    try { location.replace(hash); } catch(e2) {}
+  }
+}
+let hashTimer = null;
+function scheduleHashWrite(){
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(writeHash, 300);   // debounce: browsers limit how often the URL can be changed
+}
+
+// Fill the form from the URL when the page opens
+if(location.hash.length > 1){
+  applyState(new URLSearchParams(location.hash.slice(1)));
+}
+
+// Update the URL as values change
+document.addEventListener('input', scheduleHashWrite);
+document.addEventListener('click', e => {
+  if(e.target.closest('.age-btn, .wtype-btn, .spin')) scheduleHashWrite();
+});
+
+// Pasting a saved link into a tab that already shows this page only changes the #, so refill then too
+window.addEventListener('hashchange', () => {
+  if(location.hash === lastHash) return;   // our own update
+  lastHash = location.hash;
+  if(location.hash.length > 1){
+    applyState(new URLSearchParams(location.hash.slice(1)));
+    calculate();
+    calculateIrmaa();
+  }
+});
 
 calculate();
 calculateIrmaa();
