@@ -42,9 +42,9 @@ summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
 </head>
 <body>
 <div class="wrap">
-<h1>Roth Conversion Planner <span class="ty">2026 tax year</span></h1>
-<p class="tynote">Click <b>Save to link</b> to store your inputs in this page's web address, then bookmark it. Opening a saved address fills everything back in.</p>
-<div class="tynote"><button id="savebtn" type="button" onclick="saveBtn()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--green);background:var(--green);color:#FFFDF8;font-weight:600;cursor:pointer">Save to link</button><span id="savemsg"></span><input id="savelink" readonly style="display:none;width:100%;margin-top:6px;padding:6px;border:1px solid var(--line);border-radius:6px;font-size:.75rem;background:var(--card);color:var(--ink)"></div>
+<h1>Roth Conversion Planner <span class="ty">2026 tax year</span><button id="savebtn" type="button" onclick="saveBtn()" style="margin-left:10px;padding:4px 12px;border-radius:8px;border:1px solid var(--green);background:var(--card);color:var(--green);font-size:.85rem;font-weight:600;cursor:pointer;vertical-align:middle;white-space:nowrap">Save to link</button></h1>
+<input id="savelink" readonly tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;top:0;opacity:0">
+<p class="tynote">Click <b>Save to link</b> (top) to store your inputs in this page's web address, then bookmark it. Opening a saved address fills everything back in.<span id="savemsg"></span></p>
 <p class="sub" id="hdr">Born Nov 1966 · Single · Florida · Federal tax only · RMDs start at 75 (2041) · All dollar amounts in today's (2026) dollars · Medicare IRMAA is taken out of your Social Security payment</p>
 <div class="card"><h2>Inputs</h2><div class="grid" id="inputs"></div><div class="grid" id="work" style="margin-top:8px"></div></div>
 <div class="card"><h2>Result</h2><div class="scroll"><table class="sum" id="sum"></table></div><p class="warn" id="warn"></p></div>
@@ -207,10 +207,10 @@ function run(){
 let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?24:20}clearTimeout(tm);tm=setTimeout(run,150);dirty(1)});
 const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input')];
 const sb=()=>document.getElementById('savebtn'),sm=()=>document.getElementById('savemsg');
-function dirty(d){if(sb()){sb().textContent=d?'Save to link (unsaved changes)':'Saved to link';if(d)sm().textContent=''}}
-function saveBtn(){saveURL();dirty(0);const u=location.href,i=document.getElementById('savelink');i.style.display='block';i.value=u;
-  const fb=()=>{try{i.focus();i.select();return document.execCommand('copy')}catch(e){return false}};
-  const done=ok=>{sm().textContent=ok?' Saved, and the link is copied to your clipboard.':' Saved, but the browser blocked copying. The link is in the box below: tap it, select all, and copy.'};
+function dirty(d){if(sb()){sb().textContent=d?'Save to link ●':'Saved ✓';if(d)sm().textContent=''}}
+function saveBtn(){saveURL();dirty(0);const u=location.href,i=document.getElementById('savelink');i.value=u;
+  const fb=()=>{try{i.focus();i.select();i.setSelectionRange(0,99999);return document.execCommand('copy')}catch(e){return false}};
+  const done=ok=>{sm().textContent=ok?' Saved, and the link is copied to your clipboard.':' Saved, but the browser blocked copying. Copy the address from the address bar instead.'};
   try{navigator.clipboard.writeText(u).then(()=>done(true),()=>done(fb()))}catch(e){done(fb())}}
 function saveURL(){try{const q=new URLSearchParams();fields().forEach(e=>{if(e.value!=='')q.set(e.id,e.value)});const s=q.toString();history.replaceState(null,'',s?'#'+s:location.pathname+location.search)}catch(e){}}
 function loadURL(){const q=new URLSearchParams(location.hash.slice(1));if(![...q.keys()].length)return;
