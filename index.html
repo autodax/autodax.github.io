@@ -1301,6 +1301,28 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
 // +/- $500 spinner buttons on dollar inputs
 (function(){
   const STEP = 500;
+  const MAX_HOLD_MS = 5000;   // safety: a hold never runs longer than this
+
+  // One shared controller, so only a single repeat can ever be running
+  let activeHold = null;
+  function stopHold(){
+    if(activeHold){
+      clearTimeout(activeHold.delay);
+      clearInterval(activeHold.timer);
+      activeHold = null;
+    }
+  }
+  // Stop on every signal that a finger or mouse button was released or interrupted.
+  // Mobile browsers sometimes drop the button's own "up" event, so listen on the whole window.
+  ['pointerup','pointercancel','touchend','touchcancel','mouseup','dragstart','contextmenu','blur']
+    .forEach(ev => window.addEventListener(ev, stopHold, true));
+  window.addEventListener('scroll', stopHold, true);
+  window.addEventListener('pagehide', stopHold);
+  document.addEventListener('visibilitychange', stopHold);
+  // Any new touch or click that isn't on a ▲/▼ button also stops it
+  ['pointerdown','touchstart','mousedown'].forEach(ev =>
+    window.addEventListener(ev, e => { if(!(e.target.closest && e.target.closest('.spin'))) stopHold(); }, true));
+
   ['wages','ira','ssa','ltcg','stcg','qdiv','ndiv','magi2yr'].forEach(id => {
     const input = document.getElementById(id);
     const wrap = input.closest('.amount-wrap');
@@ -1321,19 +1343,25 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
     };
     // Press-and-hold repeat (pointer events cover mouse, touch and pen)
     const hold = (btn, dir) => {
-      let delay = null, timer = null;
-      const stop = () => {
-        clearTimeout(delay); clearInterval(timer);
-        delay = timer = null;
-      };
       btn.addEventListener('pointerdown', e => {
         e.preventDefault();               // no focus, text selection or double-tap zoom
         try { btn.setPointerCapture(e.pointerId); } catch(_){}
-        stop();
+        stopHold();
         bump(dir);
-        delay = setTimeout(() => { timer = setInterval(() => bump(dir), 70); }, 400);
+        const started = Date.now();
+        const h = {delay:null, timer:null};
+        h.delay = setTimeout(() => {
+          h.timer = setInterval(() => {
+            if(activeHold !== h || !btn.isConnected || document.hidden || Date.now() - started > MAX_HOLD_MS){
+              stopHold();
+              return;
+            }
+            bump(dir);
+          }, 70);
+        }, 400);
+        activeHold = h;
       });
-      ['pointerup','pointercancel','lostpointercapture'].forEach(ev => btn.addEventListener(ev, stop));
+      btn.addEventListener('lostpointercapture', stopHold);
       btn.addEventListener('contextmenu', e => e.preventDefault());
       btn.addEventListener('dblclick', e => e.preventDefault());
     };
@@ -1370,7 +1398,7 @@ setInterval(() => {
   ORDINARY_BRACKETS.filter(b => isFinite(b.to)).forEach(b => {
     const o = document.createElement('option');
     o.value = String(Math.round(b.rate * 100));
-    o.textContent = Math.round(b.rate * 100) + '% bracket (top ' + fmt(b.to) + ')';
+    o.textContent = Math.round(b.rate * 100) + '% bracket';
     if(o.value === '24') o.selected = true;
     sel.appendChild(o);
   });
