@@ -250,6 +250,16 @@
     color:var(--ink-soft);
     margin-left:-2px;
   }
+  .solve-row select{
+    font-family:inherit;
+    font-size:0.74rem;
+    padding:4px 8px;
+    border:1px solid var(--input-line);
+    border-radius:9px;
+    background:var(--input-bg);
+    color:var(--ink);
+    max-width:100%;
+  }
   .solve-result{
     display:block;
     font-size:0.7rem;
@@ -616,6 +626,11 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
           <input type="number" id="ira" min="0" step="500" placeholder="0" inputmode="decimal">
         </div>
         <span class="hint">Distributions and Roth conversions — taxed as ordinary income</span>
+        <div class="solve-row">
+          <select id="bracketSel" aria-label="Tax bracket to fill"></select>
+          <button type="button" class="tool-btn" id="solveIraBtn">Fill to top of bracket</button>
+        </div>
+        <span class="solve-result" id="iraSolveResult"></span>
       </div>
 
       <div class="field">
@@ -940,6 +955,7 @@ function renderTable(tbodyId, footId, rows){
 
 let ageOver65 = false;
 let withholdType = 'pct'; // 'pct' or 'amt'
+let lastOrdinaryTaxable = 0; // latest ordinary taxable income, used by the IRA bracket solver
 let lastStillOwed = 0;      // latest "still owed after withholding", used by the LTCG solver
 
 function computeTaxableSocialSecurity(ssBenefits, otherIncome){
@@ -1045,6 +1061,7 @@ function calculate(){
   const taxableIncome = Math.max(0, totalIncome - stdDeduction);
 
   const ordinaryTaxable = Math.max(0, ordinaryIncome - stdDeduction);
+  lastOrdinaryTaxable = ordinaryTaxable;
   const leftoverDeduction = Math.max(0, stdDeduction - ordinaryIncome);
   const qualifiedTaxable = Math.max(0, qualifiedIncome - leftoverDeduction);
 
@@ -1344,6 +1361,59 @@ setInterval(() => {
   if(!manualTheme && autoTheme() !== currentTheme()) setTheme(autoTheme());
 }, 60000);
 
+// ---- Solve for the IRA withdrawal that fills a chosen ordinary tax bracket ----
+// Finds the largest whole-dollar IRA amount that keeps ordinary taxable income at or below the
+// top of the selected bracket. It re-runs the full calculation each time, so taxable Social
+// Security and the senior deduction phase-out are accounted for.
+(function(){
+  const sel = document.getElementById('bracketSel');
+  ORDINARY_BRACKETS.filter(b => isFinite(b.to)).forEach(b => {
+    const o = document.createElement('option');
+    o.value = String(Math.round(b.rate * 100));
+    o.textContent = Math.round(b.rate * 100) + '% bracket (top ' + fmt(b.to) + ')';
+    if(o.value === '24') o.selected = true;
+    sel.appendChild(o);
+  });
+})();
+
+function solveIraToBracket(){
+  const iraEl = document.getElementById('ira');
+  const resultEl = document.getElementById('iraSolveResult');
+  const sel = document.getElementById('bracketSel');
+  const pctChoice = parseFloat(sel.value);
+  const bracket = ORDINARY_BRACKETS.find(b => isFinite(b.to) && Math.round(b.rate * 100) === pctChoice);
+  if(!bracket){ resultEl.textContent = 'Pick a bracket first.'; return; }
+  const target = bracket.to;
+  const label = Math.round(bracket.rate * 100) + '% bracket';
+  const prev = iraEl.value;
+
+  const taxableAt = v => {
+    iraEl.value = v > 0 ? String(v) : '';
+    calculate();
+    return lastOrdinaryTaxable;
+  };
+
+  if(taxableAt(0) > target){
+    iraEl.value = prev;
+    calculate();
+    resultEl.textContent = 'Taxable income is already above the top of the ' + label + ' (' + fmt(target) + ') before any IRA withdrawal.';
+    return;
+  }
+
+  let lo = 0, hi = Math.max(1000, target);
+  for(let i = 0; i < 30 && taxableAt(hi) <= target; i++){ lo = hi; hi *= 2; }
+  while(hi - lo > 1){
+    const mid = Math.floor((lo + hi) / 2);
+    if(taxableAt(mid) <= target) lo = mid; else hi = mid;
+  }
+  const taxable = taxableAt(lo);
+  resultEl.textContent = lo > 0
+    ? 'An IRA withdrawal of ' + fmt(lo) + ' brings ordinary taxable income to ' + fmt(taxable) + ', the top of the ' + label + '.'
+    : 'No IRA withdrawal fits: taxable income is already at the top of the ' + label + '.';
+}
+
+document.getElementById('solveIraBtn').addEventListener('click', solveIraToBracket);
+
 // ---- Solve for the long-term gain whose sale proceeds cover the tax still owed ----
 // Selling stock at a given cost basis (as a % of proceeds) realizes gain = proceeds x (1 - basis).
 // That gain adds tax of its own, so the amount needed is found by repeating:
@@ -1392,13 +1462,16 @@ function solveLtcg(){
 
 document.getElementById('solveLtcgBtn').addEventListener('click', solveLtcg);
 // Clear the result line once any input changes, since it no longer matches
-document.addEventListener('input', () => { document.getElementById('solveResult').textContent = ''; });
-document.querySelectorAll('.age-btn, .wtype-btn').forEach(b =>
-  b.addEventListener('click', () => { document.getElementById('solveResult').textContent = ''; }));
+const clearSolveResults = () => {
+  document.getElementById('solveResult').textContent = '';
+  document.getElementById('iraSolveResult').textContent = '';
+};
+document.addEventListener('input', clearSolveResults);
+document.querySelectorAll('.age-btn, .wtype-btn').forEach(b => b.addEventListener('click', clearSolveResults));
 
 // ---- Save the entered values to the page URL (after the #) on request ----
 // Click "Save values to URL", then bookmark the page; opening it again refills the form.
-const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr','solveBasis'];
+const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr','solveBasis','bracketSel'];
 let lastHash = location.hash;
 
 function collectState(){
