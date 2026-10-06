@@ -630,6 +630,10 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
           <select id="bracketSel" aria-label="Tax bracket to fill"></select>
           <button type="button" class="tool-btn" id="solveIraBtn">Fill to top of bracket</button>
         </div>
+        <div class="solve-row">
+          <select id="rateSel" aria-label="Effective tax rate to reach"></select>
+          <button type="button" class="tool-btn" id="solveIraRateBtn">Fill to effective rate</button>
+        </div>
         <span class="solve-result" id="iraSolveResult"></span>
       </div>
 
@@ -955,6 +959,7 @@ function renderTable(tbodyId, footId, rows){
 
 let ageOver65 = false;
 let withholdType = 'pct'; // 'pct' or 'amt'
+let lastEffOrdinary = {tax:0, inc:0}; // tax and income for wages + taxable SS + IRA, used by the effective-rate solver
 let lastOrdinaryTaxable = 0; // latest ordinary taxable income, used by the IRA bracket solver
 let lastStillOwed = 0;      // latest "still owed after withholding", used by the LTCG solver
 
@@ -1158,6 +1163,10 @@ function calculate(){
     srcIra:   {inc: pos(ira),               tax: ordLayerTax[4]},
     srcDiv:   {inc: pos(ndiv) + pos(qdiv),  tax: ordLayerTax[2] + qdivOnlyTax + niitDivShare},
     srcGain:  {inc: pos(stcg) + pos(ltcg),  tax: ordLayerTax[3] + ltcgOnlyTax + niitGainShare}
+  };
+  lastEffOrdinary = {
+    tax: srcRows.srcWages.tax + srcRows.srcSs.tax + srcRows.srcIra.tax,
+    inc: srcRows.srcWages.inc + srcRows.srcSs.inc + srcRows.srcIra.inc
   };
   const pct = (t, inc) => inc > 0 ? (t/inc*100).toFixed(1) + '%' : '—';
   for(const [id, r] of Object.entries(srcRows)){
@@ -1442,6 +1451,65 @@ function solveIraToBracket(){
 
 document.getElementById('solveIraBtn').addEventListener('click', solveIraToBracket);
 
+// ---- Solve for the IRA withdrawal that reaches a chosen effective tax rate ----
+// Effective rate here = tax on wages + taxable Social Security + the IRA withdrawal (the matching rows of
+// "Tax by income source") divided by that same income. Dividends and capital gains are left out of both.
+(function(){
+  const sel = document.getElementById('rateSel');
+  for(let p = 15; p <= 22; p++){
+    const o = document.createElement('option');
+    o.value = String(p);
+    o.textContent = p + '% effective';
+    if(p === 20) o.selected = true;
+    sel.appendChild(o);
+  }
+})();
+
+function solveIraToRate(){
+  const iraEl = document.getElementById('ira');
+  const resultEl = document.getElementById('iraSolveResult');
+  let pct = parseFloat(document.getElementById('rateSel').value);
+  if(!isFinite(pct)) pct = 20;
+  const target = pct / 100;
+  const prev = iraEl.value;
+
+  const rateAt = v => {
+    iraEl.value = v > 0 ? String(v) : '';
+    calculate();
+    return lastEffOrdinary.inc > 0 ? lastEffOrdinary.tax / lastEffOrdinary.inc : 0;
+  };
+
+  if(rateAt(0) > target){
+    iraEl.value = prev;
+    calculate();
+    resultEl.textContent = 'The effective rate on wages and Social Security is already above ' + pct + '% before any IRA withdrawal.';
+    return;
+  }
+
+  let lo = 0, hi = 10000, found = false;
+  for(let i = 0; i < 40; i++){
+    if(rateAt(hi) > target){ found = true; break; }
+    lo = hi; hi *= 2;
+  }
+  if(!found){
+    iraEl.value = prev;
+    calculate();
+    resultEl.textContent = 'Could not reach a ' + pct + '% effective rate.';
+    return;
+  }
+  while(hi - lo > 1){
+    const mid = Math.floor((lo + hi) / 2);
+    if(rateAt(mid) <= target) lo = mid; else hi = mid;
+  }
+  const finalRate = rateAt(lo);
+  resultEl.textContent = lo > 0
+    ? 'An IRA withdrawal of ' + fmt(lo) + ' gives an effective rate of ' + (finalRate * 100).toFixed(1) +
+      '% on wages, taxable Social Security and IRA income (dividends and gains excluded).'
+    : 'No IRA withdrawal fits under a ' + pct + '% effective rate.';
+}
+
+document.getElementById('solveIraRateBtn').addEventListener('click', solveIraToRate);
+
 // ---- Solve for the long-term gain whose sale proceeds cover the tax still owed ----
 // Selling stock at a given cost basis (as a % of proceeds) realizes gain = proceeds x (1 - basis).
 // That gain adds tax of its own, so the amount needed is found by repeating:
@@ -1499,7 +1567,7 @@ document.querySelectorAll('.age-btn, .wtype-btn').forEach(b => b.addEventListene
 
 // ---- Save the entered values to the page URL (after the #) on request ----
 // Click "Save values to URL", then bookmark the page; opening it again refills the form.
-const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr','solveBasis','bracketSel'];
+const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr','solveBasis','bracketSel','rateSel'];
 let lastHash = location.hash;
 
 function collectState(){
