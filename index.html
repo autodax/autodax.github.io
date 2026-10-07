@@ -632,7 +632,8 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
         </div>
         <div class="solve-row">
           <select id="rateSel" aria-label="Effective tax rate to reach"></select>
-          <button type="button" class="tool-btn" id="solveIraRateBtn">Fill to effective rate</button>
+          <button type="button" class="tool-btn" id="solveIraRateBtn">Fill incl. IRMAA</button>
+          <button type="button" class="tool-btn" id="solveIraRateNoIrmaaBtn">Fill excl. IRMAA</button>
         </div>
         <span class="solve-result" id="iraSolveResult"></span>
       </div>
@@ -960,7 +961,7 @@ function renderTable(tbodyId, footId, rows){
 
 let ageOver65 = false;
 let withholdType = 'pct'; // 'pct' or 'amt'
-let lastEffOrdinary = {tax:0, inc:0}; // tax (incl. IRMAA) and income for wages + taxable SS + IRA, used by the effective-rate solver
+let lastEffOrdinary = {tax:0, irmaa:0, inc:0}; // tax (without IRMAA), IRMAA, and income for wages + taxable SS + IRA, used by the effective-rate solver
 let lastOrdinaryTaxable = 0; // latest ordinary taxable income, used by the IRA bracket solver
 let lastStillOwed = 0;      // latest "still owed after withholding", used by the LTCG solver
 
@@ -1166,7 +1167,8 @@ function calculate(){
     srcGain:  {inc: pos(stcg) + pos(ltcg),  tax: ordLayerTax[3] + ltcgOnlyTax + niitGainShare}
   };
   lastEffOrdinary = {
-    tax: srcRows.srcWages.tax + srcRows.srcSs.tax + srcRows.srcIra.tax + irmaaAnnual,
+    tax: srcRows.srcWages.tax + srcRows.srcSs.tax + srcRows.srcIra.tax,
+    irmaa: irmaaAnnual,
     inc: srcRows.srcWages.inc + srcRows.srcSs.inc + srcRows.srcIra.inc
   };
   const pct = (t, inc) => inc > 0 ? (t/inc*100).toFixed(1) + '%' : '—';
@@ -1455,8 +1457,8 @@ document.getElementById('solveIraBtn').addEventListener('click', solveIraToBrack
 
 // ---- Solve for the IRA withdrawal that reaches a chosen effective tax rate ----
 // Effective rate here = (tax on wages + taxable Social Security + the IRA withdrawal, plus the IRMAA
-// surcharge) divided by that same income. Dividends and capital gains are left out of both.
-// IRMAA is a fixed amount, so a small IRA makes the rate very high; the rate falls as the IRA grows,
+// surcharge when "incl. IRMAA" is chosen) divided by that same income. Dividends and capital gains are
+// left out of both. With IRMAA, a fixed amount, a small IRA makes the rate very high; the rate falls as the IRA grows,
 // bottoms out, then climbs again with the brackets. The solver finds the lowest point and then the
 // largest withdrawal that still stays at or under the chosen rate.
 (function(){
@@ -1470,19 +1472,21 @@ document.getElementById('solveIraBtn').addEventListener('click', solveIraToBrack
   }
 })();
 
-function solveIraToRate(){
+function solveIraToRate(withIrmaa){
   const iraEl = document.getElementById('ira');
   const resultEl = document.getElementById('iraSolveResult');
   let pct = parseFloat(document.getElementById('rateSel').value);
   if(!isFinite(pct)) pct = 20;
   const target = pct / 100;
   const prev = iraEl.value;
+  const note = withIrmaa ? 'including IRMAA' : 'excluding IRMAA';
 
   const rateAt = v => {
     iraEl.value = v > 0 ? String(v) : '';
     calculate();
     const e = lastEffOrdinary;
-    return e.inc > 0 ? e.tax / e.inc : (e.tax > 0 ? Infinity : 0);
+    const tax = e.tax + (withIrmaa ? e.irmaa : 0);
+    return e.inc > 0 ? tax / e.inc : (tax > 0 ? Infinity : 0);
   };
   const giveUp = msg => {
     iraEl.value = prev;
@@ -1515,9 +1519,9 @@ function solveIraToRate(){
 
   if(rm > target){
     if(pm === 0){
-      giveUp('The effective rate (including IRMAA) is already above ' + pct + '% before any IRA withdrawal.');
+      giveUp('The effective rate (' + note + ') is already above ' + pct + '% before any IRA withdrawal.');
     } else {
-      giveUp('A ' + pct + '% effective rate (including IRMAA) can\'t be reached. The lowest possible is ' +
+      giveUp('A ' + pct + '% effective rate (' + note + ') can\'t be reached. The lowest possible is ' +
         (rm * 100).toFixed(1) + '%, at an IRA withdrawal of about ' + fmt(pm) + '.');
     }
     return;
@@ -1537,11 +1541,12 @@ function solveIraToRate(){
   const finalRate = rateAt(lo);
   resultEl.textContent = lo > 0
     ? 'An IRA withdrawal of ' + fmt(lo) + ' gives an effective rate of ' + (finalRate * 100).toFixed(1) +
-      '% including IRMAA, on wages, taxable Social Security and IRA income (dividends and gains excluded).'
+      '% ' + note + ', on wages, taxable Social Security and IRA income (dividends and gains excluded).'
     : 'No IRA withdrawal fits under a ' + pct + '% effective rate.';
 }
 
-document.getElementById('solveIraRateBtn').addEventListener('click', solveIraToRate);
+document.getElementById('solveIraRateBtn').addEventListener('click', () => solveIraToRate(true));
+document.getElementById('solveIraRateNoIrmaaBtn').addEventListener('click', () => solveIraToRate(false));
 
 // ---- Solve for the long-term gain whose sale proceeds cover the tax still owed ----
 // Selling stock at a given cost basis (as a % of proceeds) realizes gain = proceeds x (1 - basis).
