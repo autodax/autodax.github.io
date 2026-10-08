@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Investment Withdrawal Calculator</title>
+<title>Guyton-Klinger Withdrawal Calculator</title>
 <style>
 :root{--bg:#f3ede4;--card:#faf6ef;--tx:#3d342b;--mut:#8a7d6e;--ac:#a9673f;--bd:#e0d5c4;--bad:#a8473a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#211b17;--card:#2b231e;--tx:#e6dccf;--mut:#a09282;--ac:#d09a6a;--bd:#41372e;--bad:#d9806f}}
@@ -30,6 +30,7 @@ th{position:sticky;top:0;background:var(--card);color:var(--mut);font-weight:600
 svg{width:100%;height:auto;display:block}
 .n{font-size:.78rem;color:var(--mut);margin-top:14px}
 @media(min-width:700px){body{zoom:1.25}}
+.ci{background:var(--bg);border-radius:10px;padding:12px 14px;margin:12px 0}.ci h2{margin:0 0 6px}.ci ol{margin:0;padding-left:20px}.ci li{margin:3px 0}
 .bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
 .bar div{display:flex;gap:8px}
 button{font:inherit;font-size:.85rem;padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
@@ -39,8 +40,8 @@ button:hover{border-color:var(--ac)}
 if(t!=="light"&&t!=="dark"){var h=new Date().getHours();t=(h>=19||h<7)?"dark":"light"}
 document.documentElement.setAttribute("data-theme",t)})();
 </script></head><body><div class="w">
-<div class="bar"><h1>Investment Withdrawal Calculator</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
-<p class="sub">How much can you spend each year and still leave your target estate?</p>
+<div class="bar"><h1>Guyton-Klinger Calculator</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
+<p class="sub">Start with a set withdrawal rate, then let the guardrails raise or cut spending as markets move.</p>
 <div class="g">
 <div class="c">
 <h2>Portfolio</h2>
@@ -51,22 +52,38 @@ document.documentElement.setAttribute("data-theme",t)})();
 <label>Inflation (%)<input id="inflation" type="number" step="0.1" value="3"></label>
 <label>Tax rate on withdrawals (%)<input id="tax" type="number" step="0.1" value="17"></label>
 <label>Plan to age<input id="deathAge" type="number" value="93"></label>
-<label>Estate to leave ($, today's $)<input id="estate" type="number" value="400000"></label>
 </div>
 <h2>Social Security (monthly, today's $)</h2>
 <div class="f">
 <label>Monthly benefit ($)<input id="ssInc" type="number" value="4648"></label>
 <label>Starts at age<input id="ssAge" type="number" value="70"></label>
 </div>
-<h2>Withdrawal strategy</h2>
+<h2>Guyton-Klinger rules</h2>
+<div class="f" style="margin-bottom:10px">
+<label>Mode<select id="mode"><option value="plan">Plan from the start</option><option value="ci">Annual check-in (already retired)</option></select></label><span></span>
+</div>
+<div class="f" id="ciBox" style="display:none;margin-bottom:10px">
+<label>Last year's withdrawal, pre-tax ($)<input id="lastW" type="number" value="115000"></label>
+<label>Last year's portfolio return (%)<input id="lastRet" type="number" step="0.1" value="6"></label>
+<label>Last year's inflation (%)<input id="lastInf" type="number" step="0.1" value="3"></label>
+</div>
 <div class="f">
-<label>Method<select id="strat"><option value="dyn">Dynamic (recalculate yearly)</option><option value="fix">Fixed (set once)</option></select></label><span></span>
-<label>Stress-test return (%/yr)<input id="sRoi" type="number" step="0.1" value="0"></label>
+<label>Initial withdrawal rate (%)<input id="iwr" type="number" step="0.1" value="5"></label>
+<label>Adjustment size (%)<input id="adj" type="number" step="0.5" value="10"></label>
+<label>Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
+<label>Raise if rate is this % below initial<input id="floor" type="number" value="20"></label>
+<label>No cuts in final (years)<input id="noCut" type="number" value="15"></label>
+<label>Skip inflation raise after a down year<select id="skip"><option value="1">Yes</option><option value="0">No</option></select></label>
+</div>
+<h2>Stress test</h2>
+<div class="f">
+<label>Return for early years (%/yr)<input id="sRoi" type="number" step="0.1" value="0"></label>
 <label>For the first (years)<input id="sYrs" type="number" value="0"></label>
 </div>
 </div>
 <div class="c">
-<div style="color:var(--mut);font-size:.85rem">Year-1 spending (after tax)</div>
+<div style="color:var(--mut);font-size:.85rem"><span id="lab">Year-1 spending (after tax)</span></div>
+<div id="ci"></div>
 <div class="big" id="spend">—</div>
 <div style="color:var(--mut);font-size:.85rem;margin-top:10px">Lowest yearly spending on this path</div>
 <div class="big" id="low" style="font-size:1.5rem">—</div>
@@ -80,35 +97,33 @@ document.documentElement.setAttribute("data-theme",t)})();
 </div>
 </div>
 <div class="c" style="margin-top:16px"><h2>Year by year</h2><div class="tw"><table id="tbl"></table></div></div>
-<p class="n">Assumptions: withdrawals happen at the start of each year; Social Security and spending rise with inflation; the tax rate applies only to portfolio withdrawals (enter other income after tax); the estate target is in today's dollars. <b>Dynamic</b> re-solves your spending every year from the current balance, remaining years, and remaining Social Security, so it spends less after a downturn and more after a windfall. <b>Fixed</b> locks in year-1 spending, adjusted only for inflation. Returns are constant at your assumed rate unless you use the stress test (for example, 0% or -10% for the first 3 years). This is an estimate, not financial advice.</p>
+<p class="n">How it works: year 1 withdraws your initial rate times your portfolio. Each later year the withdrawal rises with inflation, except it skips that raise after a losing year when your current rate is above the initial rate. If your current withdrawal rate climbs past the upper guardrail, spending is cut by the adjustment size (no cuts in the final years); if it falls below the lower guardrail, spending is raised. Guyton-Klinger is applied to portfolio withdrawals, and Social Security is added on top (enter it after tax). Withdrawals happen at the start of each year; returns are constant at your assumed rate unless you use the stress test. The tax rate applies to withdrawals. This is an estimate, not financial advice.</p>
 </div>
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat($(id).value)||0;
 const $f=n=>(n<0?"-":"")+"$"+Math.round(Math.abs(n)).toLocaleString();
-function plan(S,p,B,a0){ // assumed-return projection in real terms; returns final balance
-  for(let a=a0;a<p.end;a++){
-    const inc=a>=p.ssA?p.ss:0,gross=Math.max(0,S-inc)/(1-p.tax);
-    B=(B-gross)*(1+p.r);
-  }
-  return B;
-}
-function solve(p,B,a0){ // max constant real spending from age a0 that still ends at the estate target
-  if(plan(0,p,B,a0)<p.est-1)return 0;
-  let lo=0,hi=Math.max(B,1)*2+p.ss;
-  for(let i=0;i<60;i++){const m=(lo+hi)/2;plan(m,p,B,a0)>=p.est?lo=m:hi=m}
-  return lo;
-}
-function path(p,dyn){ // actual path, using stress-test returns for the first N years
-  let B=p.sav,rows=[];const S0=solve(p,B,p.age);
+function path(p){ // Guyton-Klinger in real (today's) dollars
+  const ci=p.ci;let B=p.sav,W=0,rows=[],prevNeg=ci?ci.ret<0:false,dep=null,info=null;
   for(let a=p.age;a<p.end;a++){
-    const i=a-p.age,inc=a>=p.ssA?p.ss:0,S=dyn?solve(p,B,a):S0;
-    const gross=Math.min(Math.max(0,S-inc)/(1-p.tax),Math.max(B,0));
-    const rr=i<p.sYrs?(1+p.sRoi)/(1+p.inf)-1:p.r;
+    const i=a-p.age,inc=a>=p.ssA?p.ss:0;let rule="—";
+    if(B<=0){rows.push({a,start:0,inc,gross:0,spend:inc,end:0,rule:"Out of money"});continue}
+    if(i===0&&!ci)W=p.iwr*B;
+    else{
+      const raised=(i===0)?ci.w*(1+ci.inf):W,held=(i===0)?ci.w:W/(1+p.inf);
+      const sk=p.skip&&prevNeg&&raised/B>p.iwr;
+      W=sk?held:raised;if(sk)rule="Skipped inflation raise";
+      const wr=W/B,noCutNow=p.end-a<=p.noCut;let note="";
+      if(wr>p.iwr*(1+p.ceil)){if(!noCutNow){W*=1-p.adj;rule="Cut "+(p.adj*100)+"%"}else note="above the upper guardrail, but cuts are off in the final "+p.noCut+" years"}
+      else if(wr<p.iwr*(1-p.floor)){W*=1+p.adj;rule="Raise "+(p.adj*100)+"%"}
+      if(i===0)info={last:ci.w,raised,sk,wr,rule,note,final:W};
+    }
+    const gross=Math.min(W,B),rr=i<p.sYrs?(1+p.sRoi)/(1+p.inf)-1:p.r;
     const end=(B-gross)*(1+rr);
-    rows.push({a,start:B,inc,gross,spend:inc+gross*(1-p.tax),end});
-    B=end;
+    if(end<=0&&dep===null)dep=a+1;
+    rows.push({a,start:B,inc,gross,spend:inc+gross*(1-p.tax),end:Math.max(end,0),rule});
+    prevNeg=(1+rr)*(1+p.inf)-1<0;B=Math.max(end,0);
   }
-  return {S0,rows,B};
+  return {rows,B,dep,info};
 }
 function chart(pts,ages,label){
   const W=600,H=200,L=56,Bm=24,mx=Math.max(...pts,1),X=i=>L+i/(pts.length-1)*(W-L-8),Y=y=>H-Bm-Math.max(y,0)/mx*(H-Bm-10);
@@ -121,30 +136,35 @@ function chart(pts,ages,label){
 function run(){
   const inf=v("inflation")/100;
   const p={sav:v("currentSavings"),age:v("currentAge"),end:v("deathAge"),tax:Math.min(v("tax")/100,.95),
-    ss:v("ssInc")*12,ssA:v("ssAge"),est:v("estate"),inf,sRoi:v("sRoi")/100,sYrs:Math.max(0,v("sYrs"))};
+    ss:v("ssInc")*12,ssA:v("ssAge"),inf,sRoi:v("sRoi")/100,sYrs:Math.max(0,v("sYrs")),
+    iwr:v("iwr")/100,adj:v("adj")/100,ceil:v("ceil")/100,floor:v("floor")/100,noCut:v("noCut"),skip:$("skip").value==="1"};
+  const isCi=$("mode").value==="ci";$("ciBox").style.display=isCi?"grid":"none";
+  if(isCi)p.ci={w:v("lastW"),ret:v("lastRet")/100,inf:v("lastInf")/100};
   p.r=(1+v("roi")/100)/(1+inf)-1;
-  if(p.end<=p.age){$("spend").textContent="—";$("low").textContent="—";$("msg").innerHTML='<span class="warn">Plan-to age must be above current age.</span>';return}
-  const dyn=$("strat").value==="dyn",res=path(p,dyn),r=res.rows,y1=r[0],S=res.S0;
-  const ok=plan(0,p,p.sav,p.age)>=p.est-1;
+  if(p.end<=p.age||p.sav<=0){$("spend").textContent="—";$("low").textContent="—";$("msg").innerHTML='<span class="warn">Enter savings and a plan-to age above your current age.</span>';return}
+  const res=path(p),r=res.rows,y1=r[0];
+  $("lab").textContent=isCi?"This year's spending (after tax)":"Year-1 spending (after tax)";
+  const I=res.info,G=p.iwr*100;
+  $("ci").innerHTML=isCi&&I?`<div class="ci"><h2>This year's check-in</h2><ol><li>Last year you withdrew <b>${$f(I.last)}</b>.</li><li>${I.sk?"Inflation raise <b>skipped</b>: last year's return was negative and a raise would put your rate above "+G.toFixed(1)+"%.":"Raised for "+v("lastInf")+"% inflation to <b>"+$f(I.raised)+"</b>."}</li><li>Your current withdrawal rate is <b>${(I.wr*100).toFixed(2)}%</b> of ${$f(y1.start)} (guardrails ${(G*(1-p.floor)).toFixed(1)}%–${(G*(1+p.ceil)).toFixed(1)}%).</li><li>${I.note?"You are "+I.note+", so no cut.":I.rule.startsWith("Cut")?"Above the upper guardrail, so cut "+(p.adj*100)+"%.":I.rule.startsWith("Raise")?"Below the lower guardrail, so raised "+(p.adj*100)+"%.":"Within the guardrails, so no change."}</li><li>Withdraw <b>${$f(I.final)}</b> this year (about ${$f(I.final/12)}/month, ${$f(I.final*(1-p.tax))} after tax).</li></ol><div style="color:var(--mut);font-size:.8rem;margin-top:6px">Next year, enter your new balance and ${$f(I.final)} as last year's withdrawal.</div></div>`:"";
   const real=document.querySelector('input[name=d]:checked').value==="real";
   const f=i=>real?1:Math.pow(1+inf,i);
-  const sp=r.map(x=>x.spend);
-  $("spend").textContent=ok?$f(S)+"/yr":"Not reachable";
-  $("low").textContent=$f(Math.min(...sp.map((x,i)=>x*f(i))))+"/yr";
-  $("kpis").innerHTML=[["Monthly",ok?$f(S/12):"—"],["Year-1 withdrawal (pre-tax)",$f(y1.gross)],["Year-1 withdrawal rate",(p.sav?y1.gross/p.sav*100:0).toFixed(1)+"%"],
-    ["Social Security, yr 1",$f(y1.inc)],["SS first payment (future $/mo)",$f(v("ssInc")*Math.pow(1+inf,Math.max(0,p.ssA-p.age)))],["Real return",(p.r*100).toFixed(2)+"%"],
-    ["Lowest yearly spending",$f(Math.min(...sp.map((x,i)=>x*f(i))))],["Final-year spending",$f(sp[sp.length-1]*f(sp.length-1))],["Ending balance",$f(res.B*f(r.length))]]
+  const sp=r.map((x,i)=>x.spend*f(i)),cnt=k=>r.filter(x=>x.rule.startsWith(k)).length;
+  $("spend").textContent=$f(y1.spend)+"/yr";
+  $("low").textContent=$f(Math.min(...sp))+"/yr";
+  $("kpis").innerHTML=[["Monthly, year 1",$f(y1.spend/12)],["Year-1 withdrawal (pre-tax)",$f(y1.gross)],["Guardrails (rate)",(p.iwr*(1-p.floor)*100).toFixed(1)+"% – "+(p.iwr*(1+p.ceil)*100).toFixed(1)+"%"],
+    ["Cuts / raises / skips",cnt("Cut")+" / "+cnt("Raise")+" / "+cnt("Skipped")],["SS first payment (future $/mo)",$f(v("ssInc")*Math.pow(1+inf,Math.max(0,p.ssA-p.age)))],["Real return",(p.r*100).toFixed(2)+"%"],
+    ["Final-year spending",$f(sp[sp.length-1])],["Ending balance",$f(res.B*f(r.length))],["Money lasts to",res.dep?"Age "+res.dep:"Age "+p.end+"+"]]
     .map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
-  $("msg").innerHTML=ok?"":'<span class="warn">Your income and estate target already exceed what the portfolio can support; even with zero spending the balance cannot reach the target.</span>';
-  $("tbl").innerHTML="<tr><th>Age</th><th>Start balance</th><th>Social Security</th><th>Withdrawal (gross)</th><th>Spending (net)</th><th>End balance</th></tr>"+
-    r.map((x,i)=>{const k=f(i);return `<tr><td>${x.a}</td><td>${$f(x.start*k)}</td><td>${$f(x.inc*k)}</td><td>${$f(x.gross*k)}</td><td>${$f(x.spend*k)}</td><td>${$f(x.end*f(i+1))}</td></tr>`}).join("");
+  $("msg").innerHTML=res.dep?`<span class="warn">The portfolio runs out at age ${res.dep}. Try a lower initial rate or a smaller stress test.</span>`:"";
+  $("tbl").innerHTML="<tr><th>Age</th><th>Start balance</th><th>Social Security</th><th>Withdrawal (gross)</th><th>Spending (net)</th><th>End balance</th><th>Guardrail</th></tr>"+
+    r.map((x,i)=>{const k=f(i);return `<tr><td>${x.a}</td><td>${$f(x.start*k)}</td><td>${$f(x.inc*k)}</td><td>${$f(x.gross*k)}</td><td>${$f(x.spend*k)}</td><td>${$f(x.end*f(i+1))}</td><td>${x.rule}</td></tr>`}).join("");
   const ages=[p.age,...r.map(x=>x.a+1)];
   $("chart").innerHTML=chart([r[0].start,...r.map((x,i)=>x.end*f(i+1))],ages,"Portfolio balance by age");
-  $("chart2").innerHTML=chart(sp.map((x,i)=>x*f(i)),r.map(x=>x.a),"Yearly spending by age");
+  $("chart2").innerHTML=chart(sp,r.map(x=>x.a),"Yearly spending by age");
 }
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",run));
 const q=new URLSearchParams(location.search);
-for(const[k,id]of Object.entries({currentSavings:"currentSavings",currentAge:"currentAge",roi:"roi",inflation:"inflation",retirementIncomeTaxRate:"tax",ssAge:"ssAge",socialSecurityIncome:"ssInc",deathAge:"deathAge",estateSize:"estate",strat:"strat",stressRoi:"sRoi",stressYears:"sYrs"}))if(q.has(k))$(id).value=id==="ssInc"?Math.round(q.get(k)/12):q.get(k);
+for(const[k,id]of Object.entries({currentSavings:"currentSavings",currentAge:"currentAge",roi:"roi",inflation:"inflation",retirementIncomeTaxRate:"tax",ssAge:"ssAge",socialSecurityIncome:"ssInc",deathAge:"deathAge",initialRate:"iwr",adjustment:"adj",upperTrigger:"ceil",lowerTrigger:"floor",noCutYears:"noCut",skipRule:"skip",stressRoi:"sRoi",stressYears:"sYrs",mode:"mode",lastWithdrawal:"lastW",lastReturn:"lastRet",lastInflation:"lastInf"}))if(q.has(k))$(id).value=id==="ssInc"?Math.round(q.get(k)/12):q.get(k);
 run();
 const root=document.documentElement,tb=$("theme");
 function label(){tb.textContent=root.getAttribute("data-theme")==="dark"?"☀ Light mode":"🌙 Dark mode"}
@@ -153,7 +173,7 @@ tb.onclick=()=>{const n=root.getAttribute("data-theme")==="dark"?"light":"dark";
 function buildUrl(){
   const u=new URL(location.href);u.search="";u.hash="";
   const m={currentSavings:v("currentSavings"),currentAge:v("currentAge"),roi:v("roi"),inflation:v("inflation"),retirementIncomeTaxRate:v("tax"),
-    ssAge:v("ssAge"),socialSecurityIncome:v("ssInc")*12,deathAge:v("deathAge"),estateSize:v("estate"),strat:$("strat").value,stressRoi:v("sRoi"),stressYears:v("sYrs")};
+    ssAge:v("ssAge"),socialSecurityIncome:v("ssInc")*12,deathAge:v("deathAge"),initialRate:v("iwr"),adjustment:v("adj"),upperTrigger:v("ceil"),lowerTrigger:v("floor"),noCutYears:v("noCut"),skipRule:$("skip").value,stressRoi:v("sRoi"),stressYears:v("sYrs"),mode:$("mode").value,lastWithdrawal:v("lastW"),lastReturn:v("lastRet"),lastInflation:v("lastInf")};
   for(const k in m)u.searchParams.set(k,m[k]);
   return u.toString();
 }
