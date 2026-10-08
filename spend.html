@@ -21,7 +21,7 @@ button:hover{border-color:var(--ac)}
 h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 8px}h2:first-child{margin-top:0}
 .big{font-size:2.3rem;font-weight:700;color:var(--ac);line-height:1.2}
 ol{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
-details{margin-top:14px}summary{cursor:pointer;color:var(--mut);font-size:.85rem}
+details{margin-top:14px}details.c p,details.c li{font-size:.9rem}summary{cursor:pointer;color:var(--mut);font-size:.85rem}
 .n{font-size:.78rem;color:var(--mut);margin-top:14px}.warn{color:var(--bad);font-weight:600}
 </style><script>
 (function(){var t=null;try{t=localStorage.getItem("wc-theme")}catch(e){}
@@ -44,7 +44,7 @@ document.documentElement.setAttribute("data-theme",t)})();
 <label>Amount you took from the portfolio last year ($)<input id="lastW" type="number" value="115000"></label>
 </div>
 <details><summary>Advanced settings</summary><div class="f" style="margin-top:10px">
-<label>Initial withdrawal rate (%)<input id="iwr" type="number" step="0.1" value="5"></label>
+<label>Initial withdrawal rate (%) <span style="opacity:.8">(about 5% is typical)</span><input id="iwr" type="number" step="0.1" value="5"></label>
 <label>Plan to age<input id="end" type="number" value="93"></label>
 <label>Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
 <label>Raise if rate is this % below initial<input id="floor" type="number" value="20"></label>
@@ -54,6 +54,16 @@ document.documentElement.setAttribute("data-theme",t)})();
 </div></details>
 </div>
 <div class="c" id="out"></div>
+<details class="c" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind Guyton-Klinger</summary>
+<p>A fixed rule like "withdraw 4% and add inflation forever" has to be cautious enough to survive the worst markets in history, so in most outcomes it leaves a lot unspent. Guyton-Klinger makes a trade: <b>start higher, and agree to adjust if things go badly</b>.</p>
+<ul style="padding-left:20px;margin:6px 0">
+<li><b>Start at about 5%.</b> The typical starting point is around 5% of your balance in the first year (the original research looked at roughly 5% to 5.5% with a stock-heavy portfolio), compared with the 4% rule.</li>
+<li><b>Inflation raises by default.</b> Your spending power is protected in ordinary years, except after a down year when your rate is already above the starting rate.</li>
+<li><b>Guardrails keep the rate in a band.</b> If a falling balance pushes your withdrawal rate 20% above the start (about 6%), you cut spending 10%. If a rising balance pulls it 20% below (about 4%), you give yourself a 10% raise.</li>
+<li><b>Cuts stop late in life,</b> because with few years left a cut helps little.</li>
+</ul>
+<p>The cost is that income is not guaranteed. In a bad stretch you may take a few modest cuts, so this works best if you have some flexibility in spending. The benefit is a higher starting income and a plan that responds to what the markets actually do, rather than one set in stone.</p></details>
+
 <p class="n">Last year's withdrawal is needed because Guyton-Klinger adjusts what you took last year rather than starting fresh. Use the amount taken from the portfolio only (not Social Security), before tax, and next year enter this year's result. Enter Social Security in today's dollars; it is applied to your spending first so your portfolio covers the rest. This is an estimate, not financial advice.</p>
 </div>
 <script>
