@@ -15,7 +15,7 @@ h1{font-size:1.5rem;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 18px}
 .c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
 .f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 label{display:block;font-size:.78rem;color:var(--mut)}
-input{width:100%;box-sizing:border-box;margin-top:3px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+input,select{width:100%;box-sizing:border-box;margin-top:3px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
 h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 8px}h2:first-child{margin-top:0}
 .big{font-size:2rem;font-weight:700;color:var(--ac)}
 .k{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
@@ -58,67 +58,93 @@ document.documentElement.setAttribute("data-theme",t)})();
 <label>Monthly benefit ($)<input id="ssInc" type="number" value="4648"></label>
 <label>Starts at age<input id="ssAge" type="number" value="70"></label>
 </div>
+<h2>Withdrawal strategy</h2>
+<div class="f">
+<label>Method<select id="strat"><option value="dyn">Dynamic (recalculate yearly)</option><option value="fix">Fixed (set once)</option></select></label><span></span>
+<label>Stress-test return (%/yr)<input id="sRoi" type="number" step="0.1" value="0"></label>
+<label>For the first (years)<input id="sYrs" type="number" value="0"></label>
+</div>
 </div>
 <div class="c">
-<div style="color:var(--mut);font-size:.85rem">Sustainable yearly spending (after tax)</div>
+<div style="color:var(--mut);font-size:.85rem">Year-1 spending (after tax)</div>
 <div class="big" id="spend">—</div>
+<div style="color:var(--mut);font-size:.85rem;margin-top:10px">Lowest yearly spending on this path</div>
+<div class="big" id="low" style="font-size:1.5rem">—</div>
 <div class="k" id="kpis"></div>
 <div id="msg" style="margin-top:10px"></div>
 <h2 style="margin-top:16px">Portfolio balance</h2>
 <div id="chart"></div>
+<h2 style="margin-top:16px">Yearly spending (after tax)</h2>
+<div id="chart2"></div>
 <div class="t"><label><input type="radio" name="d" value="real" checked> Today's dollars</label><label><input type="radio" name="d" value="nom"> Future dollars</label></div>
 </div>
 </div>
 <div class="c" style="margin-top:16px"><h2>Year by year</h2><div class="tw"><table id="tbl"></table></div></div>
-<p class="n">Assumptions: withdrawals happen at the start of each year; Social Security and spending rise with inflation; the tax rate applies only to portfolio withdrawals (enter other income after tax); the estate target is in today's dollars. This is an estimate with constant returns, not financial advice, and real markets are bumpy.</p>
+<p class="n">Assumptions: withdrawals happen at the start of each year; Social Security and spending rise with inflation; the tax rate applies only to portfolio withdrawals (enter other income after tax); the estate target is in today's dollars. <b>Dynamic</b> re-solves your spending every year from the current balance, remaining years, and remaining Social Security, so it spends less after a downturn and more after a windfall. <b>Fixed</b> locks in year-1 spending, adjusted only for inflation. Returns are constant at your assumed rate unless you use the stress test (for example, 0% or -10% for the first 3 years). This is an estimate, not financial advice.</p>
 </div>
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat($(id).value)||0;
 const $f=n=>(n<0?"-":"")+"$"+Math.round(Math.abs(n)).toLocaleString();
-function sim(S,p){ // real terms
-  let B=p.sav,rows=[];
-  for(let a=p.age;a<p.end;a++){
-    const inc=(a>=p.ssA?p.ss:0);
-    const net=Math.max(0,S-inc),gross=net/(1-p.tax);
-    rows.push({a,start:B,inc,gross,spend:Math.max(S,inc)});
+function plan(S,p,B,a0){ // assumed-return projection in real terms; returns final balance
+  for(let a=a0;a<p.end;a++){
+    const inc=a>=p.ssA?p.ss:0,gross=Math.max(0,S-inc)/(1-p.tax);
     B=(B-gross)*(1+p.r);
-    rows[rows.length-1].end=B;
   }
-  return {B,rows};
+  return B;
 }
-function run(){
-  const p={sav:v("currentSavings"),age:v("currentAge"),end:v("deathAge"),tax:Math.min(v("tax")/100,.95),
-    ss:v("ssInc")*12,ssA:v("ssAge"),est:v("estate")};
-  const inf=v("inflation")/100;p.r=(1+v("roi")/100)/(1+inf)-1;
-  if(p.end<=p.age){$("spend").textContent="—";$("msg").innerHTML='<span class="warn">Plan-to age must be above current age.</span>';return}
-  let lo=0,hi=Math.max(p.sav,1)*2+p.ss;
-  for(let i=0;i<80;i++){const m=(lo+hi)/2;sim(m,p).B>=p.est?lo=m:hi=m}
-  let S=lo,res=sim(S,p);
-  const ok=res.B>=p.est-1;
-  if(!ok){S=0;res=sim(0,p)}
-  const r=res.rows,y1=r[0],real=document.querySelector('input[name=d]:checked').value==="real";
-  const f=i=>real?1:Math.pow(1+inf,i);
-  $("spend").textContent=ok?$f(S)+"/yr":"Not reachable";
-  $("kpis").innerHTML=[["Monthly",ok?$f(S/12):"—"],["Year-1 withdrawal (pre-tax)",$f(y1.gross)],["Year-1 withdrawal rate",(p.sav?y1.gross/p.sav*100:0).toFixed(1)+"%"],
-    ["Social Security, yr 1",$f(y1.inc)],["SS first payment (future $/mo)",$f(v("ssInc")*Math.pow(1+inf,Math.max(0,p.ssA-p.age)))],["Real return",(p.r*100).toFixed(2)+"%"],["Ending balance",$f(res.B*Math.pow(1+inf,p.end-p.age)*(real?1/Math.pow(1+inf,p.end-p.age):1))]]
-    .map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
-  $("msg").innerHTML=ok?"":'<span class="warn">Your income and estate target already exceed what the portfolio can support; even with zero spending the balance cannot reach the target.</span>';
-  // table
-  $("tbl").innerHTML="<tr><th>Age</th><th>Start balance</th><th>Social Security</th><th>Withdrawal (gross)</th><th>Spending (net)</th><th>End balance</th></tr>"+
-    r.map((x,i)=>{const k=f(i);return `<tr><td>${x.a}</td><td>${$f(x.start*k)}</td><td>${$f(x.inc*k)}</td><td>${$f(x.gross*k)}</td><td>${$f(x.spend*k)}</td><td>${$f(x.end*f(i+1))}</td></tr>`}).join("");
-  // chart
-  const pts=[r[0].start*f(0),...r.map((x,i)=>x.end*f(i+1))],ages=[p.age,...r.map(x=>x.a+1)];
-  const W=600,H=220,L=56,Bm=24,mx=Math.max(...pts,1),X=i=>L+i/(pts.length-1)*(W-L-8),Y=y=>H-Bm-Math.max(y,0)/mx*(H-Bm-10);
-  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Portfolio balance by age">`;
+function solve(p,B,a0){ // max constant real spending from age a0 that still ends at the estate target
+  if(plan(0,p,B,a0)<p.est-1)return 0;
+  let lo=0,hi=Math.max(B,1)*2+p.ss;
+  for(let i=0;i<60;i++){const m=(lo+hi)/2;plan(m,p,B,a0)>=p.est?lo=m:hi=m}
+  return lo;
+}
+function path(p,dyn){ // actual path, using stress-test returns for the first N years
+  let B=p.sav,rows=[];const S0=solve(p,B,p.age);
+  for(let a=p.age;a<p.end;a++){
+    const i=a-p.age,inc=a>=p.ssA?p.ss:0,S=dyn?solve(p,B,a):S0;
+    const gross=Math.min(Math.max(0,S-inc)/(1-p.tax),Math.max(B,0));
+    const rr=i<p.sYrs?(1+p.sRoi)/(1+p.inf)-1:p.r;
+    const end=(B-gross)*(1+rr);
+    rows.push({a,start:B,inc,gross,spend:inc+gross*(1-p.tax),end});
+    B=end;
+  }
+  return {S0,rows,B};
+}
+function chart(pts,ages,label){
+  const W=600,H=200,L=56,Bm=24,mx=Math.max(...pts,1),X=i=>L+i/(pts.length-1)*(W-L-8),Y=y=>H-Bm-Math.max(y,0)/mx*(H-Bm-10);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">`;
   for(let i=0;i<=4;i++){const y=mx*i/4;s+=`<line x1="${L}" x2="${W-8}" y1="${Y(y)}" y2="${Y(y)}" stroke="var(--bd)"/><text x="${L-6}" y="${Y(y)+4}" text-anchor="end" font-size="10" fill="var(--mut)">$${y>=1e6?(y/1e6).toFixed(1)+"M":Math.round(y/1e3)+"k"}</text>`}
   const step=Math.ceil(pts.length/8);
   pts.forEach((_,i)=>{if(i%step===0)s+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--mut)">${ages[i]}</text>`});
-  s+=`<polyline fill="none" stroke="var(--ac)" stroke-width="2.5" points="${pts.map((y,i)=>X(i)+","+Y(y)).join(" ")}"/></svg>`;
-  $("chart").innerHTML=s;
+  return s+`<polyline fill="none" stroke="var(--ac)" stroke-width="2.5" points="${pts.map((y,i)=>X(i)+","+Y(y)).join(" ")}"/></svg>`;
 }
-document.querySelectorAll("input").forEach(e=>e.addEventListener("input",run));
+function run(){
+  const inf=v("inflation")/100;
+  const p={sav:v("currentSavings"),age:v("currentAge"),end:v("deathAge"),tax:Math.min(v("tax")/100,.95),
+    ss:v("ssInc")*12,ssA:v("ssAge"),est:v("estate"),inf,sRoi:v("sRoi")/100,sYrs:Math.max(0,v("sYrs"))};
+  p.r=(1+v("roi")/100)/(1+inf)-1;
+  if(p.end<=p.age){$("spend").textContent="—";$("low").textContent="—";$("msg").innerHTML='<span class="warn">Plan-to age must be above current age.</span>';return}
+  const dyn=$("strat").value==="dyn",res=path(p,dyn),r=res.rows,y1=r[0],S=res.S0;
+  const ok=plan(0,p,p.sav,p.age)>=p.est-1;
+  const real=document.querySelector('input[name=d]:checked').value==="real";
+  const f=i=>real?1:Math.pow(1+inf,i);
+  const sp=r.map(x=>x.spend);
+  $("spend").textContent=ok?$f(S)+"/yr":"Not reachable";
+  $("low").textContent=$f(Math.min(...sp.map((x,i)=>x*f(i))))+"/yr";
+  $("kpis").innerHTML=[["Monthly",ok?$f(S/12):"—"],["Year-1 withdrawal (pre-tax)",$f(y1.gross)],["Year-1 withdrawal rate",(p.sav?y1.gross/p.sav*100:0).toFixed(1)+"%"],
+    ["Social Security, yr 1",$f(y1.inc)],["SS first payment (future $/mo)",$f(v("ssInc")*Math.pow(1+inf,Math.max(0,p.ssA-p.age)))],["Real return",(p.r*100).toFixed(2)+"%"],
+    ["Lowest yearly spending",$f(Math.min(...sp.map((x,i)=>x*f(i))))],["Final-year spending",$f(sp[sp.length-1]*f(sp.length-1))],["Ending balance",$f(res.B*f(r.length))]]
+    .map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
+  $("msg").innerHTML=ok?"":'<span class="warn">Your income and estate target already exceed what the portfolio can support; even with zero spending the balance cannot reach the target.</span>';
+  $("tbl").innerHTML="<tr><th>Age</th><th>Start balance</th><th>Social Security</th><th>Withdrawal (gross)</th><th>Spending (net)</th><th>End balance</th></tr>"+
+    r.map((x,i)=>{const k=f(i);return `<tr><td>${x.a}</td><td>${$f(x.start*k)}</td><td>${$f(x.inc*k)}</td><td>${$f(x.gross*k)}</td><td>${$f(x.spend*k)}</td><td>${$f(x.end*f(i+1))}</td></tr>`}).join("");
+  const ages=[p.age,...r.map(x=>x.a+1)];
+  $("chart").innerHTML=chart([r[0].start,...r.map((x,i)=>x.end*f(i+1))],ages,"Portfolio balance by age");
+  $("chart2").innerHTML=chart(sp.map((x,i)=>x*f(i)),r.map(x=>x.a),"Yearly spending by age");
+}
+document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",run));
 const q=new URLSearchParams(location.search);
-for(const[k,id]of Object.entries({currentSavings:"currentSavings",currentAge:"currentAge",roi:"roi",inflation:"inflation",retirementIncomeTaxRate:"tax",ssAge:"ssAge",socialSecurityIncome:"ssInc",deathAge:"deathAge",estateSize:"estate"}))if(q.has(k))$(id).value=id==="ssInc"?Math.round(q.get(k)/12):q.get(k);
+for(const[k,id]of Object.entries({currentSavings:"currentSavings",currentAge:"currentAge",roi:"roi",inflation:"inflation",retirementIncomeTaxRate:"tax",ssAge:"ssAge",socialSecurityIncome:"ssInc",deathAge:"deathAge",estateSize:"estate",strat:"strat",stressRoi:"sRoi",stressYears:"sYrs"}))if(q.has(k))$(id).value=id==="ssInc"?Math.round(q.get(k)/12):q.get(k);
 run();
 const root=document.documentElement,tb=$("theme");
 function label(){tb.textContent=root.getAttribute("data-theme")==="dark"?"☀ Light mode":"🌙 Dark mode"}
@@ -127,7 +153,7 @@ tb.onclick=()=>{const n=root.getAttribute("data-theme")==="dark"?"light":"dark";
 function buildUrl(){
   const u=new URL(location.href);u.search="";u.hash="";
   const m={currentSavings:v("currentSavings"),currentAge:v("currentAge"),roi:v("roi"),inflation:v("inflation"),retirementIncomeTaxRate:v("tax"),
-    ssAge:v("ssAge"),socialSecurityIncome:v("ssInc")*12,deathAge:v("deathAge"),estateSize:v("estate")};
+    ssAge:v("ssAge"),socialSecurityIncome:v("ssInc")*12,deathAge:v("deathAge"),estateSize:v("estate"),strat:$("strat").value,stressRoi:v("sRoi"),stressYears:v("sYrs")};
   for(const k in m)u.searchParams.set(k,m[k]);
   return u.toString();
 }
