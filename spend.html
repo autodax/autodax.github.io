@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Investment Withdrawal Calculator</title>
+<style>
+:root{--bg:#f3ede4;--card:#faf6ef;--tx:#3d342b;--mut:#8a7d6e;--ac:#a9673f;--bd:#e0d5c4;--bad:#a8473a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#211b17;--card:#2b231e;--tx:#e6dccf;--mut:#a09282;--ac:#d09a6a;--bd:#41372e;--bad:#d9806f}}
+:root[data-theme="dark"]{--bg:#211b17;--card:#2b231e;--tx:#e6dccf;--mut:#a09282;--ac:#d09a6a;--bd:#41372e;--bad:#d9806f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+.w{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 18px}
+.g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px}
+@media(max-width:760px){.g{grid-template-columns:1fr}}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:.78rem;color:var(--mut)}
+input{width:100%;box-sizing:border-box;margin-top:3px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 8px}h2:first-child{margin-top:0}
+.big{font-size:2rem;font-weight:700;color:var(--ac)}
+.k{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+@media(max-width:480px){.k{grid-template-columns:1fr 1fr}}
+.k div{background:var(--bg);border-radius:8px;padding:8px 10px}.k b{display:block;font-size:1.05rem}.k span{font-size:.72rem;color:var(--mut)}
+.warn{color:var(--bad);font-weight:600}
+.tw{overflow-x:auto;max-height:340px;overflow-y:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:.82rem;white-space:nowrap}
+th,td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--bd)}th:first-child,td:first-child{text-align:left}
+th{position:sticky;top:0;background:var(--card);color:var(--mut);font-weight:600}
+.t{display:flex;gap:14px;align-items:center;margin-top:12px;font-size:.85rem}.t label{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--tx)}.t input{width:auto;margin:0}
+svg{width:100%;height:auto;display:block}
+.n{font-size:.78rem;color:var(--mut);margin-top:14px}
+@media(min-width:700px){body{zoom:1.25}}
+.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
+.bar div{display:flex;gap:8px}
+button{font:inherit;font-size:.85rem;padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+button:hover{border-color:var(--ac)}
+</style><script>
+(function(){var t=null;try{t=localStorage.getItem("wc-theme")}catch(e){}
+if(t!=="light"&&t!=="dark"){var h=new Date().getHours();t=(h>=19||h<7)?"dark":"light"}
+document.documentElement.setAttribute("data-theme",t)})();
+</script></head><body><div class="w">
+<div class="bar"><h1>Investment Withdrawal Calculator</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
+<p class="sub">How much can you spend each year and still leave your target estate?</p>
+<div class="g">
+<div class="c">
+<h2>Portfolio</h2>
+<div class="f">
+<label>Current savings ($)<input id="currentSavings" type="number" value="2300000"></label>
+<label>Current age<input id="currentAge" type="number" value="60"></label>
+<label>Return on investment (%)<input id="roi" type="number" step="0.1" value="6"></label>
+<label>Inflation (%)<input id="inflation" type="number" step="0.1" value="3"></label>
+<label>Tax rate on withdrawals (%)<input id="tax" type="number" step="0.1" value="17"></label>
+<label>Plan to age<input id="deathAge" type="number" value="93"></label>
+<label>Estate to leave ($, today's $)<input id="estate" type="number" value="400000"></label>
+</div>
+<h2>Social Security (monthly, today's $)</h2>
+<div class="f">
+<label>Monthly benefit ($)<input id="ssInc" type="number" value="4648"></label>
+<label>Starts at age<input id="ssAge" type="number" value="70"></label>
+</div>
+</div>
+<div class="c">
+<div style="color:var(--mut);font-size:.85rem">Sustainable yearly spending (after tax)</div>
+<div class="big" id="spend">—</div>
+<div class="k" id="kpis"></div>
+<div id="msg" style="margin-top:10px"></div>
+<h2 style="margin-top:16px">Portfolio balance</h2>
+<div id="chart"></div>
+<div class="t"><label><input type="radio" name="d" value="real" checked> Today's dollars</label><label><input type="radio" name="d" value="nom"> Future dollars</label></div>
+</div>
+</div>
+<div class="c" style="margin-top:16px"><h2>Year by year</h2><div class="tw"><table id="tbl"></table></div></div>
+<p class="n">Assumptions: withdrawals happen at the start of each year; Social Security and spending rise with inflation; the tax rate applies only to portfolio withdrawals (enter other income after tax); the estate target is in today's dollars. This is an estimate with constant returns, not financial advice, and real markets are bumpy.</p>
+</div>
+<script>
+const $=id=>document.getElementById(id),v=id=>parseFloat($(id).value)||0;
+const $f=n=>(n<0?"-":"")+"$"+Math.round(Math.abs(n)).toLocaleString();
+function sim(S,p){ // real terms
+  let B=p.sav,rows=[];
+  for(let a=p.age;a<p.end;a++){
+    const inc=(a>=p.ssA?p.ss:0);
+    const net=Math.max(0,S-inc),gross=net/(1-p.tax);
+    rows.push({a,start:B,inc,gross,spend:Math.max(S,inc)});
+    B=(B-gross)*(1+p.r);
+    rows[rows.length-1].end=B;
+  }
+  return {B,rows};
+}
+function run(){
+  const p={sav:v("currentSavings"),age:v("currentAge"),end:v("deathAge"),tax:Math.min(v("tax")/100,.95),
+    ss:v("ssInc")*12,ssA:v("ssAge"),est:v("estate")};
+  const inf=v("inflation")/100;p.r=(1+v("roi")/100)/(1+inf)-1;
+  if(p.end<=p.age){$("spend").textContent="—";$("msg").innerHTML='<span class="warn">Plan-to age must be above current age.</span>';return}
+  let lo=0,hi=Math.max(p.sav,1)*2+p.ss;
+  for(let i=0;i<80;i++){const m=(lo+hi)/2;sim(m,p).B>=p.est?lo=m:hi=m}
+  let S=lo,res=sim(S,p);
+  const ok=res.B>=p.est-1;
+  if(!ok){S=0;res=sim(0,p)}
+  const r=res.rows,y1=r[0],real=document.querySelector('input[name=d]:checked').value==="real";
+  const f=i=>real?1:Math.pow(1+inf,i);
+  $("spend").textContent=ok?$f(S)+"/yr":"Not reachable";
+  $("kpis").innerHTML=[["Monthly",ok?$f(S/12):"—"],["Year-1 withdrawal (pre-tax)",$f(y1.gross)],["Year-1 withdrawal rate",(p.sav?y1.gross/p.sav*100:0).toFixed(1)+"%"],
+    ["Social Security, yr 1",$f(y1.inc)],["SS first payment (future $/mo)",$f(v("ssInc")*Math.pow(1+inf,Math.max(0,p.ssA-p.age)))],["Real return",(p.r*100).toFixed(2)+"%"],["Ending balance",$f(res.B*Math.pow(1+inf,p.end-p.age)*(real?1/Math.pow(1+inf,p.end-p.age):1))]]
+    .map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
+  $("msg").innerHTML=ok?"":'<span class="warn">Your income and estate target already exceed what the portfolio can support; even with zero spending the balance cannot reach the target.</span>';
+  // table
+  $("tbl").innerHTML="<tr><th>Age</th><th>Start balance</th><th>Social Security</th><th>Withdrawal (gross)</th><th>Spending (net)</th><th>End balance</th></tr>"+
+    r.map((x,i)=>{const k=f(i);return `<tr><td>${x.a}</td><td>${$f(x.start*k)}</td><td>${$f(x.inc*k)}</td><td>${$f(x.gross*k)}</td><td>${$f(x.spend*k)}</td><td>${$f(x.end*f(i+1))}</td></tr>`}).join("");
+  // chart
+  const pts=[r[0].start*f(0),...r.map((x,i)=>x.end*f(i+1))],ages=[p.age,...r.map(x=>x.a+1)];
+  const W=600,H=220,L=56,Bm=24,mx=Math.max(...pts,1),X=i=>L+i/(pts.length-1)*(W-L-8),Y=y=>H-Bm-Math.max(y,0)/mx*(H-Bm-10);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Portfolio balance by age">`;
+  for(let i=0;i<=4;i++){const y=mx*i/4;s+=`<line x1="${L}" x2="${W-8}" y1="${Y(y)}" y2="${Y(y)}" stroke="var(--bd)"/><text x="${L-6}" y="${Y(y)+4}" text-anchor="end" font-size="10" fill="var(--mut)">$${y>=1e6?(y/1e6).toFixed(1)+"M":Math.round(y/1e3)+"k"}</text>`}
+  const step=Math.ceil(pts.length/8);
+  pts.forEach((_,i)=>{if(i%step===0)s+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--mut)">${ages[i]}</text>`});
+  s+=`<polyline fill="none" stroke="var(--ac)" stroke-width="2.5" points="${pts.map((y,i)=>X(i)+","+Y(y)).join(" ")}"/></svg>`;
+  $("chart").innerHTML=s;
+}
+document.querySelectorAll("input").forEach(e=>e.addEventListener("input",run));
+const q=new URLSearchParams(location.search);
+for(const[k,id]of Object.entries({currentSavings:"currentSavings",currentAge:"currentAge",roi:"roi",inflation:"inflation",retirementIncomeTaxRate:"tax",ssAge:"ssAge",socialSecurityIncome:"ssInc",deathAge:"deathAge",estateSize:"estate"}))if(q.has(k))$(id).value=id==="ssInc"?Math.round(q.get(k)/12):q.get(k);
+run();
+const root=document.documentElement,tb=$("theme");
+function label(){tb.textContent=root.getAttribute("data-theme")==="dark"?"☀ Light mode":"🌙 Dark mode"}
+label();
+tb.onclick=()=>{const n=root.getAttribute("data-theme")==="dark"?"light":"dark";root.setAttribute("data-theme",n);try{localStorage.setItem("wc-theme",n)}catch(e){}label()};
+function buildUrl(){
+  const u=new URL(location.href);u.search="";u.hash="";
+  const m={currentSavings:v("currentSavings"),currentAge:v("currentAge"),roi:v("roi"),inflation:v("inflation"),retirementIncomeTaxRate:v("tax"),
+    ssAge:v("ssAge"),socialSecurityIncome:v("ssInc")*12,deathAge:v("deathAge"),estateSize:v("estate")};
+  for(const k in m)u.searchParams.set(k,m[k]);
+  return u.toString();
+}
+$("copy").onclick=async()=>{
+  const url=buildUrl();let ok=false;
+  try{history.replaceState(null,"",url)}catch(e){}
+  try{await navigator.clipboard.writeText(url);ok=true}catch(e){
+    try{const t=document.createElement("textarea");t.value=url;t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();ok=document.execCommand("copy");t.remove()}catch(e2){}
+  }
+  const b=$("copy");b.textContent=ok?"Copied ✓":"Copy failed";
+  if(!ok)prompt("Copy this link:",url);
+  setTimeout(()=>b.textContent="Copy link",1800);
+};
+</script></body></html>
