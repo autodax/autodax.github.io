@@ -75,15 +75,21 @@ function run(){
   else if(wr<lo){W*=1+adj;res=`Below the lower guardrail (${(lo*100).toFixed(1)}%), so raised ${(adj*100)}%.`}
   else res=`Within the guardrails (${(lo*100).toFixed(1)}% to ${(hi*100).toFixed(1)}%), so no change.`;
   W=Math.min(W,B);
+  const W0=sk?Math.max(0,Tlast-ssNow):raisedW,cutBelow=W0/hi,raiseAbove=W0/lo;
   const ssTxt=ssNow?`Social Security of <b>${$f(ssNow)}</b> a year is now coming in`:(ssA>age?`Social Security starts at ${ssA}`:"No Social Security entered");
   o.innerHTML=`<div style="color:var(--mut);font-size:.85rem">Take from your portfolio this year</div>
 <div class="big">${$f(W)}</div>
 <div>about <b>${$f(W/12)}</b> a month, before tax${ssNow?`. With Social Security, total income is about <b>${$f(W+ssNow)}</b> a year.`:"."}</div>
 <h2 style="margin-top:16px">How it was figured</h2><ol>
 <li>Last year's spending: ${$f(lastW)} from the portfolio${ssPrev?` plus ${$f(ssPrev)} Social Security`:""} = <b>${$f(Tlast)}</b>.</li>
-<li>${sk?`Inflation raise <b>skipped</b>, because last year's growth was negative and a raise would put your rate above ${(iwr*100).toFixed(1)}%.`:`Raised by ${(inf*100).toFixed(1)}% inflation to <b>${$f(Traised)}</b>.`}</li>
+<li>${sk?`Last year's growth was <b>${(ret*100).toFixed(1)}%</b> and a raise would put your rate above ${(iwr*100).toFixed(1)}%, so the inflation raise was <b>skipped</b>.`:`Raised by ${(inf*100).toFixed(1)}% inflation to <b>${$f(Traised)}</b>. Last year's growth of <b>${(ret*100).toFixed(1)}%</b> ${ret<0?"was negative, but a raise would not push your rate above "+(iwr*100).toFixed(1)+"%, so the raise still applies":"was positive, so there was no reason to skip the raise"}.`}</li>
 <li>${ssTxt}, so the portfolio covers <b>${$f(sk?Math.max(0,Tlast-ssNow):raisedW)}</b>, a <b>${(wr*100).toFixed(2)}%</b> withdrawal rate.</li>
 <li>${res}</li></ol>
+${W0>0?`<h2 style="margin-top:16px">What would change this answer</h2><ol>
+<li><b>Balance:</b> your withdrawal stays at ${$f(W0)} (last year's amount plus inflation) as long as your balance is between <b>${$f(cutBelow)}</b> and <b>${$f(raiseAbove)}</b>. Your balance of ${$f(B)} is ${B<cutBelow?"below that range":B>raiseAbove?"above that range":"inside it"}.</li>
+<li>Below ${$f(cutBelow)}, the withdrawal is cut ${(adj*100)}% to ${$f(W0*(1-adj))}${end-age<=noCut?" (not applied now, since cuts are off in the final "+noCut+" years)":""}. Above ${$f(raiseAbove)}, it is raised ${(adj*100)}% to ${$f(W0*(1+adj))}.</li>
+<li><b>Growth:</b> it matters only through your balance, which already includes it. The one direct use is a negative year: if growth was below zero and your balance is under <b>${$f(raisedW/iwr)}</b>, the inflation raise is skipped.</li>
+<li><b>No ceiling:</b> there is no fixed dollar limit. Each year the amount can rise by inflation, plus an extra ${(adj*100)}% if the balance grows enough, and can never exceed your balance.</li></ol>`:""}
 <div style="color:var(--mut);font-size:.8rem;margin-top:8px">Next year, enter ${$f(W)} as the amount you took last year.</div>`;
 }
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",run));
