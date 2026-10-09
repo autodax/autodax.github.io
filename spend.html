@@ -51,7 +51,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 </div>
 <h2>From your records</h2>
 <div class="f">
-<label>Amount you took from the portfolio last year ($) <span class="rb" style="opacity:.8">(optional with risk-based)</span><input id="lastW" type="number" step="500" value="115000"></label>
+<label>Amount you took from the portfolio last year ($) <span class="rb" id="lwHint" style="opacity:.8">(optional: leave blank for an 85% chance of success)</span><input id="lastW" type="number" step="500" value="115000"></label>
 </div>
 <details><summary>Advanced settings</summary><div class="f" style="margin-top:10px">
 <label class="gk">Initial withdrawal rate (%) <span style="opacity:.8">(about 5% is typical)</span><input id="iwr" type="number" step="0.1" value="5"></label>
@@ -59,7 +59,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <label class="rb">Expected return (%/yr, annualized)<input id="mean" type="number" step="0.1" value="5.12"></label>
 <label class="rb">Volatility (% std. dev.)<input id="vol" type="number" step="0.1" value="14.9"></label>
 <label class="rb">Target chance of success (%)<input id="tgt" type="number" value="85"></label>
-<label class="rb">Cut if chance falls below (%)<input id="lowP" type="number" value="70"></label>
+<label class="rb">Cut if chance falls below (%)<input id="lowP" type="number" value="72"></label>
 <label class="rb">Raise if chance rises above (%)<input id="upP" type="number" value="95"></label>
 <div class="rb" style="grid-column:1/-1;font-size:.8rem;color:var(--mut)">Where to look up expected returns and volatility: <a href="https://corporate.vanguard.com/content/corporatesite/us/en/corp/vemo/vemo-return-forecasts.html" target="_blank" rel="noopener">Vanguard</a> · <a href="https://www.blackrock.com/institutions/en-us/insights/charts/capital-market-assumptions" target="_blank" rel="noopener">BlackRock</a> · <a href="https://www.capitalgroup.com/offshore/en/investments/capabilities/capital-market-assumptions.html" target="_blank" rel="noopener">Capital Group</a>. Forecasts differ by firm and are updated about quarterly. Type your choice into the boxes above.</div>
 <label class="gk">Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
@@ -83,11 +83,11 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <details class="c rb" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind risk-based guardrails</summary>
 <p>Instead of watching a withdrawal rate, this method asks a direct question each year: <b>if I keep spending this much (plus inflation), what are the chances my money lasts to my plan-to age?</b> It answers by running thousands of simulated futures with random market returns.</p>
 <ul style="padding-left:20px;margin:6px 0">
-<li>If the chance is inside your comfort band (say 70% to 95%), you change nothing.</li>
-<li>If it drops below the lower guardrail, you cut spending to the amount that restores your target chance (say 85%).</li>
-<li>If it rises above the upper guardrail, you can raise spending back to the target.</li></ul>
-<p>The upside is that it uses your actual age, balance, and Social Security timing, so longevity is built in. The return and volatility boxes fill in automatically from your stock/bond mix, using a snapshot of Vanguard's June 30, 2026 10-year outlook (US stocks about 5.2% a year, US bonds about 4.4%) plus approximate long-run volatility (stocks about 16.5%, bonds about 5.5%, correlation 0.1). It is a saved snapshot, not a live feed. The downside is that it depends on those assumptions, and cuts can be larger than a fixed 10%. It is an estimate, not a guarantee.</p></details>
-<p class="n">About last year's withdrawal: Guyton-Klinger adjusts what you took last year, so it is required. With risk-based guardrails it is optional and works only as a test. If last year's amount plus inflation still gives a chance of success inside your comfort band, you keep it. Outside the band, your last year's amount is ignored and the answer resets to the amount that hits your target chance. Use the amount taken from the portfolio only (not Social Security), before tax, and next year enter this year's result. Enter Social Security in today's dollars; it is applied to your spending first so your portfolio covers the rest. This is an estimate, not financial advice.</p>
+<li>If the chance is inside your comfort band (say 72% to 95%), you change nothing.</li>
+<li>If it drops below the lower guardrail, spending is held at the most you can take while staying at that guardrail.</li>
+<li>If it rises above the upper guardrail, spending is raised to the amount that puts you at that guardrail. Your target chance (say 85%) is the answer shown when you leave last year's withdrawal blank.</li></ul>
+<p>The upside is that it uses your actual age, balance, and Social Security timing, so longevity is built in. The return and volatility boxes fill in automatically from your stock/bond mix, using a snapshot of Vanguard's June 30, 2026 10-year outlook (US stocks about 5.2% a year, US bonds about 4.4%) plus approximate long-run volatility (stocks about 16.5%, bonds about 5.5%, correlation 0.1). It is a saved snapshot, not a live feed. The downside is that it depends on those assumptions, and a large drop in your balance can call for a large cut. It is an estimate, not a guarantee.</p></details>
+<p class="n">About last year's withdrawal: Guyton-Klinger adjusts what you took last year, so it is required. With risk-based guardrails it is optional and works only as a test. If last year's amount plus inflation still gives a chance of success inside your comfort band, you keep it. Outside the band, spending is held at the nearest edge of the band, so the answer changes smoothly and in one direction as last year's amount changes. Leave it blank to see the amount that hits your target chance. Use the amount taken from the portfolio only (not Social Security), before tax, and next year enter this year's result. Enter Social Security in today's dollars; it is applied to your spending first so your portfolio covers the rest. This is an estimate, not financial advice.</p>
 </div>
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat($(id).value)||0;
@@ -96,6 +96,7 @@ function run(){
   const age=v("age"),B=v("bal"),ret=v("ret")/100,inf=v("inf")/100,lastW=v("lastW"),ss=v("ss")*12,ssA=v("ssA"),
     iwr=v("iwr")/100,end=v("end"),ceil=v("ceil")/100,floor=v("floor")/100,adj=v("adj")/100,noCut=v("noCut"),skip=$("skip").value==="1";
   const o=$("out"),rbm=$("method").value==="rb";
+  $("lwHint").textContent="(optional: leave blank for a "+v("tgt")+"% chance of success)";
   document.querySelectorAll(".gk").forEach(e=>e.style.display=rbm?"none":"");
   document.querySelectorAll(".rb").forEach(e=>e.style.display=rbm?"":"none");
   if(rbm){if(B<=0)o.innerHTML='<span class="warn">Enter a balance above zero.</span>';else runRB({age,B,inf,ss,ssA,lastW,end,blank:$("lastW").value.trim()===""},o);return}
@@ -161,11 +162,12 @@ function runRB(q,o){
 <li>If it is below about <b>${$f(Wr)}</b>, your chance is above ${(up*100).toFixed(0)}% and you have room to raise spending.</li>
 <li>In between, you can leave spending alone. Enter last year's withdrawal above to get that check.</li></ol>`;return}
   const Tlast=q.lastW+ssPrev,W0=Math.max(0,Tlast*(1+q.inf)-ssNow),P0=prob(W0);
-  let W=W0,res;
-  if(P0<lo){W=Wt;res=`That is below your lower guardrail (${(lo*100).toFixed(0)}%), so spending is cut to the level that restores your ${(tg*100).toFixed(0)}% target.`}
-  else if(P0>up){W=Wt;res=`That is above your upper guardrail (${(up*100).toFixed(0)}%), so spending is raised to the level that brings you back to your ${(tg*100).toFixed(0)}% target.`}
+  const Wcut=solve(lo),Wraise=solve(up);
+  const W=Math.min(Math.max(W0,Wraise),Wcut);let res;
+  if(W0>Wcut)res=`That is below your lower guardrail (${(lo*100).toFixed(0)}%), so spending is held at <b>${$f(Wcut)}</b>, the most you can take while staying at that guardrail.`;
+  else if(W0<Wraise)res=`That is above your upper guardrail (${(up*100).toFixed(0)}%), so spending is raised to <b>${$f(Wraise)}</b>, the amount that puts you at that guardrail.`;
   else res=`That is inside your ${(lo*100).toFixed(0)}% to ${(up*100).toFixed(0)}% comfort band, so no change.`;
-  const Wcut=solve(lo),Wraise=solve(up),P1=prob(W);
+  const P1=prob(W);
   o.innerHTML=`<div style="color:var(--mut);font-size:.85rem">Take from your portfolio this year</div>
 <div class="big">${$f(W)}</div>
 <div>about <b>${$f(W/12)}</b> a month, before tax${ssNow?`. With Social Security, total income is about <b>${$f(W+ssNow)}</b> a year.`:"."}</div>
@@ -175,8 +177,8 @@ function runRB(q,o){
 <li>${res}</li>
 ${W!==W0?`<li>The new amount of ${$f(W)} gives about a <b>${(P1*100).toFixed(0)}%</b> chance of lasting.</li>`:""}</ol>
 <h2 style="margin-top:16px">What would change this answer</h2><ol>
-<li>Your withdrawal stays as is whenever the amount you would take is between <b>${$f(Wraise)}</b> and <b>${$f(Wcut)}</b> at today's balance and assumptions. Above ${$f(Wcut)} it is cut; below ${$f(Wraise)} it is raised.</li>
-<li><b>Last year's amount:</b> if it is between about <b>${$f((Wraise+ssNow)/(1+q.inf)-ssPrev)}</b> and <b>${$f((Wcut+ssNow)/(1+q.inf)-ssPrev)}</b>, your recommendation simply follows it plus inflation. If it is higher than that, the recommendation stops following it and is held at <b>${$f(Wt)}</b>, the amount that restores your ${(tg*100).toFixed(0)}% target. If it is lower than that range, it is raised to the same ${$f(Wt)}. So the recommendation rises with last year's amount inside that range, then levels off at that target amount.</li>
+<li>Your withdrawal follows last year's amount plus inflation, but is kept between <b>${$f(Wraise)}</b> (the ${(up*100).toFixed(0)}% chance level) and <b>${$f(Wcut)}</b> (the ${(lo*100).toFixed(0)}% chance level) at today's balance and assumptions.</li>
+<li><b>Last year's amount:</b> if it is between about <b>${$f((Wraise+ssNow)/(1+q.inf)-ssPrev)}</b> and <b>${$f((Wcut+ssNow)/(1+q.inf)-ssPrev)}</b>, the recommendation is simply that amount plus inflation. Above that range it stays at ${$f(Wcut)}; below it, it stays at ${$f(Wraise)}. It never moves in the opposite direction as last year's amount changes.</li>
 <li>A larger balance, a shorter horizon, or higher assumed returns move that range up; a smaller balance or a longer horizon moves it down.</li></ol>
 <div style="color:var(--mut);font-size:.8rem;margin-top:8px">Next year, enter ${$f(W)} as the amount you took last year. Simulations are estimates and depend on your return and volatility assumptions.</div>`;
 }
