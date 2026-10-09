@@ -22,6 +22,13 @@ h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .big{font-size:2.3rem;font-weight:700;color:var(--ac);line-height:1.2}
 ol{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
 a{color:var(--ac)}
+input,select{font-size:1.15rem;font-weight:600}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.nw{position:relative;margin-top:3px}.nw input{margin-top:0;padding-right:36px}
+.nw .st{position:absolute;right:3px;width:32px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--mut);font-size:.7rem;line-height:1;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer}
+.nw .st:hover{color:var(--ac);background:var(--card)}
+.nw .up{top:3px;bottom:50%}.nw .dn{top:50%;bottom:3px}
 details{margin-top:14px}details.c p,details.c li{font-size:.9rem}summary{cursor:pointer;color:var(--mut);font-size:.85rem}
 .n{font-size:.78rem;color:var(--mut);margin-top:14px}.warn{color:var(--bad);font-weight:600}
 </style><script>
@@ -33,10 +40,10 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <div class="bar"><h1>What to withdraw this year</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
 <p class="sub">Guyton-Klinger or risk-based guardrails, including Social Security.</p>
 <div class="c">
-<div class="f" style="margin-bottom:10px"><label>Method<select id="method"><option value="gk">Guyton-Klinger guardrails</option><option value="rb">Risk-based guardrails</option></select></label><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select><span style="display:block;margin-top:3px;font-size:.72rem;opacity:.85">Figures as of June 30, 2026</span></label></div>
+<div class="f" style="grid-template-columns:1fr;margin-bottom:10px"><label>Method<select id="method"><option value="gk">Guyton-Klinger guardrails</option><option value="rb">Risk-based guardrails</option></select></label><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select><span style="display:block;margin-top:3px;font-size:.72rem;opacity:.85">Figures as of June 30, 2026</span></label></div>
 <div class="f">
 <label>Your age now<input id="age" type="number" value="61"></label>
-<label>Portfolio balance now ($)<input id="bal" type="number" value="2300000"></label>
+<label>Portfolio balance now ($)<input id="bal" type="number" step="500" value="2300000"></label>
 <label class="gk">Last year's portfolio growth (%)<input id="ret" type="number" step="0.1" value="6"></label>
 <label>Inflation rate (%)<input id="inf" type="number" step="0.1" value="3"></label>
 <label>Social Security per month ($)<input id="ss" type="number" value="4648"></label>
@@ -44,7 +51,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 </div>
 <h2>From your records</h2>
 <div class="f">
-<label>Amount you took from the portfolio last year ($)<input id="lastW" type="number" value="115000"></label>
+<label>Amount you took from the portfolio last year ($)<input id="lastW" type="number" step="500" value="115000"></label>
 </div>
 <details><summary>Advanced settings</summary><div class="f" style="margin-top:10px">
 <label class="gk">Initial withdrawal rate (%) <span style="opacity:.8">(about 5% is typical)</span><input id="iwr" type="number" step="0.1" value="5"></label>
@@ -166,6 +173,12 @@ function applyMix(){const p=$("mix").value;if(p==="custom")return;const w=+p/100
   $("mean").value=r.toFixed(2);$("vol").value=Math.sqrt(vr).toFixed(1)}
 $("mix").addEventListener("input",applyMix);
 ["mean","vol"].forEach(id=>$(id).addEventListener("input",()=>{$("mix").value="custom"}));
+document.querySelectorAll('input[type=number]').forEach(inp=>{
+  const w=document.createElement('div');w.className='nw';inp.parentNode.insertBefore(w,inp);w.appendChild(inp);
+  [['up','\u25B2',1,'Increase'],['dn','\u25BC',-1,'Decrease']].forEach(([c,t,d,l])=>{
+    const b=document.createElement('button');b.type='button';b.className='st '+c;b.textContent=t;b.tabIndex=-1;b.setAttribute('aria-label',l);
+    b.addEventListener('click',e=>{e.preventDefault();d>0?inp.stepUp():inp.stepDown();inp.dispatchEvent(new Event('input',{bubbles:true}))});
+    w.appendChild(b)})});
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",run));
 const P={age:"currentAge",bal:"currentSavings",ret:"lastReturn",inf:"inflation",ss:"socialSecurityIncome",ssA:"ssAge",lastW:"lastWithdrawal",iwr:"initialRate",end:"deathAge",ceil:"upperTrigger",floor:"lowerTrigger",adj:"adjustment",noCut:"noCutYears",skip:"skipRule",method:"method",mean:"expReturn",vol:"volatility",tgt:"targetSuccess",lowP:"lowerSuccess",upP:"upperSuccess",mix:"stockPct"};
 const q=new URLSearchParams(location.search);
