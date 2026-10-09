@@ -24,17 +24,19 @@ ol{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
 details{margin-top:14px}details.c p,details.c li{font-size:.9rem}summary{cursor:pointer;color:var(--mut);font-size:.85rem}
 .n{font-size:.78rem;color:var(--mut);margin-top:14px}.warn{color:var(--bad);font-weight:600}
 </style><script>
-(function(){var t=null;try{t=localStorage.getItem("wc-theme")}catch(e){}
-if(t!=="light"&&t!=="dark"){var h=new Date().getHours();t=(h>=19||h<7)?"dark":"light"}
-document.documentElement.setAttribute("data-theme",t)})();
+var wcManual=null;
+function wcTime(){var h=new Date().getHours();return(h>=19||h<7)?"dark":"light"}
+function wcApply(){var t=wcManual||wcTime();if(document.documentElement.getAttribute("data-theme")!==t){document.documentElement.setAttribute("data-theme",t);if(window.wcLabel)wcLabel()}}
+wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange",wcApply);
 </script></head><body><div class="w">
 <div class="bar"><h1>What to withdraw this year</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
 <p class="sub">Guyton-Klinger guardrails, including Social Security.</p>
 <div class="c">
+<div class="f" style="margin-bottom:10px"><label>Method<select id="method"><option value="gk">Guyton-Klinger guardrails</option><option value="rb">Risk-based guardrails</option></select></label><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select></label></div>
 <div class="f">
 <label>Your age now<input id="age" type="number" value="61"></label>
 <label>Portfolio balance now ($)<input id="bal" type="number" value="2300000"></label>
-<label>Last year's portfolio growth (%)<input id="ret" type="number" step="0.1" value="6"></label>
+<label class="gk">Last year's portfolio growth (%)<input id="ret" type="number" step="0.1" value="6"></label>
 <label>Inflation rate (%)<input id="inf" type="number" step="0.1" value="3"></label>
 <label>Social Security per month ($)<input id="ss" type="number" value="4648"></label>
 <label>SS starts at age<input id="ssA" type="number" value="70"></label>
@@ -44,17 +46,22 @@ document.documentElement.setAttribute("data-theme",t)})();
 <label>Amount you took from the portfolio last year ($)<input id="lastW" type="number" value="115000"></label>
 </div>
 <details><summary>Advanced settings</summary><div class="f" style="margin-top:10px">
-<label>Initial withdrawal rate (%) <span style="opacity:.8">(about 5% is typical)</span><input id="iwr" type="number" step="0.1" value="5"></label>
+<label class="gk">Initial withdrawal rate (%) <span style="opacity:.8">(about 5% is typical)</span><input id="iwr" type="number" step="0.1" value="5"></label>
 <label>Plan to age<input id="end" type="number" value="93"></label>
-<label>Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
-<label>Raise if rate is this % below initial<input id="floor" type="number" value="20"></label>
-<label>Cut/raise size (%)<input id="adj" type="number" step="0.5" value="10"></label>
-<label>No cuts in final (years)<input id="noCut" type="number" value="15"></label>
-<label>Skip inflation raise after a down year<select id="skip"><option value="1">Yes</option><option value="0">No</option></select></label>
+<label class="rb">Expected return (%/yr, annualized)<input id="mean" type="number" step="0.1" value="5.12"></label>
+<label class="rb">Volatility (% std. dev.)<input id="vol" type="number" step="0.1" value="14.9"></label>
+<label class="rb">Target chance of success (%)<input id="tgt" type="number" value="85"></label>
+<label class="rb">Cut if chance falls below (%)<input id="lowP" type="number" value="70"></label>
+<label class="rb">Raise if chance rises above (%)<input id="upP" type="number" value="95"></label>
+<label class="gk">Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
+<label class="gk">Raise if rate is this % below initial<input id="floor" type="number" value="20"></label>
+<label class="gk">Cut/raise size (%)<input id="adj" type="number" step="0.5" value="10"></label>
+<label class="gk">No cuts in final (years)<input id="noCut" type="number" value="15"></label>
+<label class="gk">Skip inflation raise after a down year<select id="skip"><option value="1">Yes</option><option value="0">No</option></select></label>
 </div></details>
 </div>
 <div class="c" id="out"></div>
-<details class="c" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind Guyton-Klinger</summary>
+<details class="c gk" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind Guyton-Klinger</summary>
 <p>A fixed rule like "withdraw 4% and add inflation forever" has to be cautious enough to survive the worst markets in history, so in most outcomes it leaves a lot unspent. Guyton-Klinger makes a trade: <b>start higher, and agree to adjust if things go badly</b>.</p>
 <ul style="padding-left:20px;margin:6px 0">
 <li><b>Start at about 5%.</b> The typical starting point is around 5% of your balance in the first year (the original research looked at roughly 5% to 5.5% with a stock-heavy portfolio), compared with the 4% rule.</li>
@@ -64,6 +71,13 @@ document.documentElement.setAttribute("data-theme",t)})();
 </ul>
 <p>The cost is that income is not guaranteed. In a bad stretch you may take a few modest cuts, so this works best if you have some flexibility in spending. The benefit is a higher starting income and a plan that responds to what the markets actually do, rather than one set in stone.</p></details>
 
+<details class="c rb" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind risk-based guardrails</summary>
+<p>Instead of watching a withdrawal rate, this method asks a direct question each year: <b>if I keep spending this much (plus inflation), what are the chances my money lasts to my plan-to age?</b> It answers by running thousands of simulated futures with random market returns.</p>
+<ul style="padding-left:20px;margin:6px 0">
+<li>If the chance is inside your comfort band (say 70% to 95%), you change nothing.</li>
+<li>If it drops below the lower guardrail, you cut spending to the amount that restores your target chance (say 85%).</li>
+<li>If it rises above the upper guardrail, you can raise spending back to the target.</li></ul>
+<p>The upside is that it uses your actual age, balance, and Social Security timing, so longevity is built in. The return and volatility boxes fill in automatically from your stock/bond mix, using a snapshot of Vanguard's June 30, 2026 10-year outlook (US stocks about 5.2% a year, US bonds about 4.4%) plus approximate long-run volatility (stocks about 16.5%, bonds about 5.5%, correlation 0.1). It is a saved snapshot, not a live feed. The downside is that it depends on those assumptions, and cuts can be larger than a fixed 10%. It is an estimate, not a guarantee.</p></details>
 <p class="n">Last year's withdrawal is needed because Guyton-Klinger adjusts what you took last year rather than starting fresh. Use the amount taken from the portfolio only (not Social Security), before tax, and next year enter this year's result. Enter Social Security in today's dollars; it is applied to your spending first so your portfolio covers the rest. This is an estimate, not financial advice.</p>
 </div>
 <script>
@@ -72,7 +86,10 @@ const $f=n=>"$"+Math.round(n).toLocaleString();
 function run(){
   const age=v("age"),B=v("bal"),ret=v("ret")/100,inf=v("inf")/100,lastW=v("lastW"),ss=v("ss")*12,ssA=v("ssA"),
     iwr=v("iwr")/100,end=v("end"),ceil=v("ceil")/100,floor=v("floor")/100,adj=v("adj")/100,noCut=v("noCut"),skip=$("skip").value==="1";
-  const o=$("out");
+  const o=$("out"),rbm=$("method").value==="rb";
+  document.querySelectorAll(".gk").forEach(e=>e.style.display=rbm?"none":"");
+  document.querySelectorAll(".rb").forEach(e=>e.style.display=rbm?"":"none");
+  if(rbm){if(B<=0)o.innerHTML='<span class="warn">Enter a balance above zero.</span>';else runRB({age,B,inf,ss,ssA,lastW,end},o);return}
   if(B<=0||iwr<=0){o.innerHTML='<span class="warn">Enter a balance and an initial rate above zero.</span>';return}
   const ssNow=age>=ssA?ss:0,ssPrev=age-1>=ssA?ss/(1+inf):0;
   const Tlast=lastW+ssPrev,Traised=Tlast*(1+inf);
@@ -102,15 +119,63 @@ ${W0>0?`<h2 style="margin-top:16px">What would change this answer</h2><ol>
 <li><b>No ceiling:</b> there is no fixed dollar limit. Each year the amount can rise by inflation, plus an extra ${(adj*100)}% if the balance grows enough, and can never exceed your balance.</li></ol>`:""}
 <div style="color:var(--mut);font-size:.8rem;margin-top:8px">Next year, enter ${$f(W)} as the amount you took last year.</div>`;
 }
+
+let zc={n:0,z:null};
+function zs(n){ // fixed random normals so results are repeatable
+  if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B79F5|0;let x=Math.imul(t^t>>>15,1|t);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296};
+  const z=[];for(let i=0;i<2000*n;i+=1){const u=r()||1e-9,w=r();z.push(Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w))}
+  zc={n,z};return z;
+}
+function runRB(q,o){
+  const yrs=q.end-q.age;if(yrs<1){o.innerHTML='<span class="warn">Plan-to age must be above your age.</span>';return}
+  const m=v("mean")/100,sd=v("vol")/100,tg=v("tgt")/100,lo=v("lowP")/100,up=v("upP")/100,N=2000,z=zs(yrs);
+  const sg=Math.sqrt(Math.log(1+sd*sd/((1+m)*(1+m)))),mu=Math.log(1+m);
+  const R=z.map(x=>Math.exp(mu+sg*x)/(1+q.inf)); // real growth factors
+  const ssAt=a=>a>=q.ssA?q.ss:0,ssNow=ssAt(q.age),ssPrev=q.age-1>=q.ssA?q.ss/(1+q.inf):0;
+  const prob=W=>{const T=W+ssNow;let ok=0;
+    for(let n=0;n<N;n++){let B=q.B,good=true;
+      for(let y=0;y<yrs;y++){const d=Math.max(0,T-ssAt(q.age+y));if(d>B){good=false;break}B=(B-d)*R[n*yrs+y]}
+      if(good)ok++}
+    return ok/N};
+  const solve=p=>{if(prob(0)<p)return 0;let a=0,b=q.B;if(prob(b)>=p)return b;for(let i=0;i<28;i++){const c=(a+b)/2;prob(c)>=p?a=c:b=c}return a};
+  const Tlast=q.lastW+ssPrev,W0=Math.max(0,Tlast*(1+q.inf)-ssNow),P0=prob(W0);
+  let W=W0,res;
+  if(P0<lo){W=solve(tg);res=`That is below your lower guardrail (${(lo*100).toFixed(0)}%), so spending is cut to the level that restores your ${(tg*100).toFixed(0)}% target.`}
+  else if(P0>up){W=solve(tg);res=`That is above your upper guardrail (${(up*100).toFixed(0)}%), so spending is raised to the level that brings you back to your ${(tg*100).toFixed(0)}% target.`}
+  else res=`That is inside your ${(lo*100).toFixed(0)}% to ${(up*100).toFixed(0)}% comfort band, so no change.`;
+  const Wcut=solve(lo),Wraise=solve(up),P1=prob(W);
+  o.innerHTML=`<div style="color:var(--mut);font-size:.85rem">Take from your portfolio this year</div>
+<div class="big">${$f(W)}</div>
+<div>about <b>${$f(W/12)}</b> a month, before tax${ssNow?`. With Social Security, total income is about <b>${$f(W+ssNow)}</b> a year.`:"."}</div>
+<h2 style="margin-top:16px">How it was figured</h2><ol>
+<li>Last year's spending: ${$f(q.lastW)} from the portfolio${ssPrev?` plus ${$f(ssPrev)} Social Security`:""} = <b>${$f(Tlast)}</b>. With ${(q.inf*100).toFixed(1)}% inflation, the portfolio would need to supply <b>${$f(W0)}</b> this year.</li>
+<li>Across ${N.toLocaleString()} simulated market futures (${v("mean")}% expected return, ${v("vol")}% volatility), that spending, adjusted for inflation each year, lasts to age ${q.end} in <b>${(P0*100).toFixed(0)}%</b> of them.</li>
+<li>${res}</li>
+${W!==W0?`<li>The new amount of ${$f(W)} gives about a <b>${(P1*100).toFixed(0)}%</b> chance of lasting.</li>`:""}</ol>
+<h2 style="margin-top:16px">What would change this answer</h2><ol>
+<li>Your withdrawal stays as is whenever the amount you would take is between <b>${$f(Wraise)}</b> and <b>${$f(Wcut)}</b> at today's balance and assumptions. Above ${$f(Wcut)} it is cut; below ${$f(Wraise)} it is raised.</li>
+<li>A larger balance, a shorter horizon, or higher assumed returns move that range up; a smaller balance or a longer horizon moves it down.</li></ol>
+<div style="color:var(--mut);font-size:.8rem;margin-top:8px">Next year, enter ${$f(W)} as the amount you took last year. Simulations are estimates and depend on your return and volatility assumptions.</div>`;
+}
+
+const MIX={s:{r:5.2,v:16.5},b:{r:4.4,v:5.5},rho:0.1};
+function applyMix(){const p=$("mix").value;if(p==="custom")return;const w=+p/100,b=1-w,
+  r=w*MIX.s.r+b*MIX.b.r,vr=w*w*MIX.s.v**2+b*b*MIX.b.v**2+2*MIX.rho*w*b*MIX.s.v*MIX.b.v;
+  $("mean").value=r.toFixed(2);$("vol").value=Math.sqrt(vr).toFixed(1)}
+$("mix").addEventListener("input",applyMix);
+["mean","vol"].forEach(id=>$(id).addEventListener("input",()=>{$("mix").value="custom"}));
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",run));
-const P={age:"currentAge",bal:"currentSavings",ret:"lastReturn",inf:"inflation",ss:"socialSecurityIncome",ssA:"ssAge",lastW:"lastWithdrawal",iwr:"initialRate",end:"deathAge",ceil:"upperTrigger",floor:"lowerTrigger",adj:"adjustment",noCut:"noCutYears",skip:"skipRule"};
+const P={age:"currentAge",bal:"currentSavings",ret:"lastReturn",inf:"inflation",ss:"socialSecurityIncome",ssA:"ssAge",lastW:"lastWithdrawal",iwr:"initialRate",end:"deathAge",ceil:"upperTrigger",floor:"lowerTrigger",adj:"adjustment",noCut:"noCutYears",skip:"skipRule",method:"method",mean:"expReturn",vol:"volatility",tgt:"targetSuccess",lowP:"lowerSuccess",upP:"upperSuccess",mix:"stockPct"};
 const q=new URLSearchParams(location.search);
 for(const id in P)if(q.has(P[id]))$(id).value=id==="ss"?Math.round(q.get(P[id])/12):q.get(P[id]);
+if((q.has("expReturn")||q.has("volatility"))&&!q.has("stockPct"))$("mix").value="custom";
+if(!$("mix").value)$("mix").value="90";
+applyMix();
 run();
 const root=document.documentElement,tb=$("theme");
 function label(){tb.textContent=root.getAttribute("data-theme")==="dark"?"☀ Light mode":"🌙 Dark mode"}
-label();
-tb.onclick=()=>{const n=root.getAttribute("data-theme")==="dark"?"light":"dark";root.setAttribute("data-theme",n);try{localStorage.setItem("wc-theme",n)}catch(e){}label()};
+window.wcLabel=label;wcApply();label();
+tb.onclick=()=>{wcManual=root.getAttribute("data-theme")==="dark"?"light":"dark";wcApply();label()};
 function buildUrl(){const u=new URL(location.href);u.search="";u.hash="";
   for(const id in P)u.searchParams.set(P[id],id==="ss"?v(id)*12:$(id).value);return u.toString()}
 $("copy").onclick=async()=>{
