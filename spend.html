@@ -21,6 +21,7 @@ button:hover{border-color:var(--ac)}
 h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 8px}h2:first-child{margin-top:0}
 .big{font-size:2.3rem;font-weight:700;color:var(--ac);line-height:1.2}
 ol{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
+a{color:var(--ac)}
 details{margin-top:14px}details.c p,details.c li{font-size:.9rem}summary{cursor:pointer;color:var(--mut);font-size:.85rem}
 .n{font-size:.78rem;color:var(--mut);margin-top:14px}.warn{color:var(--bad);font-weight:600}
 </style><script>
@@ -32,7 +33,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <div class="bar"><h1>What to withdraw this year</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
 <p class="sub">Guyton-Klinger or risk-based guardrails, including Social Security.</p>
 <div class="c">
-<div class="f" style="margin-bottom:10px"><label>Method<select id="method"><option value="gk">Guyton-Klinger guardrails</option><option value="rb">Risk-based guardrails</option></select></label><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select></label></div>
+<div class="f" style="margin-bottom:10px"><label>Method<select id="method"><option value="gk">Guyton-Klinger guardrails</option><option value="rb">Risk-based guardrails</option></select></label><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select><span style="display:block;margin-top:3px;font-size:.72rem;opacity:.85">Figures as of June 30, 2026</span></label></div>
 <div class="f">
 <label>Your age now<input id="age" type="number" value="61"></label>
 <label>Portfolio balance now ($)<input id="bal" type="number" value="2300000"></label>
@@ -53,6 +54,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <label class="rb">Target chance of success (%)<input id="tgt" type="number" value="85"></label>
 <label class="rb">Cut if chance falls below (%)<input id="lowP" type="number" value="70"></label>
 <label class="rb">Raise if chance rises above (%)<input id="upP" type="number" value="95"></label>
+<div class="rb" style="grid-column:1/-1;font-size:.8rem;color:var(--mut)">Where to look up expected returns and volatility: <a href="https://corporate.vanguard.com/content/corporatesite/us/en/corp/vemo/vemo-return-forecasts.html" target="_blank" rel="noopener">Vanguard</a> · <a href="https://www.blackrock.com/institutions/en-us/insights/charts/capital-market-assumptions" target="_blank" rel="noopener">BlackRock</a> · <a href="https://www.capitalgroup.com/offshore/en/investments/capabilities/capital-market-assumptions.html" target="_blank" rel="noopener">Capital Group</a>. Forecasts differ by firm and are updated about quarterly. Type your choice into the boxes above.</div>
 <label class="gk">Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
 <label class="gk">Raise if rate is this % below initial<input id="floor" type="number" value="20"></label>
 <label class="gk">Cut/raise size (%)<input id="adj" type="number" step="0.5" value="10"></label>
