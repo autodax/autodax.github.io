@@ -45,8 +45,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <label>Your age now<input id="age" type="number" value="61"></label>
 <label>Portfolio balance now ($)<input id="bal" type="number" step="500" value="2300000"></label>
 <label>Inflation rate (%)<input id="inf" type="number" step="0.1" value="3"></label>
-<label>Social Security per month ($)<input id="ss" type="number" value="4648"></label>
-<label>SS starts at age<input id="ssA" type="number" value="70"></label>
+<label style="grid-column:1/-1">Social Security claiming age and monthly benefit (from your SSA statement)<select id="ssPick"><option value="62">Age 62: $2,316 / month</option><option value="63">Age 63: $2,513 / month</option><option value="64">Age 64: $2,729 / month</option><option value="65">Age 65: $3,008 / month</option><option value="66">Age 66: $3,294 / month</option><option value="67">Age 67: $3,587 / month</option><option value="68">Age 68: $3,692 / month</option><option value="69">Age 69: $4,043 / month</option><option value="70" selected>Age 70: $4,648 / month</option></select><input type="hidden" id="ss" value="4648"><input type="hidden" id="ssA" value="70"></label>
 </div>
 <h2>From your records</h2>
 <div class="f">
@@ -140,6 +139,9 @@ function applyMix(){const p=$("mix").value;if(p==="custom")return;const w=+p/100
   r=w*MIX.s.r+b*MIX.b.r,vr=w*w*MIX.s.v**2+b*b*MIX.b.v**2+2*MIX.rho*w*b*MIX.s.v*MIX.b.v;
   $("mean").value=r.toFixed(2);$("vol").value=Math.sqrt(vr).toFixed(1)}
 $("mix").addEventListener("input",applyMix);
+const SS={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
+function syncSS(){const a=$("ssPick").value;$("ssA").value=a;$("ss").value=SS[a]}
+$("ssPick").addEventListener("input",syncSS);
 ["mean","vol"].forEach(id=>$(id).addEventListener("input",()=>{$("mix").value="custom"}));
 document.querySelectorAll('input[type=number]').forEach(inp=>{
   const w=document.createElement('div');w.className='nw';inp.parentNode.insertBefore(w,inp);w.appendChild(inp);
@@ -153,6 +155,7 @@ const q=new URLSearchParams(location.search);
 for(const id in P)if(q.has(P[id]))$(id).value=id==="ss"?Math.round(q.get(P[id])/12):q.get(P[id]);
 if((q.has("expReturn")||q.has("volatility"))&&!q.has("stockPct"))$("mix").value="custom";
 if(!$("mix").value)$("mix").value="90";
+if(SS[$("ssA").value])$("ssPick").value=$("ssA").value;syncSS();
 applyMix();
 run();
 const root=document.documentElement,tb=$("theme");
