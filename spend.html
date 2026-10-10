@@ -38,23 +38,21 @@ function wcApply(){var t=wcManual||wcTime();if(document.documentElement.getAttri
 wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange",wcApply);
 </script></head><body><div class="w">
 <div class="bar"><h1>What to withdraw this year</h1><div><button id="theme" type="button"></button><button id="copy" type="button">Copy link</button></div></div>
-<p class="sub">Guyton-Klinger or risk-based guardrails, including Social Security.</p>
+<p class="sub">Risk-based guardrails, including Social Security.</p>
 <div class="c">
-<div class="f" style="grid-template-columns:1fr;margin-bottom:10px"><label>Method<select id="method"><option value="gk">Guyton-Klinger guardrails</option><option value="rb">Risk-based guardrails</option></select></label><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select><span style="display:block;margin-top:3px;font-size:.72rem;opacity:.85">Vanguard figures as of June 30, 2026</span></label></div>
+<div class="f" style="grid-template-columns:1fr;margin-bottom:10px"><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select><span style="display:block;margin-top:3px;font-size:.72rem;opacity:.85">Vanguard figures as of June 30, 2026</span></label></div>
 <div class="f">
 <label>Your age now<input id="age" type="number" value="61"></label>
 <label>Portfolio balance now ($)<input id="bal" type="number" step="500" value="2300000"></label>
-<label class="gk">Last year's portfolio growth (%) <span style="opacity:.8">(only used if negative)</span><input id="ret" type="number" step="0.1" value="6"></label>
 <label>Inflation rate (%)<input id="inf" type="number" step="0.1" value="3"></label>
 <label>Social Security per month ($)<input id="ss" type="number" value="4648"></label>
 <label>SS starts at age<input id="ssA" type="number" value="70"></label>
 </div>
 <h2>From your records</h2>
 <div class="f">
-<label>Amount you took from the portfolio last year ($) <span class="rb" id="lwHint" style="opacity:.8">(optional: leave blank for an 85% chance of success)</span><input id="lastW" type="number" step="500" value="115000"></label>
+<label>Amount you took from the portfolio last year ($) <span class="rb" id="lwHint" style="opacity:.8">(optional: leave blank for an 85% chance of success)</span><input id="lastW" type="number" step="500" value=""></label>
 </div>
 <details><summary>Advanced settings</summary><div class="f" style="margin-top:10px">
-<label class="gk">Initial withdrawal rate (%) <span style="opacity:.8">(about 5% is typical)</span><input id="iwr" type="number" step="0.1" value="5"></label>
 <label>Plan to age<input id="end" type="number" value="93"></label>
 <label class="rb">Expected return (%/yr, annualized)<input id="mean" type="number" step="0.1" value="5.16"></label>
 <label class="rb">Volatility (% std. dev.)<input id="vol" type="number" step="0.1" value="13.7"></label>
@@ -62,23 +60,9 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <label class="rb">Cut if chance falls below (%)<input id="lowP" type="number" value="72"></label>
 <label class="rb">Raise if chance rises above (%)<input id="upP" type="number" value="95"></label>
 <div class="rb" style="grid-column:1/-1;font-size:.8rem;color:var(--mut)">Where to look up expected returns and volatility: <a href="https://corporate.vanguard.com/content/corporatesite/us/en/corp/vemo/vemo-return-forecasts.html" target="_blank" rel="noopener">Vanguard</a> · <a href="https://www.blackrock.com/institutions/en-us/insights/charts/capital-market-assumptions" target="_blank" rel="noopener">BlackRock</a> · <a href="https://www.capitalgroup.com/offshore/en/investments/capabilities/capital-market-assumptions.html" target="_blank" rel="noopener">Capital Group</a>. Forecasts differ by firm and are updated about quarterly. Type your choice into the boxes above.</div>
-<label class="gk">Cut if rate is this % above initial<input id="ceil" type="number" value="20"></label>
-<label class="gk">Raise if rate is this % below initial<input id="floor" type="number" value="20"></label>
-<label class="gk">Cut/raise size (%)<input id="adj" type="number" step="0.5" value="10"></label>
-<label class="gk">No cuts in final (years)<input id="noCut" type="number" value="15"></label>
-<label class="gk">Skip inflation raise after a down year<select id="skip"><option value="1">Yes</option><option value="0">No</option></select></label>
 </div></details>
 </div>
 <div class="c" id="out"></div>
-<details class="c gk" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind Guyton-Klinger</summary>
-<p>A fixed rule like "withdraw 4% and add inflation forever" has to be cautious enough to survive the worst markets in history, so in most outcomes it leaves a lot unspent. Guyton-Klinger makes a trade: <b>start higher, and agree to adjust if things go badly</b>.</p>
-<ul style="padding-left:20px;margin:6px 0">
-<li><b>Start at about 5%.</b> The typical starting point is around 5% of your balance in the first year (the original research looked at roughly 5% to 5.5% with a stock-heavy portfolio), compared with the 4% rule.</li>
-<li><b>Inflation raises by default.</b> Your spending power is protected in ordinary years, except after a down year when your rate is already above the starting rate.</li>
-<li><b>Guardrails keep the rate in a band.</b> If a falling balance pushes your withdrawal rate 20% above the start (about 6%), you cut spending 10%. If a rising balance pulls it 20% below (about 4%), you give yourself a 10% raise.</li>
-<li><b>Cuts stop late in life,</b> because with few years left a cut helps little.</li>
-</ul>
-<p>The cost is that income is not guaranteed. In a bad stretch you may take a few modest cuts, so this works best if you have some flexibility in spending. The benefit is a higher starting income and a plan that responds to what the markets actually do, rather than one set in stone.</p></details>
 
 <details class="c rb" open><summary style="font-size:.95rem;color:var(--tx);font-weight:600">The idea behind risk-based guardrails</summary>
 <p>Instead of watching a withdrawal rate, this method asks a direct question each year: <b>if I keep spending this much (plus inflation), what are the chances my money lasts to my plan-to age?</b> It answers by running thousands of simulated futures with random market returns.</p>
@@ -87,50 +71,18 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <li>If it drops below the lower guardrail, spending is held at the most you can take while staying at that guardrail.</li>
 <li>If it rises above the upper guardrail, spending is raised to the amount that puts you at that guardrail. Your target chance (say 85%) is the answer shown when you leave last year's withdrawal blank.</li></ul>
 <p>The upside is that it uses your actual age, balance, and Social Security timing, so longevity is built in. The return and volatility boxes fill in automatically from your stock/bond mix, using a saved snapshot of Vanguard's Capital Markets Model run of June 30, 2026: the midpoints of its 10-year return ranges (US stocks 4.2% to 6.2%, so 5.2%; US aggregate bonds 4.3% to 5.3%, so 4.8%) and its median volatility (stocks 15.1%, bonds 6.2%). The 0.1 stock-bond correlation is my own assumption, not a Vanguard figure. It is a snapshot, not a live feed. The downside is that it depends on those assumptions, and a large drop in your balance can call for a large cut. It is an estimate, not a guarantee.</p></details>
-<p class="n">About last year's withdrawal: Guyton-Klinger adjusts what you took last year, so it is required. With risk-based guardrails it is optional and works only as a test. If last year's amount plus inflation still gives a chance of success inside your comfort band, you keep it. Outside the band, spending is held at the nearest edge of the band, so the answer changes smoothly and in one direction as last year's amount changes. Leave it blank to see the amount that hits your target chance. Use the amount taken from the portfolio only (not Social Security), before tax, and next year enter this year's result. Enter Social Security in today's dollars; it is applied to your spending first so your portfolio covers the rest. This is an estimate, not financial advice.</p>
+<p class="n">About last year's withdrawal: it is optional. If you enter it, it works as a test. When last year's amount plus inflation still gives a chance of success inside your comfort band, that is your answer. Outside the band, spending is held at the nearest edge of the band, so the answer changes smoothly and in one direction as last year's amount changes. Leave it blank to see the amount that hits your target chance. Use the amount taken from the portfolio only (not Social Security), before tax, and next year enter this year's result. Enter Social Security in today's dollars; it is applied to your spending first so your portfolio covers the rest. This is an estimate, not financial advice.</p>
 </div>
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat($(id).value)||0;
 const $f=n=>"$"+Math.round(n).toLocaleString();
 function run(){
-  const age=v("age"),B=v("bal"),ret=v("ret")/100,inf=v("inf")/100,lastW=v("lastW"),ss=v("ss")*12,ssA=v("ssA"),
-    iwr=v("iwr")/100,end=v("end"),ceil=v("ceil")/100,floor=v("floor")/100,adj=v("adj")/100,noCut=v("noCut"),skip=$("skip").value==="1";
-  const o=$("out"),rbm=$("method").value==="rb";
+  const age=v("age"),B=v("bal"),inf=v("inf")/100,lastW=v("lastW"),ss=v("ss")*12,ssA=v("ssA"),end=v("end");
+  const o=$("out");
   $("lwHint").textContent="(optional: leave blank for a "+v("tgt")+"% chance of success)";
-  document.querySelectorAll(".gk").forEach(e=>e.style.display=rbm?"none":"");
-  document.querySelectorAll(".rb").forEach(e=>e.style.display=rbm?"":"none");
-  if(rbm){if(B<=0)o.innerHTML='<span class="warn">Enter a balance above zero.</span>';else runRB({age,B,inf,ss,ssA,lastW,end,blank:$("lastW").value.trim()===""},o);return}
-  if($("lastW").value.trim()===""){o.innerHTML='<span class="warn">Enter last year\'s withdrawal. Guyton-Klinger adjusts that amount, so it needs a starting point.</span>';return}
-  if(B<=0||iwr<=0){o.innerHTML='<span class="warn">Enter a balance and an initial rate above zero.</span>';return}
-  const ssNow=age>=ssA?ss:0,ssPrev=age-1>=ssA?ss/(1+inf):0;
-  const Tlast=lastW+ssPrev,Traised=Tlast*(1+inf);
-  const raisedW=Math.max(0,Traised-ssNow);
-  const sk=skip&&ret<0&&raisedW/B>iwr;
-  let W=sk?Math.max(0,Tlast-ssNow):raisedW;
-  const wr=W/B,lo=iwr*(1-floor),hi=iwr*(1+ceil);
-  let res,note="";
-  if(wr>hi){if(end-age>noCut){W*=1-adj;res=`Above the upper guardrail (${(hi*100).toFixed(1)}%), so cut ${(adj*100)}%.`}else res=`Above the upper guardrail, but cuts are off in the final ${noCut} years, so no change.`}
-  else if(wr<lo){W*=1+adj;res=`Below the lower guardrail (${(lo*100).toFixed(1)}%), so raised ${(adj*100)}%.`}
-  else res=`Within the guardrails (${(lo*100).toFixed(1)}% to ${(hi*100).toFixed(1)}%), so no change.`;
-  W=Math.min(W,B);
-  const W0=sk?Math.max(0,Tlast-ssNow):raisedW,cutBelow=W0/hi,raiseAbove=W0/lo;
-  const ssTxt=ssNow?`Social Security of <b>${$f(ssNow)}</b> a year is now coming in`:(ssA>age?`Social Security starts at ${ssA}`:"No Social Security entered");
-  o.innerHTML=`<div style="color:var(--mut);font-size:.85rem">Take from your portfolio this year</div>
-<div class="big">${$f(W)}</div>
-<div>about <b>${$f(W/12)}</b> a month, before tax${ssNow?`. With Social Security, total income is about <b>${$f(W+ssNow)}</b> a year.`:"."}</div>
-<h2 style="margin-top:16px">How it was figured</h2><ol>
-<li>Last year's spending: ${$f(lastW)} from the portfolio${ssPrev?` plus ${$f(ssPrev)} Social Security`:""} = <b>${$f(Tlast)}</b>.</li>
-<li>${sk?`Last year's growth was <b>${(ret*100).toFixed(1)}%</b> and a raise would put your rate above ${(iwr*100).toFixed(1)}%, so the inflation raise was <b>skipped</b>.`:`Raised by ${(inf*100).toFixed(1)}% inflation to <b>${$f(Traised)}</b>. Last year's growth of <b>${(ret*100).toFixed(1)}%</b> ${ret<0?"was negative, but a raise would not push your rate above "+(iwr*100).toFixed(1)+"%, so the raise still applies":"was positive, so there was no reason to skip the raise"}.`}</li>
-<li>${ssTxt}, so the portfolio covers <b>${$f(sk?Math.max(0,Tlast-ssNow):raisedW)}</b>, a <b>${(wr*100).toFixed(2)}%</b> withdrawal rate.</li>
-<li>${res}</li></ol>
-${W0>0?`<h2 style="margin-top:16px">What would change this answer</h2><ol>
-<li><b>Balance:</b> your withdrawal stays at ${$f(W0)} (last year's amount plus inflation) as long as your balance is between <b>${$f(cutBelow)}</b> and <b>${$f(raiseAbove)}</b>. Your balance of ${$f(B)} is ${B<cutBelow?"below that range":B>raiseAbove?"above that range":"inside it"}.</li>
-<li>Below ${$f(cutBelow)}, the withdrawal is cut ${(adj*100)}% to ${$f(W0*(1-adj))}${end-age<=noCut?" (not applied now, since cuts are off in the final "+noCut+" years)":""}. Above ${$f(raiseAbove)}, it is raised ${(adj*100)}% to ${$f(W0*(1+adj))}.</li>
-<li><b>Growth:</b> it matters only through your balance, which already includes it. The one direct use is a negative year: if growth was below zero and your balance is under <b>${$f(raisedW/iwr)}</b>, the inflation raise is skipped.</li>
-<li><b>No ceiling:</b> there is no fixed dollar limit. Each year the amount can rise by inflation, plus an extra ${(adj*100)}% if the balance grows enough, and can never exceed your balance.</li></ol>`:""}
-<div style="color:var(--mut);font-size:.8rem;margin-top:8px">Next year, enter ${$f(W)} as the amount you took last year.</div>`;
+  if(B<=0)o.innerHTML='<span class="warn">Enter a balance above zero.</span>';
+  else runRB({age,B,inf,ss,ssA,lastW,end,blank:$("lastW").value.trim()===""},o);
 }
-
 let zc={n:0,z:null};
 function zs(n){ // fixed random normals so results are repeatable
   if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B79F5|0;let x=Math.imul(t^t>>>15,1|t);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296};
@@ -196,7 +148,7 @@ document.querySelectorAll('input[type=number]').forEach(inp=>{
     b.addEventListener('click',e=>{e.preventDefault();d>0?inp.stepUp():inp.stepDown();inp.dispatchEvent(new Event('input',{bubbles:true}))});
     w.appendChild(b)})});
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",run));
-const P={age:"currentAge",bal:"currentSavings",ret:"lastReturn",inf:"inflation",ss:"socialSecurityIncome",ssA:"ssAge",lastW:"lastWithdrawal",iwr:"initialRate",end:"deathAge",ceil:"upperTrigger",floor:"lowerTrigger",adj:"adjustment",noCut:"noCutYears",skip:"skipRule",method:"method",mean:"expReturn",vol:"volatility",tgt:"targetSuccess",lowP:"lowerSuccess",upP:"upperSuccess",mix:"stockPct"};
+const P={age:"currentAge",bal:"currentSavings",inf:"inflation",ss:"socialSecurityIncome",ssA:"ssAge",lastW:"lastWithdrawal",end:"deathAge",mean:"expReturn",vol:"volatility",tgt:"targetSuccess",lowP:"lowerSuccess",upP:"upperSuccess",mix:"stockPct"};
 const q=new URLSearchParams(location.search);
 for(const id in P)if(q.has(P[id]))$(id).value=id==="ss"?Math.round(q.get(P[id])/12):q.get(P[id]);
 if((q.has("expReturn")||q.has("volatility"))&&!q.has("stockPct"))$("mix").value="custom";
