@@ -42,8 +42,8 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <div class="c">
 <div class="f" style="grid-template-columns:1fr;margin-bottom:10px"><label class="rb">Portfolio mix (stocks / bonds)<select id="mix"><option value="100">100 / 0</option><option value="90" selected>90 / 10</option><option value="80">80 / 20</option><option value="70">70 / 30</option><option value="60">60 / 40</option><option value="50">50 / 50</option><option value="40">40 / 60</option><option value="30">30 / 70</option><option value="20">20 / 80</option><option value="custom">Custom</option></select><span style="display:block;margin-top:3px;font-size:.72rem;opacity:.85">Vanguard figures as of June 30, 2026</span></label></div>
 <div class="f">
-<label>Your age now<input id="age" type="number" value="61"></label>
-<label>Portfolio balance now ($)<input id="bal" type="number" step="500" value="2300000"></label>
+<label>Your age now<input id="age" type="number" placeholder="e.g. 61" value=""></label>
+<label>Portfolio balance now ($)<input id="bal" type="number" step="500" placeholder="e.g. 2,000,000" value=""></label>
 <label>Inflation rate (%)<input id="inf" type="number" step="0.1" value="3"></label>
 <label style="grid-column:1/-1">Social Security claiming age and monthly benefit (from your SSA statement)<select id="ssPick"><option value="62">Age 62: $2,316 / month</option><option value="63">Age 63: $2,513 / month</option><option value="64">Age 64: $2,729 / month</option><option value="65">Age 65: $3,008 / month</option><option value="66">Age 66: $3,294 / month</option><option value="67">Age 67: $3,587 / month</option><option value="68">Age 68: $3,692 / month</option><option value="69">Age 69: $4,043 / month</option><option value="70" selected>Age 70: $4,648 / month</option></select><input type="hidden" id="ss" value="4648"><input type="hidden" id="ssA" value="70"></label>
 </div>
@@ -79,7 +79,7 @@ function run(){
   const age=v("age"),B=v("bal"),inf=v("inf")/100,lastW=v("lastW"),ss=v("ss")*12,ssA=v("ssA"),end=v("end");
   const o=$("out");
   $("lwHint").textContent="(optional: leave blank for a "+v("tgt")+"% chance of success)";
-  if(B<=0)o.innerHTML='<span class="warn">Enter a balance above zero.</span>';
+  if(B<=0||age<=0)o.innerHTML='<span style="color:var(--mut)">Enter your age and portfolio balance to see a result.</span>';
   else runRB({age,B,inf,ss,ssA,lastW,end,blank:$("lastW").value.trim()===""},o);
 }
 let zc={n:0,z:null};
