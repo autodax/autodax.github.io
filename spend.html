@@ -173,7 +173,7 @@ document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",
 const DEF={method:"mc",src:"van",wrap:"1",mix:"90",ssPick:"70"};
 const BASE=["age","bal","inf","lastW","end","ssPick","method","mix","tgt","lowP","upP"];
 function urlKeys(){return $("method").value==="bt"?[...BASE,"wrap"]:[...BASE,"src",...($("mix").value==="custom"?["mean","vol"]:[])]}
-const q=new URLSearchParams(location.search);
+const q=new URLSearchParams(location.hash.slice(1));
 [...BASE,"wrap","src","mean","vol"].forEach(k=>{if(q.has(k))$(k).value=q.get(k)});
 for(const k in DEF)if(!$(k).value)$(k).value=DEF[k];
 applyMix();
@@ -182,8 +182,8 @@ const root=document.documentElement,tb=$("theme");
 function label(){tb.textContent=root.getAttribute("data-theme")==="dark"?"☀ Light mode":"🌙 Dark mode"}
 window.wcLabel=label;wcApply();label();
 tb.onclick=()=>{wcManual=root.getAttribute("data-theme")==="dark"?"light":"dark";wcApply();label()};
-function buildUrl(){const u=new URL(location.href);u.search="";u.hash="";
-  urlKeys().forEach(k=>u.searchParams.set(k,$(k).value));return u.toString()}
+function buildUrl(){const u=new URL(location.href);u.search="";const hp=new URLSearchParams();
+  urlKeys().forEach(k=>hp.set(k,$(k).value));u.hash=hp.toString();return u.toString()}
 $("copy").onclick=async()=>{
   const url=buildUrl();let ok=false;
   try{history.replaceState(null,"",url)}catch(e){}
