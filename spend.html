@@ -22,6 +22,7 @@ h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .big{font-size:2.3rem;font-weight:700;color:var(--ac);line-height:1.2}
 ol{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
 a{color:var(--ac)}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 input,select{font-size:1rem;font-weight:500;padding:5px 8px}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -46,7 +47,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <label>Plan to age<input id="end" type="number" value="93"></label>
 <label>Portfolio balance now ($)<input id="bal" type="number" step="500" placeholder="e.g. 2,000,000" value=""></label>
 <label>Inflation rate (%)<input id="inf" type="number" step="0.1" value="3"></label>
-<label style="grid-column:1/-1">Social Security claiming age and monthly benefit (from your SSA statement)<select id="ssPick"><option value="62">Age 62: $2,316 / month</option><option value="63">Age 63: $2,513 / month</option><option value="64">Age 64: $2,729 / month</option><option value="65">Age 65: $3,008 / month</option><option value="66">Age 66: $3,294 / month</option><option value="67">Age 67: $3,587 / month</option><option value="68">Age 68: $3,692 / month</option><option value="69">Age 69: $4,043 / month</option><option value="70" selected>Age 70: $4,648 / month</option></select></label>
+<label style="grid-column:1/-1">Social Security claiming age and monthly benefit (amounts are editable in Advanced settings)<select id="ssPick"></select></label>
 </div>
 <h2>From your records</h2>
 <div class="f">
@@ -59,6 +60,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 <label class="rb">Cut if chance falls below (%)<input id="lowP" type="number" value="72"></label>
 <label class="rb">Raise if chance rises above (%)<input id="upP" type="number" value="95"></label>
 <div class="rb mc" style="grid-column:1/-1;font-size:.8rem;color:var(--mut)">Where to look up expected returns and volatility: <a href="https://corporate.vanguard.com/content/corporatesite/us/en/corp/vemo/vemo-return-forecasts.html" target="_blank" rel="noopener">Vanguard</a> · <a href="https://www.blackrock.com/institutions/en-us/insights/charts/capital-market-assumptions" target="_blank" rel="noopener">BlackRock</a> · <a href="https://www.capitalgroup.com/offshore/en/investments/capabilities/capital-market-assumptions.html" target="_blank" rel="noopener">Capital Group</a>. Forecasts differ by firm and are updated about quarterly. Type your choice into the boxes above.</div>
+<div style="grid-column:1/-1"><div style="font-size:.78rem;color:var(--mut);margin-bottom:4px">Social Security monthly estimates from your statement ($ in today's dollars). They fill the dropdown above. Leave an age blank to remove it.</div><div class="f3"><label>Age 62<input id="ss62" type="number" value="2316"></label><label>Age 63<input id="ss63" type="number" value="2513"></label><label>Age 64<input id="ss64" type="number" value="2729"></label><label>Age 65<input id="ss65" type="number" value="3008"></label><label>Age 66<input id="ss66" type="number" value="3294"></label><label>Age 67<input id="ss67" type="number" value="3587"></label><label>Age 68<input id="ss68" type="number" value="3692"></label><label>Age 69<input id="ss69" type="number" value="4043"></label><label>Age 70<input id="ss70" type="number" value="4648"></label></div></div>
 <label class="bt" data-d="" style="display:none;grid-column:1/-1">When the history runs out<select id="wrap"><option value="1">Wrap around to 1871 (every year is a start year)</option><option value="0">Stop at 2022 (fewer start years)</option></select></label>
 <div class="bt" data-d="block" style="display:none;grid-column:1/-1;font-size:.8rem;color:var(--mut)">Historical mode replays real (inflation-adjusted) US stock and bond returns from 1871 to 2022 (S&amp;P 500 with dividends and 10-year Treasuries, built from Robert Shiller's data), rebalanced yearly to your mix. The return, volatility and inflation-forecast boxes do not apply. A Custom mix uses 90 / 10.</div>
 </div></details>
@@ -81,7 +83,7 @@ wcApply();setInterval(wcApply,30000);document.addEventListener("visibilitychange
 const $=id=>document.getElementById(id),v=id=>parseFloat($(id).value)||0;
 const $f=n=>"$"+Math.round(n).toLocaleString();
 function run(){
-  const age=v("age"),B=v("bal"),inf=v("inf")/100,lastW=v("lastW"),ssA=+$("ssPick").value,ss=SS[ssA]*12,end=v("end");
+  const age=v("age"),B=v("bal"),inf=v("inf")/100,lastW=v("lastW"),ssA=+$("ssPick").value,ss=(SS[ssA]||0)*12,end=v("end");
   const o=$("out");
   $("lwHint").textContent="(optional: leave blank for a "+v("tgt")+"% chance of success)";
   const btm=$("method").value==="bt";
@@ -161,7 +163,13 @@ function applyMix(){const p=$("mix").value;if(p==="custom")return;const w=+p/100
 $("mix").addEventListener("input",applyMix);
 $("src").addEventListener("input",applyMix);
 $("inf").addEventListener("input",()=>{if($("src").value==="his")applyMix()});
-const SS={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
+const AGES=[62,63,64,65,66,67,68,69,70],DEFAMT=[2316,2513,2729,3008,3294,3587,3692,4043,4648];
+let SS={},avail=[];
+function rebuildSS(){const cur=$("ssPick").value;SS={};AGES.forEach(a=>{const x=parseFloat($("ss"+a).value);if(x>0)SS[a]=x});
+  avail=AGES.filter(a=>SS[a]);if(!avail.length)avail=[0];
+  $("ssPick").innerHTML=avail.map(a=>a?`<option value="${a}">Age ${a}: $${Math.round(SS[a]).toLocaleString()} / month</option>`:`<option value="0">No Social Security entered</option>`).join("");
+  $("ssPick").value=avail.includes(+cur)?cur:(avail.includes(70)?"70":String(avail[avail.length-1]))}
+AGES.forEach(a=>$("ss"+a).addEventListener("input",rebuildSS));
 ["mean","vol"].forEach(id=>$(id).addEventListener("input",()=>{$("mix").value="custom"}));
 document.querySelectorAll('input[type=number]').forEach(inp=>{
   const w=document.createElement('div');w.className='nw';inp.parentNode.insertBefore(w,inp);w.appendChild(inp);
@@ -174,8 +182,11 @@ const DEF={method:"mc",src:"van",wrap:"1",mix:"90",ssPick:"70"};
 const BASE=["age","bal","inf","lastW","end","ssPick","method","mix","tgt","lowP","upP"];
 function urlKeys(){return $("method").value==="bt"?[...BASE,"wrap"]:[...BASE,"src",...($("mix").value==="custom"?["mean","vol"]:[])]}
 const q=new URLSearchParams(location.hash.slice(1));
+if(q.has("ssAmts"))q.get("ssAmts").split(",").forEach((x,i)=>{if(AGES[i])$("ss"+AGES[i]).value=x});
+rebuildSS();
 [...BASE,"wrap","src","mean","vol"].forEach(k=>{if(q.has(k))$(k).value=q.get(k)});
 for(const k in DEF)if(!$(k).value)$(k).value=DEF[k];
+if(!avail.includes(+$("ssPick").value))$("ssPick").value=avail.includes(70)?"70":String(avail[avail.length-1]);
 applyMix();
 run();
 const root=document.documentElement,tb=$("theme");
@@ -183,7 +194,9 @@ function label(){tb.textContent=root.getAttribute("data-theme")==="dark"?"☀ Li
 window.wcLabel=label;wcApply();label();
 tb.onclick=()=>{wcManual=root.getAttribute("data-theme")==="dark"?"light":"dark";wcApply();label()};
 function buildUrl(){const u=new URL(location.href);u.search="";const hp=new URLSearchParams();
-  urlKeys().forEach(k=>hp.set(k,$(k).value));u.hash=hp.toString();return u.toString()}
+  urlKeys().forEach(k=>hp.set(k,$(k).value));
+  const am=AGES.map(a=>$("ss"+a).value).join(",");if(am!==DEFAMT.join(","))hp.set("ssAmts",am);
+  u.hash=hp.toString();return u.toString()}
 $("copy").onclick=async()=>{
   const url=buildUrl();let ok=false;
   try{history.replaceState(null,"",url)}catch(e){}
