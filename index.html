@@ -651,12 +651,20 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
         <label>Capital gains</label>
         <div class="divgroup">
           <div class="field">
-            <label for="ltcg">Long-term capital gains</label>
+            <label for="ltcgPlan">Planned long-term capital gains</label>
+            <div class="amount-wrap">
+              <span class="dollar">$</span>
+              <input type="number" id="ltcgPlan" min="0" step="500" placeholder="0" inputmode="decimal">
+            </div>
+            <span class="hint">Brokerage sales to supplement income — taxed at 0/15/20% but not sized to cover the tax</span>
+          </div>
+          <div class="field">
+            <label for="ltcg">Additional long-term gains to cover tax</label>
             <div class="amount-wrap">
               <span class="dollar">$</span>
               <input type="number" id="ltcg" min="0" step="500" placeholder="0" inputmode="decimal">
             </div>
-            <span class="hint">Held over a year — taxed at long-term capital gains rates (0/15/20%)</span>
+            <span class="hint">Added to the planned gains above — the button sizes it to cover the tax still owed</span>
             <div class="solve-row">
               <label for="solveBasis">Cost basis</label>
               <input type="number" id="solveBasis" min="0" max="99" step="5" value="50" inputmode="decimal" aria-label="Cost basis as a percent of sale proceeds">
@@ -1052,7 +1060,8 @@ function calculate(){
   const ndiv = parseFloat(document.getElementById('ndiv').value) || 0;
   const qdiv = parseFloat(document.getElementById('qdiv').value) || 0;
   const stcg = parseFloat(document.getElementById('stcg').value) || 0;
-  const ltcg = parseFloat(document.getElementById('ltcg').value) || 0;
+  // Long-term gains = planned sales + the additional amount sized to cover tax
+  const ltcg = (parseFloat(document.getElementById('ltcgPlan').value) || 0) + (parseFloat(document.getElementById('ltcg').value) || 0);
   const ssa = parseFloat(document.getElementById('ssa').value) || 0;
 
   const otherIncomeForSs = Math.max(0, wages) + Math.max(0, ira) + Math.max(0, ndiv) + Math.max(0, qdiv) + Math.max(0, stcg) + Math.max(0, ltcg);
@@ -1273,7 +1282,7 @@ function calculateIrmaa(){
   calculate();
 }
 
-['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg'].forEach(id => {
+['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','ltcgPlan'].forEach(id => {
   document.getElementById(id).addEventListener('input', calculate);
 });
 document.getElementById('magi2yr').addEventListener('input', calculateIrmaa);
@@ -1336,7 +1345,7 @@ document.querySelectorAll('.wtype-btn').forEach(btn => {
   ['pointerdown','touchstart','mousedown'].forEach(ev =>
     window.addEventListener(ev, e => { if(!(e.target.closest && e.target.closest('.spin'))) stopHold(); }, true));
 
-  ['wages','ira','ssa','ltcg','stcg','qdiv','ndiv','magi2yr'].forEach(id => {
+  ['wages','ira','ssa','ltcgPlan','ltcg','stcg','qdiv','ndiv','magi2yr'].forEach(id => {
     const input = document.getElementById(id);
     const wrap = input.closest('.amount-wrap');
     wrap.querySelectorAll('.spin').forEach(n => n.remove());
@@ -1590,8 +1599,10 @@ function solveLtcg(){
   }
 
   const proceeds = gain / keep;
+  const plan = parseFloat(document.getElementById('ltcgPlan').value) || 0;
   resultEl.textContent = 'Sell about ' + fmt(Math.ceil(proceeds)) + ' of stock (' + fmt(gain) +
-    ' gain at ' + basis + '% basis) to cover ' + fmt(Math.max(0, owed)) + ' of tax owed, including tax on the gain itself.';
+    ' gain at ' + basis + '% basis) to cover ' + fmt(Math.max(0, owed)) + ' of tax owed, including tax on the gain itself' +
+    (plan > 0 ? ' and on your ' + fmt(plan) + ' of planned gains.' : '.');
 }
 
 document.getElementById('solveLtcgBtn').addEventListener('click', solveLtcg);
@@ -1605,7 +1616,7 @@ document.querySelectorAll('.age-btn, .wtype-btn').forEach(b => b.addEventListene
 
 // ---- Save the entered values to the page URL (after the #) on request ----
 // Click "Save values to URL", then bookmark the page; opening it again refills the form.
-const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','magi2yr','solveBasis','bracketSel','rateSel'];
+const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','ltcgPlan','magi2yr','solveBasis','bracketSel','rateSel'];
 let lastHash = location.hash;
 
 function collectState(){
