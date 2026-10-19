@@ -34,10 +34,9 @@ th{font-weight:600;color:var(--soft);text-align:right;padding:3px 4px;border-bot
 td{padding:3px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
 .scroll{overflow-x:auto}
-tr.conv td{background:var(--band)}
+tr.conv td{font-weight:700}
 #tbl td:nth-child(10),#tbl th:nth-child(10){background:var(--brown);color:var(--brown-ink);font-weight:700;border-left:2px solid var(--brown-line);border-right:2px solid var(--brown-line)}
-tr.rmd td{font-weight:600;color:var(--green)}
-#sum tr:nth-child(even) td{background:var(--band)}
+tr.rmd td{color:var(--green)}
 .sum td:first-child,.sum th:first-child{white-space:normal}
 .sum td{font-size:.78rem;white-space:normal}
 .sum td:first-child{text-align:left}
@@ -50,6 +49,14 @@ dialog#chk::backdrop{background:rgba(0,0,0,.5)}
 #chk h2{font-size:1.05rem;margin:0 0 6px;color:var(--green)}#chk h3{font-size:.9rem;margin:14px 0 4px;color:var(--green)}
 #chk p,#chk li{font-size:.84rem;line-height:1.5}#chk ol,#chk ul{padding-left:20px;margin:4px 0}
 #chk table{margin:6px 0;font:.8rem ui-monospace,Menlo,monospace}#chk td,#chk th{padding:3px 8px;text-align:left;white-space:normal}
+
+:root{--year-stripe:#E8DEC7}
+:root[data-theme="dark"]{--year-stripe:#44392D}
+#results{width:fit-content;max-width:100%}
+#results .warn{max-width:76ch}
+#sum{width:auto;max-width:100%}
+#sum th,#sum td{padding:3px 10px}
+#sum tr:nth-child(even)>td{background:var(--band)}
 </style>
 <script>
 if(/^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent))document.documentElement.className+=' safari';
@@ -92,9 +99,9 @@ If none is true, stay with the baseline. If less than about $10k of room is left
 <p class="tynote">Click <b>Save to link</b> (top) to store your inputs in this page's web address, then bookmark it. Opening a saved address fills everything back in.<span id="savemsg"></span></p>
 <p class="sub" id="hdr">Born Nov 1966 · Single · Florida · Federal tax only · RMDs start at 75 (2041) · All dollar amounts in today's (2026) dollars · Medicare IRMAA is taken out of your Social Security payment</p>
 <div class="card"><h2>Inputs</h2><div class="grid" id="inputs"></div><div class="grid" id="work" style="margin-top:8px"></div></div>
-<div class="card"><h2>Result</h2><div class="scroll"><table class="sum" id="sum"></table></div><p class="warn" id="warn"></p></div>
+<div class="card" id="results"><h2>Result</h2><div class="scroll"><table class="sum" id="sum"></table></div><p class="warn" id="warn"></p></div>
 <div class="card"><h2 id="ttl">Year by year (today's 2026 dollars)</h2><div class="scroll"><table id="tbl"></table></div>
-<p class="sub" style="margin:6px 0 0">Shaded = conversion year · bold = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
+<p class="sub" style="margin:6px 0 0">Alternating shading helps track rows · bold = conversion year · green/gold text = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
 <div class="card"><details><summary>Assumptions & method</summary><ul>
 <li>FICA is charged on the wages you enter: 6.2% Social Security up to the wage base ($184,500 in 2026, indexed at your inflation rate), 1.45% Medicare, plus 0.9% above $200,000. It is cash that goes out, is not income-tax deductible, and is not available to spend. Pretax 403(b) deferrals are not modeled, so enter gross wages.</li><li><b>Auto</b> (default) tests effective-rate caps from 10% to 24%, converting through age 74, and picks the one with the lowest lifetime income tax plus IRMAA among those whose sustainable spending is within 0.1% of the best. The year-by-year table lists what to convert each year; it is a projection, so redo it each November with your actual income.</li><li>Conversion modes: <b>Convert fully by age</b> (default) finds the smallest level yearly amount (start-year dollars, inflating) that empties the 403(b) by the year you reach that age, with no bracket limit. <b>Even out</b> finds the smallest level annual amount (in start-year dollars, inflating) that brings the age-75 RMD to your ceiling, never taking taxable income above the chosen bracket and never converting outside the first/last year window. Fill modes convert as much as fits each year (front-loaded). An optional AGI cap for ages 63+ keeps conversions under an IRMAA tier two years ahead. Sustainable spending is the highest spending that never runs out and leaves the age-95 cushion.</li>
 <li>Balances are entered as of Jan 1 of the start year, which is the first projected year. Growth and inflation compound once a year; results are shown in start-year dollars. Brackets, deductions and the age-65 extra deduction are 2026 IRS figures inflated at your inflation rate; Social Security thresholds and the $200k NIIT threshold do not inflate. The temporary senior bonus deduction (2025–2028) is not modeled.</li>
@@ -231,7 +238,7 @@ function run(){
   const row=(l,a,b)=>`<tr><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
   let headline=tt=='auto'?`Auto-selected plan: convert up to a ${(p.lim*100).toFixed(0)}% effective tax rate each year, through age 74. It is the lowest-tax plan whose sustainable spending is within 0.1% of the best tested.`:tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),74)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
   document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · IRMAA comes out of your Social Security`;
-  document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
+  document.getElementById('ttl').textContent=`Year by year (${Y0} dollars) · striped rows`;
 
   let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>';
   {
@@ -259,7 +266,7 @@ function run(){
   document.getElementById('warn').textContent=headline+convNote+stressNote+(A.some(x=>x.short>1)?' Warning: assets are insufficient under this scenario.':'');
 
   document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Total tax','IRMAA','Brokerage sold','403(b) start','RMD','Other 403(b) withdrawals','Roth paid out','403(b) end','Brokerage end','Roth end','FICA'].map(h=>`<th>${h}</th>`).join('')+
-    '</tr>'+A.map(x=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td><td>${fmt(x.fica)}</td></tr>`).join('');
+    '</tr>'+A.map((x,i)=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td><td>${fmt(x.fica)}</td></tr>`.replace(/<td>/g,(_,j)=>'<td style="background-color:'+((i%2)?'var(--year-stripe)':'var(--card)')+'">')).join('');
 }
 let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?24:20}clearTimeout(tm);tm=setTimeout(run,150);dirty(1)});
 const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input')];
