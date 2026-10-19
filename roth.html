@@ -37,6 +37,7 @@ th:first-child,td:first-child{text-align:left}
 tr.conv td{background:var(--band)}
 #tbl td:nth-child(10),#tbl th:nth-child(10){background:var(--brown);color:var(--brown-ink);font-weight:700;border-left:2px solid var(--brown-line);border-right:2px solid var(--brown-line)}
 tr.rmd td{font-weight:600;color:var(--green)}
+#sum tr:nth-child(even) td{background:var(--band)}
 .sum td:first-child,.sum th:first-child{white-space:normal}
 .sum td{font-size:.78rem;white-space:normal}
 .sum td:first-child{text-align:left}
@@ -72,7 +73,7 @@ applyTheme();setInterval(applyTheme,60000);
 <ol>
 <li><b>Update the inputs.</b> Set the start year to this year, enter your actual 403(b), Roth and brokerage balances, brokerage basis, and your year-to-date income. For a conservative spending read, set growth to about 5.5–6%.</li>
 <li><b>Set next year's spending.</b> Read "Sustainable annual spending" (it keeps your age-95 cushion) and spend no more than that. Rerun every year: trim if returns disappoint, raise if they boom.</li>
-<li><b>Baseline conversion.</b> Use this year's amount from the Conversion plan row. Re-estimate it from your actual income so the year's effective tax rate (federal income tax ÷ AGI) lands at the plan's cap.</li>
+<li><b>Baseline conversion.</b> Use this year's amount from the Conversion column in the year-by-year table. Re-estimate it from your actual income so the year's effective tax rate (federal income tax ÷ AGI) lands at the plan's cap.</li>
 <li><b>Check the triggers.</b> Convert <i>more</i>, up to the top of the 24% bracket (taxable income of $201,775 in 2026, indexed each year), if any of these is true:
 <ul><li>Your 403(b) balance, in today's dollars, is above the safe line for your age (<span id="safeNow"></span>).</li>
 <li>The stress rows (growth +2 points) show an age-75 RMD above about $60k, or a bracket above 24%.</li>
@@ -95,7 +96,7 @@ If none is true, stay with the baseline. If less than about $10k of room is left
 <div class="card"><h2 id="ttl">Year by year (today's 2026 dollars)</h2><div class="scroll"><table id="tbl"></table></div>
 <p class="sub" style="margin:6px 0 0">Shaded = conversion year · bold = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
 <div class="card"><details><summary>Assumptions & method</summary><ul>
-<li>FICA is charged on the wages you enter: 6.2% Social Security up to the wage base ($184,500 in 2026, indexed at your inflation rate), 1.45% Medicare, plus 0.9% above $200,000. It is cash that goes out, is not income-tax deductible, and is not available to spend. Pretax 403(b) deferrals are not modeled, so enter gross wages.</li><li><b>Auto</b> (default) tests effective-rate caps from 10% to 24%, converting through age 74, and picks the one with the lowest lifetime income tax plus IRMAA among those whose sustainable spending is within 0.1% of the best. The plan row lists what to convert each year; it is a projection, so redo it each November with your actual income.</li><li>Conversion modes: <b>Convert fully by age</b> (default) finds the smallest level yearly amount (start-year dollars, inflating) that empties the 403(b) by the year you reach that age, with no bracket limit. <b>Even out</b> finds the smallest level annual amount (in start-year dollars, inflating) that brings the age-75 RMD to your ceiling, never taking taxable income above the chosen bracket and never converting outside the first/last year window. Fill modes convert as much as fits each year (front-loaded). An optional AGI cap for ages 63+ keeps conversions under an IRMAA tier two years ahead. Sustainable spending is the highest spending that never runs out and leaves the age-95 cushion.</li>
+<li>FICA is charged on the wages you enter: 6.2% Social Security up to the wage base ($184,500 in 2026, indexed at your inflation rate), 1.45% Medicare, plus 0.9% above $200,000. It is cash that goes out, is not income-tax deductible, and is not available to spend. Pretax 403(b) deferrals are not modeled, so enter gross wages.</li><li><b>Auto</b> (default) tests effective-rate caps from 10% to 24%, converting through age 74, and picks the one with the lowest lifetime income tax plus IRMAA among those whose sustainable spending is within 0.1% of the best. The year-by-year table lists what to convert each year; it is a projection, so redo it each November with your actual income.</li><li>Conversion modes: <b>Convert fully by age</b> (default) finds the smallest level yearly amount (start-year dollars, inflating) that empties the 403(b) by the year you reach that age, with no bracket limit. <b>Even out</b> finds the smallest level annual amount (in start-year dollars, inflating) that brings the age-75 RMD to your ceiling, never taking taxable income above the chosen bracket and never converting outside the first/last year window. Fill modes convert as much as fits each year (front-loaded). An optional AGI cap for ages 63+ keeps conversions under an IRMAA tier two years ahead. Sustainable spending is the highest spending that never runs out and leaves the age-95 cushion.</li>
 <li>Balances are entered as of Jan 1 of the start year, which is the first projected year. Growth and inflation compound once a year; results are shown in start-year dollars. Brackets, deductions and the age-65 extra deduction are 2026 IRS figures inflated at your inflation rate; Social Security thresholds and the $200k NIIT threshold do not inflate. The temporary senior bonus deduction (2025–2028) is not modeled.</li>
 <li>Living expenses and Social Security are entered in start-year dollars and inflate. Wages are taxable and entered before Roth contributions; Roth contributions come from after-tax cash. IRMAA starts the November you turn 65 and is based on AGI from two years earlier, so it is left out for any Medicare year whose income two years back is before your start year.</li>
 <li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) (only the tax caused by the conversion itself is withheld out of it; tax on the other withdrawals comes out of those withdrawals), and from the Roth only if the 403(b) runs out. The planner does not minimize lifetime taxes. The first Social Security year pays one month (November birthday).</li>
@@ -217,7 +218,6 @@ function run(){
   const Y0=p.start,Y1=p.by+100,Y75=p.by+75;
 
   let A,Z;const Araw=sim(1,p);A=re(Araw);
-  const kf=n=>'$'+Math.round(n/1000)+'k',plan=Araw.filter(x=>x.C>0).map(x=>`${x.yr}: ${kf(x.C)} (${kf(x.C/x.u)})`).join(' · ')||'none';
   Z=re(sim(0,p));
   const a75=A.find(x=>x.age==75),z75=Z.find(x=>x.age==75);
   const lA=A[A.length-1],lZ=Z[Z.length-1];
@@ -236,7 +236,6 @@ function run(){
   let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>';
   {
     sum+=row(tt=='full'?'Convert fully by age '+Math.min(v('byage'),74)+': level amount':tt=='level'?'Even conversions: level amount':'Conversions fill each year up to',tt=='full'?fmt(p.Lv)+'/yr (today\'s $), no bracket limit':tt=='level'?(p.Lv==null?'Max allowed each year':fmt(p.Lv)+'/yr (today\'s $), capped at the top of the '+Math.round(brRate*100)+'% bracket'):(p.ttype!='eff'?'Top of the '+Math.round(brRate*100)+'% bracket':(p.lim*100).toFixed(1)+'% effective rate'),'—')+
-      '<tr><td colspan="3" style="text-align:left;white-space:normal;line-height:1.5"><b>Conversion plan</b> (nominal $ each year; today\'s $ in parentheses)<br>'+plan+'</td></tr>'+
       row('Total converted',fmt(tot(A,'C')),'$0')+
       row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
       row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
