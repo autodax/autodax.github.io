@@ -57,6 +57,7 @@ dialog#chk::backdrop{background:rgba(0,0,0,.5)}
 #sum{width:auto;max-width:100%}
 #sum th,#sum td{padding:3px 10px}
 #sum tr:nth-child(even)>td{background:var(--band)}
+#sum tr.emphasis>td:not(:first-child){font-weight:700}
 </style>
 <script>
 if(/^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent))document.documentElement.className+=' safari';
@@ -238,7 +239,7 @@ function run(){
   const st=t=>{const raw=sim(t,{...p,g:p.g+.02,gb:p.gb+.02}).filter(x=>x.age>=75),r=re(raw),x75=raw.find(x=>x.age==75),ex=over(raw);return{r75:(r.find(x=>x.age==75)||{rmd:0}).rmd,pk:Math.max(0,...r.map(x=>x.rmd)),br:Math.max(0,...r.map(x=>x.br=='—'?0:parseInt(x.br))),lim75:x75?lim22(x75)/x75.u:0,ex:ex?ex.yr:0}};
   const SA=st(1),SZ=st(0),bf=o=>o.br?o.br+'%':'—',N0=over(Araw),NZ=over(sim(0,p));window.LIM75=SA.lim75;
   const stressNote=SA.ex?' Stress test (growth +2 points): RMDs would exceed the '+fmt(SA.lim75)+' that fits in the 22% bracket with your Social Security (from '+SA.ex+'). Consider converting more, up to the top of the 24% bracket.':' Stress test (growth +2 points) stays inside the 22% bracket: age-75 RMD '+fmt(SA.r75)+' vs a limit of '+fmt(SA.lim75)+'.';
-  const row=(l,a,b)=>`<tr><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
+  const row=(l,a,b)=>`<tr${/<b[ >]|<strong[ >]/i.test(l)?' class="emphasis"':''}><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
   let headline=tt=='auto'?`Auto-selected plan: convert up to a ${(p.lim*100).toFixed(0)}% effective tax rate each year, through age 74. It is the lowest-tax plan whose sustainable spending is within 0.1% of the best tested.`:tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),74)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
   document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · IRMAA comes out of your Social Security`;
   document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
@@ -254,7 +255,7 @@ function run(){
       row('<b>Avg effective rate on all retirement income</b> (AGI + untaxed SS + Roth withdrawals)',(ar2(A)*100).toFixed(1)+'%',(ar2(Z)*100).toFixed(1)+'%')+
       row('Avg effective rate on AGI only (low-income years carry little weight)',(ar(A)*100).toFixed(1)+'%',(ar(Z)*100).toFixed(1)+'%')+
       row('Total FICA paid on wages (not available as cash)',fmt(tot(A,'fica')),fmt(tot(Z,'fica')))+
-      row('Total IRMAA surcharges, lifetime',fmt(tot(A,'irm')),fmt(tot(Z,'irm')))+
+      row('<b>Total IRMAA surcharges, lifetime</b>',fmt(tot(A,'irm')),fmt(tot(Z,'irm')))+
       row('RMD limit to stay in the 22% bracket, age 75 (with Social Security)',fmt(SA.lim75),fmt(SZ.lim75))+
       row('Normal growth: first year the RMD exceeds that limit',N0?N0.yr:'never',NZ?NZ.yr:'never')+
       row('Stress, growth +2 pts: age-75 RMD',fmt(SA.r75),fmt(SZ.r75))+
