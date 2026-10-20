@@ -238,7 +238,7 @@ function run(){
   const row=(l,a,b)=>`<tr><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
   let headline=tt=='auto'?`Auto-selected plan: convert up to a ${(p.lim*100).toFixed(0)}% effective tax rate each year, through age 74. It is the lowest-tax plan whose sustainable spending is within 0.1% of the best tested.`:tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),74)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
   document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · IRMAA comes out of your Social Security`;
-  document.getElementById('ttl').textContent=`Year by year (${Y0} dollars) · striped rows`;
+  document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
 
   let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>';
   {
