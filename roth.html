@@ -296,6 +296,24 @@ function loadURL(){const q=new URLSearchParams(location.hash.slice(1));if(![...q
   renderWork();q.forEach((x,id)=>{if(/^w\d{4}[ab]$/.test(id))set(id)});saveWork()}
 addEventListener('hashchange',()=>{loadURL();run()});
 loadURL();renderWork();run();
+
+(() => {
+  const dialog = document.getElementById('chk');
+  let startedOutside = false;
+  const isOutside = event => {
+    const r = dialog.getBoundingClientRect();
+    return event.clientX < r.left || event.clientX > r.right ||
+           event.clientY < r.top || event.clientY > r.bottom;
+  };
+  document.addEventListener('pointerdown', event => {
+    startedOutside = dialog.open && isOutside(event);
+  }, true);
+  document.addEventListener('click', event => {
+    if (dialog.open && startedOutside && isOutside(event)) dialog.close();
+    startedOutside = false;
+  }, true);
+  dialog.addEventListener('close', () => { startedOutside = false; });
+})();
 </script>
 </body>
 </html>
