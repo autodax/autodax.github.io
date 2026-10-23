@@ -58,6 +58,23 @@ dialog#chk::backdrop{background:rgba(0,0,0,.5)}
 #sum th,#sum td{padding:3px 10px}
 #sum tr:nth-child(even)>td{background:var(--band)}
 #sum tr.emphasis>td:not(:first-child){font-weight:700}
+
+/* Compact checklist layout on narrow screens, including portrait phones. */
+#chk > div:first-child{gap:10px;align-items:flex-start!important}
+#chk > div:first-child h2{min-width:0}
+#chk > div:first-child button{flex-shrink:0}
+#chk .safe-balances{margin:6px 0;padding-left:20px}
+#chk .safe-balances li{margin:3px 0}
+@media(max-width:600px){
+  dialog#chk{width:calc(100% - 12px);max-width:calc(100% - 12px);
+    max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);
+    margin:auto;padding:10px 12px;border-radius:10px;overflow-wrap:anywhere}
+  #chk h2{font-size:.95rem;line-height:1.3;margin:0}
+  #chk h3{margin:10px 0 4px}
+  #chk p{margin:8px 0}
+  #chk ol,#chk ul{padding-left:18px}
+  #chk > :last-child{margin-bottom:0}
+}
 </style>
 <script>
 if(/^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent))document.documentElement.className+=' safari';
@@ -90,7 +107,12 @@ If none is true, stay with the baseline. If less than about $10k of room is left
 <li><b>Pay and time it.</b> Finish the conversion before December 31 (your plan may cut off earlier). Pay the tax from brokerage cash. If you hold at least 110% of last year's total tax in withholding for 2026 (100% if your 2025 AGI was $150k or less), the tax is due by April 15 with no underpayment penalty.</li>
 <li><b>Stop at age 74.</b> RMDs start at 75 for your birth year.</li></ol>
 <h3>Safe line (largest 403(b) balance, today's dollars, that keeps the age-75 RMD in the 22% bracket)</h3>
-<table><tr><th>Your age</th><th>60</th><th>65</th><th>70</th><th>74</th></tr><tr><td>Balance under</td><td>$0.69M</td><td>$0.97M</td><td>$1.35M</td><td>$1.78M</td></tr></table>
+<ul class="safe-balances" aria-label="Safe-line balances by age">
+<li>Age 60: balance under $0.69M</li>
+<li>Age 65: balance under $0.97M</li>
+<li>Age 70: balance under $1.35M</li>
+<li>Age 74: balance under $1.78M</li>
+</ul>
 <p>It assumes the balance grows 7% a year above inflation with no withdrawals, so it errs toward converting. For the 24% bracket instead, multiply by about 2.2.</p>
 <h3>Watch-outs</h3>
 <ul><li>Your plan must allow in-service distributions or in-plan Roth conversions while you work.</li>
