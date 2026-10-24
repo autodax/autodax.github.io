@@ -159,7 +159,7 @@ function yc(c,C){let X=0,S=0,W=0,Xc=0,sp=0,RW=0,sh=0,r;
 for(let i=0;i<22;i++){r=taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss);X=r.tax;const Xi=Math.max(0,X-taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).tax);
 const need=c.L+c.K+c.irm+c.fica+X-c.w-c.ss-c.rmd;
 if(need<=0){S=0;sp=-need;W=0;Xc=0;RW=0;sh=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,Xi,C);const wn=R-Xc;W=Math.min(wn,Math.max(0,c.T-c.rmd-C));
-if(c.cap&&W>0&&taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss).ot>c.cap){let lo=0,hi=W;for(let k=0;k<12;k++){const m=(lo+hi)/2;taxCalc(c.f,c.age,c.w+C+c.rmd+m,c.div+S*(1-c.bf),c.ss).ot<=c.cap?lo=m:hi=m}W=lo}
+if(c.cap&&W>0&&taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).ot>c.cap){let lo=0,hi=W;for(let k=0;k<12;k++){const m=(lo+hi)/2;taxCalc(c.f,c.age,c.w+c.rmd+m,c.div+S*(1-c.bf),c.ss).ot<=c.cap?lo=m:hi=m}W=lo}
 RW=Math.min(wn-W,c.Rav);sh=wn-W-RW;
 if(c.cap&&sh>0){const e=Math.min(sh,Math.max(0,c.T-c.rmd-C-W));W+=e;sh-=e}}}
 return{X,S,W,Xc,sp,RW,sh,ot:r.ot,st:r.st,agi:r.agi}}
