@@ -128,7 +128,7 @@ If none is true, stay with the baseline. If less than about $10k of room is left
 <div class="card"><h2 id="ttl">Year by year (today's 2026 dollars)</h2><div class="scroll"><table id="tbl"></table></div>
 <p class="sub" style="margin:6px 0 0">Alternating shading helps track rows · bold = conversion year · green/gold text = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
 <div class="card"><details><summary>Assumptions & method</summary><ul>
-<li>FICA is charged on the wages you enter: 6.2% Social Security up to the wage base ($184,500 in 2026, indexed at your inflation rate), 1.45% Medicare, plus 0.9% above $200,000. It is cash that goes out, is not income-tax deductible, and is not available to spend. Pretax 403(b) deferrals are not modeled, so enter gross wages.</li><li><b>Auto</b> (default) tests effective-rate caps from 10% to 24%, converting through age 74, and picks the one with the lowest lifetime income tax plus IRMAA among those whose sustainable spending is within 0.1% of the best. The year-by-year table lists what to convert each year; it is a projection, so redo it each November with your actual income.</li><li>Conversion modes: <b>Convert fully by age</b> (default) finds the smallest level yearly amount (start-year dollars, inflating) that empties the 403(b) by the year you reach that age, with no bracket limit. <b>Even out</b> finds the smallest level annual amount (in start-year dollars, inflating) that brings the age-75 RMD to your ceiling, never taking taxable income above the chosen bracket and never converting outside the first/last year window. Fill modes convert as much as fits each year (front-loaded). An optional AGI cap for ages 63+ keeps conversions under an IRMAA tier two years ahead. Sustainable spending is the highest spending that never runs out and leaves the age-95 cushion.</li>
+<li>FICA is charged on the wages you enter: 6.2% Social Security up to the wage base ($184,500 in 2026, indexed at your inflation rate), 1.45% Medicare, plus 0.9% above $200,000. It is cash that goes out, is not income-tax deductible, and is not available to spend. Pretax 403(b) deferrals are not modeled, so enter gross wages.</li><li><b>Auto</b> (default) tests effective-rate caps (10% to 24%, converting through your last conversion age) and low-bracket lifetime plans (12% and 22%), and picks the one with the lowest lifetime income tax plus IRMAA among those whose sustainable spending is within 0.1% of the best. The year-by-year table lists what to convert each year; it is a projection, so redo it each November with your actual income.</li><li><b>Low-bracket lifetime</b> caps pretax withdrawals plus conversions at the top of the chosen bracket every year, for life. Conversions fill whatever room is left, and the rest of your spending comes from Roth and brokerage (pretax is tapped beyond the cap only if those run out). "Last conversion age" lets other strategies keep converting after 75 on top of the RMD.</li><li>Conversion modes: <b>Convert fully by age</b> (default) finds the smallest level yearly amount (start-year dollars, inflating) that empties the 403(b) by the year you reach that age, with no bracket limit. <b>Even out</b> finds the smallest level annual amount (in start-year dollars, inflating) that brings the age-75 RMD to your ceiling, never taking taxable income above the chosen bracket and never converting outside the first/last year window. Fill modes convert as much as fits each year (front-loaded). An optional AGI cap for ages 63+ keeps conversions under an IRMAA tier two years ahead. Sustainable spending is the highest spending that never runs out and leaves the age-95 cushion.</li>
 <li>Balances are entered as of Jan 1 of the start year, which is the first projected year. Growth and inflation compound once a year; results are shown in start-year dollars. Brackets, deductions and the age-65 extra deduction are 2026 IRS figures inflated at your inflation rate; Social Security thresholds and the $200k NIIT threshold do not inflate. The temporary senior bonus deduction (2025–2028) is not modeled.</li>
 <li>Living expenses and Social Security are entered in start-year dollars and inflate. Wages are taxable and entered before Roth contributions; Roth contributions come from after-tax cash. IRMAA starts the November you turn 65 and is based on AGI from two years earlier, so it is left out for any Medicare year whose income two years back is before your start year.</li>
 <li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) (only the tax caused by the conversion itself is withheld out of it; tax on the other withdrawals comes out of those withdrawals), and from the Roth only if the 403(b) runs out. The planner does not minimize lifetime taxes. The first Social Security year pays one month (November birthday).</li>
@@ -142,7 +142,7 @@ function renderWork(){saveWork();const g=id=>+document.getElementById(id).value|
 if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label for="w${y}a">${y} wages (taxable, before Roth, nominal)</label><input id="w${y}a" type="number" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">${y} Roth contribution (nominal)</label><input id="w${y}b" type="number" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div>`}
 document.getElementById('work').innerHTML=h}
 const SSTBL={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
-const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="auto" selected>Auto: lowest tax within 0.1% of max spending</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
+const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="auto" selected>Auto: lowest tax within 0.1% of max spending</option><option value="low">Low-bracket lifetime (fill bracket, spend Roth/brokerage)</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="" step="1" inputmode="decimal"></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
 document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="" step="${s}" inputmode="decimal"></div>`).join('')+TGT;
 const IR=[[109000,95.7],[137000,240.4],[171000,385],[205000,529.6],[500000,578]];
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
@@ -158,7 +158,10 @@ return{tax:prog(ot,0,OB,f)+prog(pt,ot,QB,f)+.038*Math.min(pref,Math.max(0,agi-20
 function yc(c,C){let X=0,S=0,W=0,Xc=0,sp=0,RW=0,sh=0,r;
 for(let i=0;i<22;i++){r=taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss);X=r.tax;const Xi=Math.max(0,X-taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).tax);
 const need=c.L+c.K+c.irm+c.fica+X-c.w-c.ss-c.rmd;
-if(need<=0){S=0;sp=-need;W=0;Xc=0;RW=0;sh=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,Xi,C);const wn=R-Xc;W=Math.min(wn,Math.max(0,c.T-c.rmd-C));RW=Math.min(wn-W,c.Rav);sh=wn-W-RW}}
+if(need<=0){S=0;sp=-need;W=0;Xc=0;RW=0;sh=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,Xi,C);const wn=R-Xc;W=Math.min(wn,Math.max(0,c.T-c.rmd-C));
+if(c.cap&&W>0&&taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss).ot>c.cap){let lo=0,hi=W;for(let k=0;k<12;k++){const m=(lo+hi)/2;taxCalc(c.f,c.age,c.w+C+c.rmd+m,c.div+S*(1-c.bf),c.ss).ot<=c.cap?lo=m:hi=m}W=lo}
+RW=Math.min(wn-W,c.Rav);sh=wn-W-RW;
+if(c.cap&&sh>0){const e=Math.min(sh,Math.max(0,c.T-c.rmd-C-W));W+=e;sh-=e}}}
 return{X,S,W,Xc,sp,RW,sh,ot:r.ot,st:r.st,agi:r.agi}}
 function sim(tau,p,schedule){
   let T=p.t403,R=p.roth,B=p.brk,bs=B*p.basis,rows=[];
@@ -172,15 +175,15 @@ function sim(tau,p,schedule){
     }
     const wk=yr<=p.lw&&p.wk[yr]?p.wk[yr]:[0,0];
     const c={f,age,w:wk[0],K:wk[1],ss:age>=p.ssage?p.ss*12*u*(age==p.ssage?1/12:1):0,
-      fica:wk[0]*.0145+.062*Math.min(wk[0],184500*f)+.009*Math.max(0,wk[0]-2e5),rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*u,irm,T,Rav:R,B,bf:B>0?bs/B:1};
+      fica:wk[0]*.0145+.062*Math.min(wk[0],184500*f)+.009*Math.max(0,wk[0]-2e5),rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*u,irm,T,Rav:R,B,bf:B>0?bs/B:1,cap:p.capOn?p.lim*f-.5:0};
     let C=0;
     if(sched){
       C=Math.max(0,Math.min(T,sched[yr]||0));
-    }else if(yr>=p.firstc&&yr<=p.lastc&&age<75&&T>0&&tau>0){
+    }else if(yr>=p.firstc&&yr<=p.lastc&&age<=(p.cmaxAge||74)&&T>0&&tau>0){
       const brk=p.ttype!='eff',lim=brk?p.lim*f:p.lim,cp=age>=63&&p.agicap?p.agicap*f:0;
       const ok=r=>{const y=yc(c,r);return (brk?y.ot:(y.agi>0?y.X/y.agi:0))<lim&&(!cp||y.agi<cp)};
-      if(p.ttype=='full'){C=Math.min(T,p.Lv*u)}else if(ok(0)){
-        let lo=0,hi=T;
+      if(p.ttype=='full'){C=Math.min(Math.max(0,T-c.rmd),p.Lv*u)}else if(ok(0)){
+        let lo=0,hi=Math.max(0,T-c.rmd);
         for(let i=0;i<24;i++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}
         C=Math.min(lo,(p.Lv==null?Infinity:p.Lv)*u)
       }
@@ -206,7 +209,7 @@ function run(){
   const p={wk:WK,start:v('start'),by:v('by'),lw:v('lw'),firstc:v('firstc'),living:v('living'),
     infl:v('infl')/100,t403:v('t403'),g:v('g')/100,roth:v('roth'),brk:v('brk'),gb:v('gb')/100,
     yld:v('brk')>0?v('div')/v('brk'):0,basis:v('basis')/100,ssage:+v('ssclaim')||70,ss:SSTBL[+v('ssclaim')||70],lastc:v('lastc'),
-    cushion:v('cushion'),agicap:v('agicap'),Lv:null};
+    cushion:v('cushion'),agicap:v('agicap'),Lv:null,cmaxAge:Math.min(100,Math.max(60,v('cmax')||74)),capOn:false};
 
   if(!v('start')||!v('by')){document.getElementById('warn').textContent='Enter your inputs above, or open a saved link, to see results.';document.getElementById('sum').innerHTML='';document.getElementById('tbl').innerHTML='';return}
   if(!(p.start>=2000&&p.start<=p.by+75&&p.by>=1900)){
@@ -219,8 +222,9 @@ function run(){
     const bb=OB.filter(x=>x[0]*100<=tv+.01),o=bb.length?bb[bb.length-1]:OB[0];
     brRate=o[0];p.lim=o[2]===Infinity?1e9:o[2];
   }else p.lim=tv/100;
+  if(tt=='low'){p.capOn=true;p.cmaxAge=100;p.lastc=p.by+100}
   let Lnote='';
-  if(tt=='full'){p.lastc=p.by+Math.min(v('byage'),74);
+  if(tt=='full'){p.lastc=p.by+Math.min(v('byage'),p.cmaxAge);
     if(p.lastc<p.firstc)Lnote='Last conversion year is before the first; nothing converted.';
     const te=L=>{const r=sim(1,{...p,Lv:L}).find(x=>x.yr==p.lastc);return r?r.T:0};
     let lo=0,hi=5e6;for(let i=0;i<40;i++){const m=(lo+hi)/2;te(m)>1?lo=m:hi=m}p.Lv=Math.ceil(hi/500)*500}
@@ -234,13 +238,17 @@ function run(){
       return !r.some(x=>x.short>1)&&(r95.T+r95.R+r95.B)/(r95.u*(1+pp.infl))>=pp.cushion};
     while(feasible(b)&&b<2e6)b*=1.5;
     for(let i=0;i<it;i++){const m=(a+b)/2;feasible(m)?a=m:b=m}return a};
+  let autoNote='';
   if(tt=='auto'){
-    p.ttype='eff';p.lastc=p.by+74;
+    p.ttype='eff';p.lastc=p.by+p.cmaxAge;
     const cost=pp=>sim(1,pp).filter(x=>x.yr>pp.lw).reduce((s,x)=>s+(x.X+x.irm)/x.u,0);
-    const base=susP(0,p,12),cs=[];
-    for(let c=10;c<=24;c++){const pp={...p,lim:c/100};cs.push({c,sp:susP(1,pp,12),tx:cost(pp)})}
+    const base=susP(0,p,12),cs=[],lowP=r=>({...p,ttype:'brk',lim:OB.find(b=>Math.round(b[0]*100)==r)[2],capOn:true,cmaxAge:100,lastc:p.by+100});
+    for(const c of [10,12,14,15,16,17,18,19,20,22,24]){const pp={...p,lim:c/100};cs.push({k:'eff',c,pp,sp:susP(1,pp,12),tx:cost(pp)})}
+    for(const r of [12,22]){const pp=lowP(r);cs.push({k:'low',c:r,pp,sp:susP(1,pp,12),tx:cost(pp)})}
     const best=Math.max(base,...cs.map(x=>x.sp)),pick=cs.filter(x=>x.sp>=best*.999).sort((a,b)=>a.tx-b.tx)[0];
-    p.lim=pick.c/100;
+    Object.assign(p,pick.pp);
+    autoNote=pick.k=='low'?`Auto-selected plan: low-bracket lifetime at the ${pick.c}% bracket (pretax money only up to the top of that bracket each year, the rest from Roth and brokerage). `:`Auto-selected plan: convert up to a ${pick.c}% effective tax rate each year, through age ${p.cmaxAge}. `;
+    if(pick.k=='low')brRate=pick.c/100;
   }
 
   const ar=r=>{const q=r.filter(x=>x.yr>p.lw),a=tot(q,'agi');return a>0?tot(q,'X')/a:0};
@@ -264,13 +272,13 @@ function run(){
   const SA=st(1),SZ=st(0),bf=o=>o.br?o.br+'%':'—',N0=over(Araw),NZ=over(sim(0,p));window.LIM75=SA.lim75;
   const stressNote=SA.ex?' Stress test (growth +2 points): RMDs would exceed the '+fmt(SA.lim75)+' that fits in the 22% bracket with your Social Security (from '+SA.ex+'). Consider converting more, up to the top of the 24% bracket.':' Stress test (growth +2 points) stays inside the 22% bracket: age-75 RMD '+fmt(SA.r75)+' vs a limit of '+fmt(SA.lim75)+'.';
   const row=(l,a,b)=>`<tr${/<b[ >]|<strong[ >]/i.test(l)?' class="emphasis"':''}><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
-  let headline=tt=='auto'?`Auto-selected plan: convert up to a ${(p.lim*100).toFixed(0)}% effective tax rate each year, through age 74. It is the lowest-tax plan whose sustainable spending is within 0.1% of the best tested.`:tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),74)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
+  let headline=tt=='low'?`Low-bracket plan: pretax money is taken only up to the top of the ${Math.round(brRate*100)}% bracket each year (conversions fill any room). Everything else comes from Roth and brokerage, through age 100.`:tt=='auto'?autoNote+'It is the lowest-tax plan among those whose sustainable spending is within 0.1% of the best tested (effective-rate caps and low-bracket plans).':tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),p.cmaxAge)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
   document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · IRMAA comes out of your Social Security`;
   document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
 
   let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>';
   {
-    sum+=row(tt=='full'?'Convert fully by age '+Math.min(v('byage'),74)+': level amount':tt=='level'?'Even conversions: level amount':'Conversions fill each year up to',tt=='full'?fmt(p.Lv)+'/yr (today\'s $), no bracket limit':tt=='level'?(p.Lv==null?'Max allowed each year':fmt(p.Lv)+'/yr (today\'s $), capped at the top of the '+Math.round(brRate*100)+'% bracket'):(p.ttype!='eff'?'Top of the '+Math.round(brRate*100)+'% bracket':(p.lim*100).toFixed(1)+'% effective rate'),'—')+
+    sum+=row(tt=='full'?'Convert fully by age '+Math.min(v('byage'),p.cmaxAge)+': level amount':tt=='level'?'Even conversions: level amount':'Conversions fill each year up to',tt=='full'?fmt(p.Lv)+'/yr (today\'s $), no bracket limit':tt=='level'?(p.Lv==null?'Max allowed each year':fmt(p.Lv)+'/yr (today\'s $), capped at the top of the '+Math.round(brRate*100)+'% bracket'):(p.ttype!='eff'?'Top of the '+Math.round(brRate*100)+'% bracket':(p.lim*100).toFixed(1)+'% effective rate'),'—')+
       row('Total converted',fmt(tot(A,'C')),'$0')+
       row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
       row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
@@ -299,7 +307,7 @@ function run(){
   document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Total tax','IRMAA','Brokerage sold','403(b) start','RMD','Other 403(b) withdrawals','Roth paid out','403(b) end','Brokerage end','Roth end','Total assets','FICA'].map(h=>`<th>${h}</th>`).join('')+
     '</tr>'+A.map((x,i)=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td><td>${fmt(x.T+x.B+x.R)}</td><td>${fmt(x.fica)}</td></tr>`.replace(/<td>/g,(_,j)=>'<td style="background-color:'+((i%2)?'var(--year-stripe)':'var(--card)')+'">')).join('');
 }
-let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?24:20}clearTimeout(tm);tm=setTimeout(run,150);dirty(1)});
+let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?(e.target.value=='low'?12:24):20}clearTimeout(tm);tm=setTimeout(run,450);dirty(1)});
 const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input')];
 const sb=()=>document.getElementById('savebtn'),sm=()=>document.getElementById('savemsg');
 function dirty(d){if(sb()){sb().textContent=d?'Save to link ●':'Saved ✓';if(d)sm().textContent=''}}
@@ -315,7 +323,7 @@ function saveURL(){try{const q=new URLSearchParams();fields().forEach(e=>{if(e.v
 function loadURL(){const q=new URLSearchParams(location.hash.slice(1));if(![...q.keys()].length)return;
   fields().forEach(e=>{if(e.tagName=='INPUT')e.value=''});Object.keys(WK).forEach(k=>delete WK[k]);
   const set=id=>{const e=document.getElementById(id);if(e&&q.has(id))e.value=q.get(id)};
-  [...IN.map(a=>a[0]),'ssclaim','ttype','byage','tval','rtgt','agicap','cushion'].forEach(set);
+  [...IN.map(a=>a[0]),'ssclaim','ttype','cmax','byage','tval','rtgt','agicap','cushion'].forEach(set);
   if(!q.has('ssclaim')&&q.has('ssage')&&SSTBL[q.get('ssage')])document.getElementById('ssclaim').value=q.get('ssage');
   renderWork();q.forEach((x,id)=>{if(/^w\d{4}[ab]$/.test(id))set(id)});saveWork()}
 addEventListener('hashchange',()=>{loadURL();run()});
