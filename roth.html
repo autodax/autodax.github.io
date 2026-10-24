@@ -203,7 +203,11 @@ function sim(tau,p,schedule){
 }
 
 const mr=(ot,f)=>{if(ot<=0)return'—';const o=OB.find(([r,lo,hi])=>ot/f>=lo&&ot/f<hi);return Math.round(o[0]*100)+'%'};
-function run(){
+const REL={auto:['cmax','autosafe','agicap'],low:['tval','agicap'],brk:['tval','cmax','agicap'],eff:['tval','cmax','agicap'],level:['tval','rtgt','cmax','agicap'],full:['byage','cmax']};
+function syncInputs(){const t=document.getElementById('ttype').value,on=REL[t]||[];
+  for(const id of ['cmax','autosafe','byage','tval','rtgt','agicap']){const e=document.getElementById(id);if(e&&e.parentElement)e.parentElement.style.display=on.includes(id)?'':'none'}
+  const l=document.querySelector('label[for=tval]');if(l)l.textContent=t=='eff'?'Effective tax rate cap %':'Bracket ceiling % (top of this bracket)'}
+function run(){syncInputs();
   saveWork();
   const v=id=>+document.getElementById(id).value||0;
   const p={wk:WK,start:v('start'),by:v('by'),lw:v('lw'),firstc:v('firstc'),living:v('living'),
