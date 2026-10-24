@@ -238,14 +238,20 @@ function run(){
       return !r.some(x=>x.short>1)&&(r95.T+r95.R+r95.B)/(r95.u*(1+pp.infl))>=pp.cushion};
     while(feasible(b)&&b<2e6)b*=1.5;
     for(let i=0;i<it;i++){const m=(a+b)/2;feasible(m)?a=m:b=m}return a};
-  let autoNote='';
+  const top22=f=>OB.find(b=>Math.round(b[0]*100)==22)[2]*f;
+  const lim22=x=>{const pref=Math.max(0,x.agi-(x.w+x.C+x.dist+x.st));let lo=0,hi=1e9;for(let i=0;i<45;i++){const m=(lo+hi)/2;taxCalc(x.f,x.age,m,pref,x.ss).ot<=top22(x.f)?lo=m:hi=m}return lo};
+  const over=raw=>raw.find(x=>x.age>=75&&x.rmd>lim22(x)+1);
+  let autoNote='',safeNote='';
   if(tt=='auto'){
     p.ttype='eff';p.lastc=p.by+p.cmaxAge;
     const cost=pp=>sim(1,pp).filter(x=>x.yr>pp.lw).reduce((s,x)=>s+(x.X+x.irm)/x.u,0);
     const base=susP(0,p,12),cs=[],lowP=r=>({...p,ttype:'brk',lim:OB.find(b=>Math.round(b[0]*100)==r)[2],capOn:true,cmaxAge:100,lastc:p.by+100});
     for(const c of [10,12,14,15,16,17,18,19,20,22,24]){const pp={...p,lim:c/100};cs.push({k:'eff',c,pp,sp:susP(1,pp,12),tx:cost(pp)})}
     for(const r of [12,22]){const pp=lowP(r);cs.push({k:'low',c:r,pp,sp:susP(1,pp,12),tx:cost(pp)})}
-    const best=Math.max(base,...cs.map(x=>x.sp)),pick=cs.filter(x=>x.sp>=best*.999).sort((a,b)=>a.tx-b.tx)[0];
+    const hi=pp=>({...pp,g:pp.g+.02,gb:pp.gb+.02});
+    cs.forEach(x=>{x.safe=!over(sim(1,x.pp))&&!over(sim(1,hi(x.pp)))});
+    const pool=cs.some(x=>x.safe)?cs.filter(x=>x.safe):cs,best=Math.max(...pool.map(x=>x.sp)),pick=pool.filter(x=>x.sp>=best*.999).sort((a,b)=>a.tx-b.tx)[0];
+    safeNote=pool===cs&&!pick.safe?' No tested plan kept RMDs inside the 22%-bracket limit with growth +2 points, so this is the best spending among all of them.':' It keeps RMDs inside the 22%-bracket limit, even with growth +2 points.';
     Object.assign(p,pick.pp);
     autoNote=pick.k=='low'?`Auto-selected plan: low-bracket lifetime at the ${pick.c}% bracket (pretax money only up to the top of that bracket each year, the rest from Roth and brokerage). `:`Auto-selected plan: convert up to a ${pick.c}% effective tax rate each year, through age ${p.cmaxAge}. `;
     if(pick.k=='low')brRate=pick.c/100;
@@ -265,14 +271,11 @@ function run(){
   const dep=r=>{const x=r.find(x=>x.B<1);return x?x.yr:'after '+Y1};
   const sus=t=>susP(t,p);
 
-  const top22=f=>OB.find(b=>Math.round(b[0]*100)==22)[2]*f;
-  const lim22=x=>{const pref=Math.max(0,x.agi-(x.w+x.C+x.dist+x.st));let lo=0,hi=1e9;for(let i=0;i<45;i++){const m=(lo+hi)/2;taxCalc(x.f,x.age,m,pref,x.ss).ot<=top22(x.f)?lo=m:hi=m}return lo};
-  const over=raw=>raw.find(x=>x.age>=75&&x.rmd>lim22(x)+1);
   const st=t=>{const raw=sim(t,{...p,g:p.g+.02,gb:p.gb+.02}).filter(x=>x.age>=75),r=re(raw),x75=raw.find(x=>x.age==75),ex=over(raw);return{r75:(r.find(x=>x.age==75)||{rmd:0}).rmd,pk:Math.max(0,...r.map(x=>x.rmd)),br:Math.max(0,...r.map(x=>x.br=='—'?0:parseInt(x.br))),lim75:x75?lim22(x75)/x75.u:0,ex:ex?ex.yr:0}};
   const SA=st(1),SZ=st(0),bf=o=>o.br?o.br+'%':'—',N0=over(Araw),NZ=over(sim(0,p));window.LIM75=SA.lim75;
   const stressNote=SA.ex?' Stress test (growth +2 points): RMDs would exceed the '+fmt(SA.lim75)+' that fits in the 22% bracket with your Social Security (from '+SA.ex+'). Consider converting more, up to the top of the 24% bracket.':' Stress test (growth +2 points) stays inside the 22% bracket: age-75 RMD '+fmt(SA.r75)+' vs a limit of '+fmt(SA.lim75)+'.';
   const row=(l,a,b)=>`<tr${/<b[ >]|<strong[ >]/i.test(l)?' class="emphasis"':''}><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
-  let headline=tt=='low'?`Low-bracket plan: pretax money is taken only up to the top of the ${Math.round(brRate*100)}% bracket each year (conversions fill any room). Everything else comes from Roth and brokerage, through age 100.`:tt=='auto'?autoNote+'It is the lowest-tax plan among those whose sustainable spending is within 0.1% of the best tested (effective-rate caps and low-bracket plans).':tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),p.cmaxAge)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
+  let headline=tt=='low'?`Low-bracket plan: pretax money is taken only up to the top of the ${Math.round(brRate*100)}% bracket each year (conversions fill any room). Everything else comes from Roth and brokerage, through age 100.`:tt=='auto'?autoNote+'It is the lowest-tax plan among those whose sustainable spending is within 0.1% of the best tested (effective-rate caps and low-bracket plans).'+safeNote:tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),p.cmaxAge)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
   document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · IRMAA comes out of your Social Security`;
   document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
 
