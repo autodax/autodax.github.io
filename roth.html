@@ -77,6 +77,17 @@ dialog#chk{padding-bottom:28px}
   #chk ol,#chk ul{padding-left:18px}
   #chk > :last-child{margin-bottom:0}
 }
+
+.input-section-title{margin:18px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
+#strategy{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+#strategy > div{justify-content:flex-start}
+#strategy > .dropdown-field{grid-column:1 / -1}
+#strategy select{width:100%;min-width:0;padding:9px 30px 9px 10px}
+#strategy label{font-size:.78rem;line-height:1.4}
+.dropdown-selection{display:none;color:var(--soft);font-size:.8rem;line-height:1.4;margin:5px 2px 0;overflow-wrap:anywhere}
+#work{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+@media(min-width:1100px){#strategy{grid-template-columns:repeat(4,minmax(0,1fr))}#strategy > .dropdown-field{grid-column:span 2}}
+@media(max-width:700px){#strategy{grid-template-columns:minmax(0,1fr)}#strategy > .dropdown-field{grid-column:auto}.dropdown-selection{display:block}}
 </style>
 <script>
 if(/^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent))document.documentElement.className+=' safari';
@@ -123,7 +134,7 @@ If none is true, stay with the baseline. If less than about $10k of room is left
 <li>Everything assumes today's tax law. This is general information, not tax advice.</li></ul></dialog>
 <p class="tynote">Click <b>Save to link</b> (top) to store your inputs in this page's web address, then bookmark it. Opening a saved address fills everything back in.<span id="savemsg"></span></p>
 <p class="sub" id="hdr">Born Nov 1966 · Single · Florida · Federal tax only · RMDs start at 75 (2041) · All dollar amounts in today's (2026) dollars · Medicare IRMAA is taken out of your Social Security payment</p>
-<div class="card"><h2>Inputs</h2><div class="grid" id="inputs"></div><div class="grid" id="work" style="margin-top:8px"></div></div>
+<div class="card" id="planner-inputs"><h2>Inputs</h2><div class="grid" id="inputs"></div><h2 class="input-section-title">Yearly wages &amp; Roth contributions</h2><div class="grid" id="work"></div><h2 class="input-section-title">Model &amp; strategy settings</h2><div class="grid" id="strategy"></div></div>
 <div class="card" id="results"><h2>Result</h2><div class="scroll"><table class="sum" id="sum"></table></div><p class="warn" id="warn"></p></div>
 <div class="card"><h2 id="ttl">Year by year (today's 2026 dollars)</h2><div class="scroll"><table id="tbl"></table></div>
 <p class="sub" style="margin:6px 0 0">Alternating shading helps track rows · bold = conversion year · green/gold text = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
@@ -142,8 +153,9 @@ function renderWork(){saveWork();const g=id=>+document.getElementById(id).value|
 if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label for="w${y}a">${y} wages (taxable, before Roth, nominal)</label><input id="w${y}a" type="number" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">${y} Roth contribution (nominal)</label><input id="w${y}b" type="number" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div>`}
 document.getElementById('work').innerHTML=h}
 const SSTBL={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
-const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="auto" selected>Auto: lowest tax within 0.1% of max spending</option><option value="low">Low-bracket lifetime (fill bracket, spend Roth/brokerage)</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="" step="1" inputmode="decimal"></div><div><label for="autosafe">Auto: keep RMDs inside the 22% limit?</label><select id="autosafe"><option value="yes" selected>Yes (even at +2 pts growth)</option><option value="no">No (maximize spending)</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="planat">Plan at</label><select id="planat"><option value="mine" selected>My spending input</option><option value="max">Maximum sustainable spending (drain to cushion)</option></select></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
-document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="" step="${s}" inputmode="decimal"></div>`).join('')+TGT;
+const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="auto" selected>Auto: lowest tax within 0.1% of max spending</option><option value="low">Low-bracket lifetime (fill bracket, spend Roth/brokerage)</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="74" step="1" inputmode="decimal"></div><div><label for="autosafe">Auto: keep RMDs inside the 22% limit?</label><select id="autosafe"><option value="yes" selected>Yes (even at +2 pts growth)</option><option value="no">No (maximize spending)</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="planat">Plan at</label><select id="planat"><option value="mine" selected>My spending input</option><option value="max">Maximum sustainable spending (drain to cushion)</option></select></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
+document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="" step="${s}" inputmode="decimal"></div>`).join('');
+document.getElementById('strategy').innerHTML=TGT;
 const IR=[[109000,95.7],[137000,240.4],[171000,385],[205000,529.6],[500000,578]];
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
 const OB=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
@@ -320,7 +332,7 @@ function run(){syncInputs();
     '</tr>'+A.map((x,i)=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td><td>${fmt(x.T+x.B+x.R)}</td><td>${fmt(x.fica)}</td></tr>`.replace(/<td>/g,(_,j)=>'<td style="background-color:'+((i%2)?'var(--year-stripe)':'var(--card)')+'">')).join('');
 }
 let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?(e.target.value=='low'?12:24):20}clearTimeout(tm);tm=setTimeout(run,450);dirty(1)});
-const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input')];
+const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input,#strategy input,#strategy select')];
 const sb=()=>document.getElementById('savebtn'),sm=()=>document.getElementById('savemsg');
 function dirty(d){if(sb()){sb().textContent=d?'Save to link ●':'Saved ✓';if(d)sm().textContent=''}}
 function saveBtn(){saveURL();dirty(0);const u=location.href,i=document.getElementById('savelink');i.value=u;
@@ -333,9 +345,10 @@ function openChk(){const d=document.getElementById('chk'),age=(+document.getElem
   try{d.showModal()}catch(e){d.setAttribute('open','')}}
 function saveURL(){try{const q=new URLSearchParams();fields().forEach(e=>{if(e.value!=='')q.set(e.id,e.value)});const s=q.toString();history.replaceState(null,'',s?'#'+s:location.pathname+location.search)}catch(e){}}
 function loadURL(){const q=new URLSearchParams(location.hash.slice(1));if(![...q.keys()].length)return;
-  fields().forEach(e=>{if(e.tagName=='INPUT')e.value=''});Object.keys(WK).forEach(k=>delete WK[k]);
+  fields().forEach(e=>{if(e.tagName=='INPUT')e.value=e.id=='cmax'?'74':''});Object.keys(WK).forEach(k=>delete WK[k]);
   const set=id=>{const e=document.getElementById(id);if(e&&q.has(id))e.value=q.get(id)};
   [...IN.map(a=>a[0]),'ssclaim','ttype','planat','cmax','autosafe','byage','tval','rtgt','agicap','cushion'].forEach(set);
+  if(document.getElementById('cmax').value==='')document.getElementById('cmax').value='74';
   if(!q.has('ssclaim')&&q.has('ssage')&&SSTBL[q.get('ssage')])document.getElementById('ssclaim').value=q.get('ssage');
   renderWork();q.forEach((x,id)=>{if(/^w\d{4}[ab]$/.test(id))set(id)});saveWork()}
 addEventListener('hashchange',()=>{loadURL();run()});
@@ -358,6 +371,20 @@ loadURL();renderWork();run();
   }, true);
   dialog.addEventListener('close', () => { startedOutside = false; });
 })();
+
+function updateDropdownReadouts(){
+  document.querySelectorAll('#strategy select').forEach(select=>{
+    select.parentElement.classList.add('dropdown-field');
+    let note=document.getElementById(select.id+'-selection');
+    if(!note){note=document.createElement('p');note.id=select.id+'-selection';note.className='dropdown-selection';note.setAttribute('aria-hidden','true');select.insertAdjacentElement('afterend',note);}
+    const text=select.options[select.selectedIndex]?.text||'';
+    select.title=text;note.textContent=text;
+  });
+}
+document.addEventListener('input',updateDropdownReadouts);
+document.addEventListener('change',updateDropdownReadouts);
+addEventListener('hashchange',updateDropdownReadouts);
+updateDropdownReadouts();
 </script>
 </body>
 </html>
