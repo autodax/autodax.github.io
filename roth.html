@@ -41,7 +41,7 @@ tr.rmd td{color:var(--green)}
 .sum td{font-size:.78rem;white-space:normal}
 .sum td:first-child{text-align:left}
 .sum td+td{white-space:nowrap}
-.warn{color:var(--owe);font-size:.8rem;margin:6px 0 0}
+.warn{color:var(--owe);font-size:1.02rem;line-height:1.55;font-weight:600;margin:10px 0 0}
 details p,details li{font-size:.78rem;color:var(--soft);margin:4px 0}
 summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
 dialog#chk{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;width:min(700px,94vw);max-height:86vh;padding:16px 20px;overflow:auto}
@@ -52,9 +52,9 @@ dialog#chk::backdrop{background:rgba(0,0,0,.5)}
 
 :root{--year-stripe:#E8DEC7}
 :root[data-theme="dark"]{--year-stripe:#44392D}
-#results{width:fit-content;max-width:100%}
-#results .warn{max-width:76ch}
-#sum{width:auto;max-width:100%}
+#results{width:min(100%,820px)}
+#results .warn{max-width:none}
+#sum{width:100%;max-width:100%}
 #sum th,#sum td{padding:3px 10px}
 #sum tr:nth-child(even)>td{background:var(--band)}
 #sum tr.emphasis>td:not(:first-child){font-weight:700}
