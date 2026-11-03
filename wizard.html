@@ -40,9 +40,10 @@ nav.steps{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:
 nav.steps button{flex:0 0 auto;font:600 .9rem var(--serif);padding:6px 12px;border-radius:999px;border:1px solid var(--brown-line);background:var(--card);color:var(--soft);cursor:pointer}
 nav.steps button[aria-current="step"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
 nav.steps button .n{font-family:var(--mono);margin-right:5px;opacity:.8}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px;min-width:0}
-h2{font-size:.9rem;text-transform:uppercase;letter-spacing:.07em;color:var(--soft);margin:0 0 10px}
-h3{font-size:1.08rem;color:var(--green);margin:14px 0 6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 18px 20px;margin-bottom:22px;min-width:0;overflow:hidden}
+h2{font:700 1.3rem/1.25 var(--serif);color:var(--green);margin:0 -18px 18px;padding:14px 18px 12px;background:var(--band);border-bottom:2px solid var(--brown-line);text-wrap:balance}
+h2 .eyebrow{display:block;font:600 .78rem var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--brown-ink);margin-bottom:3px}
+h3{font:700 1.1rem/1.3 var(--serif);color:var(--ink);margin:28px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--brown-line)}
 .lead{font-size:1rem;color:var(--soft);margin:0 0 12px;max-width:68ch}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px}
 .grid>div{display:flex;flex-direction:column;justify-content:flex-start;min-width:0}
@@ -57,8 +58,8 @@ label{display:block;font-weight:700;color:var(--ink);font-size:.88rem;margin-bot
 .intro p{margin:4px 0;font-size:.97rem;max-width:none}
 input,select{width:100%;font:1rem var(--mono);padding:7px 9px;border:1px solid var(--brown-line);border-radius:9px;background:var(--bg);color:var(--ink);min-width:0}
 input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-.group{font-size:.84rem;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin:16px 0 8px;padding-top:10px;border-top:1px solid var(--line)}
-.group:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.group{font:700 1.12rem/1.3 var(--serif);color:var(--ink);margin:34px 0 14px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);border-left:0;border-right:0}
+.lead+.group,.intro+.lead+.group{margin-top:18px}
 .btns{display:flex;gap:8px;justify-content:space-between;margin-top:6px}
 .btn{font:600 .9rem var(--serif);padding:9px 18px;border-radius:999px;border:1px solid var(--green);background:var(--green);color:var(--on-green);cursor:pointer}
 .btn.ghost{background:var(--card);color:var(--green)}
@@ -74,7 +75,7 @@ th:first-child,td:first-child{text-align:left;white-space:normal}
 tr.zero td{opacity:.45}
 tr.tot td{font-weight:700;border-top:2px solid var(--brown-line)}
 .scroll{overflow-x:auto;min-width:0}
-.plan{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.plan{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
 .plan>.card{margin:0}
 .todo{counter-reset:t;list-style:none;padding:0;margin:0;display:grid;gap:10px}
 .todo>li{counter-increment:t;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
@@ -118,7 +119,7 @@ p{max-width:72ch}
 
 <nav class="steps" id="steps" aria-label="Wizard steps">
   <button type="button" data-s="1"><span class="n">1</span>Accounts</button>
-  <button type="button" data-s="2"><span class="n">2</span>Income &amp; last year</button>
+  <button type="button" data-s="2"><span class="n">2</span>Income &amp; spending</button>
   <button type="button" data-s="3"><span class="n">3</span>Conversion &amp; tax</button>
   <button type="button" data-s="4"><span class="n">4</span>Returns &amp; spending rules</button>
   <button type="button" data-s="5"><span class="n">5</span>Your plan</button>
@@ -126,7 +127,7 @@ p{max-width:72ch}
 
 <form id="wiz" autocomplete="off" onsubmit="return false">
 <section class="step card" data-s="1">
-  <h2>Step 1 · Account balances today</h2>
+  <h2><span class="eyebrow">Step 1 of 5</span>Account balances today</h2>
   <div class="intro">
     <p><b>When to do this:</b> once a year, in October or November. That leaves time to finish a Roth conversion before December 31 and to set up next year's monthly transfers.</p>
     <p><b>What you'll get:</b> how much to spend next year (January–December) and where it comes from, how much to convert to Roth this year, the tax that results, and whether you need estimated tax payments.</p>
@@ -161,8 +162,8 @@ p{max-width:72ch}
 </section>
 
 <section class="step card" data-s="2" hidden>
-  <h2>Step 2 · You, your income and last year</h2>
-  <p class="lead">This year's income sets this year's tax, which decides how much you can convert. Last year's spending is the starting point for next year's budget.</p>
+  <h2><span class="eyebrow">Step 2 of 5</span>You, your income and spending</h2>
+  <p class="lead">This year's income sets this year's tax, which decides how much you can convert. This year's spending is the starting point for next year's budget.</p>
   <div class="grid">
     <div><label for="yr">Plan year</label><input id="yr" type="number" inputmode="numeric" step="1" value="2026"><div class="help">The year you're doing this in. The conversion and tax are for this year; the spending budget is for January–December of next year.</div></div>
     <div><label for="by">Birth year (November birthday)</label><input id="by" type="number" inputmode="numeric" step="1" value="1966"><div class="help">Sets your age for the standard deduction, Medicare, Social Security and RMDs (which start at 75).</div></div>
@@ -202,7 +203,7 @@ p{max-width:72ch}
 </section>
 
 <section class="step card" data-s="3" hidden>
-  <h2>Step 3 · Roth conversion and how to pay the tax</h2>
+  <h2><span class="eyebrow">Step 3 of 5</span>Roth conversion and how to pay the tax</h2>
   <p class="lead">A Roth conversion moves money from pre-tax to Roth. You pay income tax on it now, and it then grows tax-free, isn't counted toward future required distributions, and is never taxed again. Your rule: convert a mild amount each year (about a 17% effective rate) and more only if required distributions are heading somewhere large.</p>
   <div class="grid">
     <div class="full"><label for="model">How to size this year's conversion</label><select id="model">
@@ -230,7 +231,7 @@ p{max-width:72ch}
 </section>
 
 <section class="step card" data-s="4" hidden>
-  <h2>Step 4 · Market returns and spending guardrails</h2>
+  <h2><span class="eyebrow">Step 4 of 5</span>Market returns and spending guardrails</h2>
   <p class="lead">Next year's budget comes from risk-based guardrails: the wizard asks how likely your money is to last at a given spending level, and adjusts spending only when that chance leaves your comfort band. These settings say how to model markets and where the band is.</p>
   <div class="grid">
     <div class="full"><label for="meth">Model future returns with</label><select id="meth">
@@ -680,7 +681,7 @@ function render(R){
   <p class="note">The planner uses its own built-in Social Security amounts.</p>`;
 
   return`<div class="plan">
-  <div class="card span"><h2>Your ${I.yr} to-do list</h2><ol class="todo">${todo.map(x=>`<li><div>${x}</div></li>`).join('')}</ol></div>
+  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · Your plan</span>Your ${I.yr} to-do list</h2><ol class="todo">${todo.map(x=>`<li><div>${x}</div></li>`).join('')}</ol></div>
   <div class="card"><h2>How much to pay yourself</h2>${spend}</div>
   <div class="card"><h2>Roth conversion</h2>${conv}</div>
   <div class="card span"><h2>${I.yr} tax scenario</h2>${tax}</div>
