@@ -171,7 +171,10 @@ p{max-width:72ch}
   <div class="grid" id="work"></div>
   <div class="group" id="tyHead">This year's other income</div>
   <div class="grid">
-    <div><label for="wwh">Federal tax withheld from paychecks, full year</label><input id="wwh" type="number" inputmode="decimal" step="100" value="" placeholder="estimate"><div class="help">Year-to-date federal income tax on your latest paystub, plus that paystub's amount times the paychecks left this year. Leave out Social Security and Medicare. Blank estimates it from your wages.</div></div>
+    <div><label for="pdate">Latest paystub date</label><input id="pdate" type="date"><div class="help">Paydays counted after it: Oct 2, 16, 30; Nov 13, 27; Dec 11, 25.</div></div>
+    <div><label for="ytdwh">Federal tax withheld, year to date</label><input id="ytdwh" type="number" inputmode="decimal" step="1" value=""><div class="help">That paystub's year-to-date federal income tax. Not Social Security or Medicare.</div></div>
+    <div><label for="perwh">Federal tax withheld per paycheck</label><input id="perwh" type="number" inputmode="decimal" step="1" value=""><div class="help">The same paystub's federal income tax for that one paycheck.</div></div>
+    <div><label for="wwh">Or type the full-year total</label><input id="wwh" type="number" inputmode="decimal" step="100" value="" placeholder="calculated"><div class="help" id="wwhHint"></div></div>
     <div><label for="ltg">Long-term gains, full year</label><input id="ltg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held over a year that you've sold or will sell this year, including brokerage sales for spending. Your brokerage's realized gain/loss or tax page shows the year-to-date total. Don't include the sale that refills the Roth; the wizard adds that.</div></div>
     <div><label for="stg">Short-term gains, full year</label><input id="stg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held a year or less. Taxed like wages. Usually zero.</div></div>
     <div><label for="oth">Pre-tax withdrawals already taken this year</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year, including any conversions already done. Leave out the conversion this wizard is sizing.</div></div>
@@ -321,6 +324,14 @@ function split(base,amt,br){let rem=amt,cur=base;return br.map(([r,lo,hi])=>{if(
 function ssTaxable(ss,other){const c=other+.5*ss,b50=Math.max(0,Math.min(c,34000)-25000),b85=Math.max(0,c-34000),t50=Math.min(.5*b50,.5*ss),tx=ss>0?Math.min(.85*ss,t50+.85*b85):0;return{taxable:tx,combined:c,rows:[['0%',0,25000,Math.max(0,Math.min(c,25000)),0],['up to 50%',25000,34000,b50,t50],['up to 85%',34000,Infinity,b85,Math.max(0,tx-t50)]]}}
 function stdDed(magi,o65){if(!o65)return 16100;return 16100+2050+Math.max(0,6000-Math.max(0,(magi-75000)*.06))}
 const employerEst=w=>sumT(split(0,Math.max(0,w-16100),ORD));
+const PAYDAYS=[[9,2],[9,16],[9,30],[10,13],[10,27],[11,11],[11,25]];
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function wwhCalc(yr,wage){
+  if(!isBlank('wwh'))return{v:num('wwh'),src:'typed'};
+  const p=val('pdate').split('-').map(Number);
+  if(p.length===3&&p[0]&&!isBlank('ytdwh')&&!isBlank('perwh')){const d=new Date(p[0],p[1]-1,p[2]),left=PAYDAYS.filter(([m,dd])=>new Date(yr,m,dd)>d);
+    return{v:num('ytdwh')+num('perwh')*left.length,src:'paystub',left,ytd:num('ytdwh'),per:num('perwh'),warn:p[0]!==yr?`The paystub is dated ${p[0]}, not ${yr}.`:d<new Date(yr,9,1)?'Paydays before October aren\'t listed, so they aren\'t counted.':''}}
+  return{v:employerEst(wage),src:'est'}}
 const ficaOf=(w,inf)=>w*.0145+.062*Math.min(w,184500*(1+inf))+.009*Math.max(0,w-2e5);
 const thpEst=(w,k,inf)=>w>0?Math.max(0,w-k-employerEst(w)-ficaOf(w,inf)):0;
 function taxOf(v){const w=Math.max(0,v.wages),i=Math.max(0,v.ira),qd=Math.max(0,v.qdiv),st=Math.max(0,v.stcg),lt=Math.max(0,v.ltcg),ss=Math.max(0,v.ss);
@@ -421,7 +432,7 @@ function inputs(){saveWork();
   const ssThis=ssA&&age>=ssA?ssM*12*(age==ssA?1/12:1):0;
   const inf=num('inf')/100,g=isBlank('g')?M.mean/100:num('g')/100;
   return{yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,down:val('down')==='yes',div:num('div'),
-    wage:wage(yr),wageNext:wage(yr+1),wwh:isBlank('wwh')?employerEst(wage(yr)):num('wwh'),wwhEst:isBlank('wwh'),ltg:num('ltg'),stg:num('stg'),oth:num('oth'),rmd,ssThis,
+    wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltg:num('ltg'),stg:num('stg'),oth:num('oth'),rmd,ssThis,
     lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?WK[yr+1][1]:0,inf):num('thp'),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
     model:val('model'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:val('pay'),
     meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,g,cush:num('cush'),
@@ -604,7 +615,7 @@ function render(R){
   ${t.niit>0?`<p class="note">Net investment income tax: 3.8% of ${fmt(t.niitBase)} = ${fmt(t.niit)}.</p>`:''}
   <h3>Tax by source</h3><div class="scroll"><table><tr><th>Source</th><th>Income</th><th>Tax</th><th>Rate</th></tr>${t.src.filter(r=>r[1]>0||r[2]>0).map(r=>`<tr><td>${r[0]}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td>${r[1]>0?pc(r[2]/r[1]):'—'}</td></tr>`).join('')}
     <tr class="tot"><td>Total federal tax</td><td>${fmt(t.tot)}</td><td>${fmt(t.tax)}</td><td>${pc(t.eff)}</td></tr>
-    <tr><td>Paycheck withholding${I.wwhEst?' (estimated)':''}</td><td></td><td>${fmt(I.wwh)}</td><td></td></tr>
+    <tr><td>Paycheck withholding${I.wwhEst?' (estimated from wages)':I.WH.src==='paystub'?` (${fmt(I.WH.ytd)} so far + ${I.WH.left.length} × ${fmt(I.WH.per)})`:''}</td><td></td><td>${fmt(I.wwh)}</td><td></td></tr>
     ${R.Wh?`<tr><td>Conversion withholding</td><td></td><td>${fmt(R.Wh)}</td><td></td></tr>`:''}
     <tr class="tot"><td>Due in April</td><td></td><td>${fmt(t.tax-I.wwh-R.Wh)}</td><td></td></tr></table></div>
   ${irThis>0?`<p class="note">Medicare IRMAA this year (from AGI two years ago): ${fmt(irThis)}, taken from Social Security, not part of income tax.</p>`:''}
@@ -680,6 +691,8 @@ function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
   const M=mv();$('mvNote').textContent=`Expected return ${M.mean}% a year, volatility ${M.vol}% (${M.lbl}).`+(me==='bt'?' The backtest replays actual years instead of using these.':'');
   $('gHint').textContent=`Blank uses ${M.mean}% from your return model. Your checklist suggests 5.5–6% for a conservative read.`;$('g').placeholder=M.mean;
   {const y=num('yr')+1,w=y<=num('lw')&&WK[y]?WK[y]:[0,0],e=thpEst(w[0],w[1],num('inf')/100);$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`Estimate ${fmt(e)}: ${y} wages ${fmt(w[0])} − Roth ${fmt(w[1])} − federal withholding − Social Security and Medicare tax. Type yours if you know it.`:`No wages in ${y}.`}
+  {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,H=wwhCalc(y,w),dl=H.left?H.left.map(([m,d])=>MO[m]+' '+d).join(', '):'';
+   $('wwhHint').textContent=H.src==='typed'?'Using the total you typed. Clear it to calculate from your paystub.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`Fill in the three paystub boxes, or this uses an estimate from your wages: ${fmt(H.v)}.`}
   const pre=num('p403')+num('p457')+num('pira'),roth=num('r403')+num('r457')+num('rira');
   $('acctSum').textContent=`Pre-tax ${fmt(pre)} · Roth ${fmt(roth)} · Brokerage ${fmt(brk)} · Emergency fund ${fmt(num('ef'))} · Total ${fmt(pre+roth+brk+num('ef'))}`;
   $('modelNote').innerHTML='<b>Settings used:</b> '+{target:{eff:'effective rate and last conversion age.',brk:'bracket and last conversion age.',amt:'total tax amount and last conversion age.'}[tt]+' Sized on this year\'s actual income with 2026 tax rules.',
