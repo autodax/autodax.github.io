@@ -41,10 +41,13 @@ nav.steps{position:-webkit-sticky;position:sticky;top:env(safe-area-inset-top,0p
 nav.steps::-webkit-scrollbar{display:none}
 nav.steps .sh{display:none}
 nav.steps.stuck{box-shadow:0 6px 10px -8px rgba(0,0,0,.35)}
-nav.steps button{flex:0 0 auto;font:600 .9rem var(--serif);padding:6px 12px;border-radius:999px;border:1px solid var(--brown-line);background:var(--card);color:var(--soft);cursor:pointer}
+nav.steps button{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;line-height:1.2;-webkit-appearance:none;appearance:none;font:600 .9rem/1.2 var(--serif);padding:6px 12px;border-radius:999px;border:1px solid var(--brown-line);background:var(--card);color:var(--soft);cursor:pointer}
+nav.steps button .t{display:block;line-height:1.2}
+nav.steps button .t span{line-height:inherit}
+nav.steps button .n{line-height:1.2}
 nav.steps button[aria-current="step"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
 nav.steps button .n{font-family:var(--mono);margin-right:5px;opacity:.8}
-@media(max-width:560px){nav.steps{gap:3px}nav.steps .lg{display:none}nav.steps .sh{display:inline}nav.steps button{flex:1 1 auto;padding:6px 4px;font-size:.82rem}nav.steps button .n{display:none}}
+nav.steps.compact{gap:3px}nav.steps.compact .lg{display:none}nav.steps.compact .sh{display:inline}nav.steps.compact button{flex:1 1 auto;padding:6px 4px;font-size:.82rem}nav.steps.compact button .n{display:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 18px 20px;margin-bottom:22px;min-width:0;overflow:hidden}
 h2{font:700 1.3rem/1.25 var(--serif);color:var(--green);margin:0 -18px 18px;padding:14px 18px 12px;background:var(--band);border-bottom:2px solid var(--brown-line);text-wrap:balance}
 h2 .eyebrow{display:block;font:600 .78rem var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--brown-ink);margin-bottom:3px}
@@ -134,11 +137,11 @@ p{max-width:72ch}
 <input id="savelink" type="text" readonly aria-hidden="true" tabindex="-1" style="position:absolute;left:-9999px;width:1px">
 
 <nav class="steps" id="steps" aria-label="Wizard steps">
-  <button type="button" data-s="1"><span class="n">1</span>Accounts</button>
-  <button type="button" data-s="2"><span class="n">2</span>Income<span class="lg"> &amp; spending</span></button>
-  <button type="button" data-s="3"><span class="n">3</span><span class="lg">Conversion &amp; tax</span><span class="sh">Convert</span></button>
-  <button type="button" data-s="4"><span class="n">4</span>Returns<span class="lg"> &amp; spending rules</span></button>
-  <button type="button" data-s="5"><span class="n">5</span><span class="lg">My p</span><span class="sh">P</span>lan</button>
+  <button type="button" data-s="1"><span class="n">1</span><span class="t">Accounts</span></button>
+  <button type="button" data-s="2"><span class="n">2</span><span class="t">Income<span class="lg"> &amp; spending</span></span></button>
+  <button type="button" data-s="3"><span class="n">3</span><span class="t"><span class="lg">Conversion &amp; tax</span><span class="sh">Convert</span></span></button>
+  <button type="button" data-s="4"><span class="n">4</span><span class="t">Returns<span class="lg"> &amp; spending rules</span></span></button>
+  <button type="button" data-s="5"><span class="n">5</span><span class="t"><span class="lg">My plan</span><span class="sh">Plan</span></span></button>
 </nav>
 
 <form id="wiz" autocomplete="off" onsubmit="return false">
@@ -740,6 +743,8 @@ function fitSelects(){if(!_cv)return;document.querySelectorAll('#wiz select').fo
   if(tw(txt)>fw+1){if(!r){r=document.createElement('p');r.className='sel-full';r.setAttribute('aria-hidden','true');sel.insertAdjacentElement('afterend',r)}r.textContent=txt}else if(r)r.remove()})}
 document.addEventListener('change',e=>{if(e.target.tagName==='SELECT')fitSelects()});
 addEventListener('scroll',()=>{const n=$('steps');if(n)n.classList.toggle('stuck',n.getBoundingClientRect().top<=1&&scrollY>40)},{passive:true});
+function fitTabs(){const n=$('steps');if(!n)return;n.classList.remove('compact');if(n.scrollWidth>n.clientWidth+1)n.classList.add('compact')}
+addEventListener('resize',fitTabs);addEventListener('load',fitTabs);setTimeout(fitTabs,0);
 addEventListener('resize',()=>{clearTimeout(fitSelects.t);fitSelects.t=setTimeout(fitSelects,150)});
 function show(s){cur=s;{const b=document.querySelector(`#steps button[data-s="${s}"]`);if(b&&b.scrollIntoView)try{b.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}}document.querySelectorAll('section.step').forEach(e=>e.hidden=+e.dataset.s!==s);
   document.querySelectorAll('#steps button').forEach(b=>{if(+b.dataset.s===s)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
