@@ -185,13 +185,13 @@ p{max-width:72ch}
   <div class="grid">
     <div><label for="lsp">Total spending last year</label><input id="lsp" type="number" inputmode="decimal" step="500" value="110000"><div class="help">Everything you spent last calendar year however it was paid: paychecks, brokerage, Social Security. Leave out taxes, Roth contributions and money moved between accounts. Last year's wizard budget is a good stand-in. Blank skips the guardrail check and shows the amount that hits your target chance.</div></div>
     <div><label for="thp">Take-home pay next year (Jan–Dec)</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What your paychecks will deposit in checking next year, after taxes, Roth contributions, insurance and other deductions. It covers part of the budget, so less comes from your accounts.</div><div class="help" id="thpHint"></div></div>
-    <div><label for="ltax">Total federal tax last year</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Federal tax return, line 24 ("total tax"). Not the refund or amount owed. Sets the safe-harbor amount that avoids underpayment penalties.</div></div>
-    <div><label for="lagi">AGI last year</label><input id="lagi" type="number" inputmode="decimal" step="1000" value=""><div class="help">Federal tax return, line 11 ("adjusted gross income"). If it was over $150,000, safe harbor is 110% of last year's tax instead of 100%.</div></div>
+    <div><label for="ltax">Total federal tax last year</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. Sets the safe-harbor amount that avoids underpayment penalties.</div></div>
+    <div><label for="lagi">AGI last year</label><input id="lagi" type="number" inputmode="decimal" step="1000" value=""><div class="help">Form 1040 line 11. If it was over $150,000, safe harbor is 110% of last year's tax instead of 100%.</div></div>
   </div>
   <div class="group">Social Security and Medicare</div>
   <div class="grid">
     <div><label for="ssa">Claim age and monthly benefit</label><select id="ssa"></select><div class="explain" id="x-ssa"></div></div>
-    <div id="agi2wrap"><label for="agi2">AGI two years ago (Medicare IRMAA)</label><input id="agi2" type="number" inputmode="decimal" step="1000" value=""><div class="help">Federal tax return from two years back, line 11 ("adjusted gross income"). Medicare sets its premium surcharge (IRMAA) from it. Only matters from age 65.</div></div>
+    <div id="agi2wrap"><label for="agi2">AGI two years ago (Medicare IRMAA)</label><input id="agi2" type="number" inputmode="decimal" step="1000" value=""><div class="help">Form 1040 line 11 from two years back. Medicare sets its premium surcharge (IRMAA) from it. Only matters from age 65.</div></div>
   </div>
   <details><summary>Monthly benefits from your Social Security statement (today's dollars)</summary>
     <p class="note">From ssa.gov › my Social Security › your estimated benefits at each age. These fill the claim-age list.</p>
