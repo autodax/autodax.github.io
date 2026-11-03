@@ -46,7 +46,9 @@ h3{font-size:1.08rem;color:var(--green);margin:14px 0 6px}
 .lead{font-size:1rem;color:var(--soft);margin:0 0 12px;max-width:68ch}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px}
 .grid>div{display:flex;flex-direction:column;justify-content:flex-start;min-width:0}
-.grid .full{grid-column:1/-1}
+.grid .full,.grid .wide-sel{grid-column:1/-1}
+select{text-overflow:ellipsis}
+.sel-full{font:600 .88rem var(--serif);color:var(--ink);margin:4px 0 0}
 label{display:block;font-weight:700;color:var(--ink);font-size:.88rem;margin-bottom:3px;line-height:1.3}
 .help{font-size:.88rem;color:var(--soft);margin-top:4px;line-height:1.35}
 .explain{font-size:.92rem;line-height:1.4;margin-top:6px;padding:8px 10px;border-left:3px solid var(--brown-line);background:var(--band);border-radius:0 8px 8px 0;color:var(--ink)}
@@ -281,7 +283,7 @@ $('ssgrid').innerHTML=AGES.map((a,i)=>`<div><label for="ss${a}">Age ${a}</label>
 function ssTable(){const t={};AGES.forEach(a=>{const x=num('ss'+a);if(x>0)t[a]=x});return t}
 function rebuildSS(){const cur=val('ssa')||'70',t=ssTable(),av=AGES.filter(a=>t[a]);
   $('ssa').innerHTML=av.length?av.map(a=>`<option value="${a}">Age ${a}: $${Math.round(t[a]).toLocaleString('en-US')}/mo</option>`).join(''):'<option value="0">No benefit entered</option>';
-  $('ssa').value=av.includes(+cur)?cur:(av.includes(70)?'70':String(av[av.length-1]||0))}
+  $('ssa').value=av.includes(+cur)?cur:(av.includes(70)?'70':String(av[av.length-1]||0));if(typeof fitSelects==='function')fitSelects()}
 $('mix').innerHTML=[100,90,80,70,60,50,40,30,20].map(p=>`<option value="${p}"${p==90?' selected':''}>${p} / ${100-p}</option>`).join('');
 
 /* ---------- Wages by year ---------- */
@@ -675,9 +677,17 @@ function render(R){
 
 /* ---------- Steps, visibility, state ---------- */
 let cur=1,lastKey='';
+const _cv=document.createElement('canvas').getContext('2d');
+function fitSelects(){document.querySelectorAll('#wiz select').forEach(sel=>{const p=sel.parentElement,g=p.parentElement;if(!g||!g.classList.contains('grid'))return;
+  const cs=getComputedStyle(sel);_cv.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;const pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+34,tw=t=>_cv.measureText(t).width+pad;
+  if(!p.classList.contains('full')){p.classList.remove('wide-sel');const w=p.getBoundingClientRect().width;if(!w)return;if(Math.max(...[...sel.options].map(o=>tw(o.text)))>w)p.classList.add('wide-sel')}
+  const fw=sel.getBoundingClientRect().width;if(!fw)return;const txt=sel.options[sel.selectedIndex]?.text||'';let r=p.querySelector('.sel-full');
+  if(tw(txt)>fw+1){if(!r){r=document.createElement('p');r.className='sel-full';r.setAttribute('aria-hidden','true');sel.insertAdjacentElement('afterend',r)}r.textContent=txt}else if(r)r.remove()})}
+document.addEventListener('change',e=>{if(e.target.tagName==='SELECT')fitSelects()});
+addEventListener('resize',()=>{clearTimeout(fitSelects.t);fitSelects.t=setTimeout(fitSelects,150)});
 function show(s){cur=s;document.querySelectorAll('section.step').forEach(e=>e.hidden=+e.dataset.s!==s);
   document.querySelectorAll('#steps button').forEach(b=>{if(+b.dataset.s===s)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
-  window.scrollTo(0,0);if(s===5)plan()}
+  window.scrollTo(0,0);fitSelects();if(s===5)plan()}
 function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dataset.done)return;lastKey=key;
   $('out').dataset.done='';$('out').innerHTML='<div class="working">Working out your plan…</div>';
   setTimeout(()=>{let h;try{h=render(compute())}catch(e){h=`<div class="card"><p class="warn">Something in the inputs couldn't be calculated (${e.message}). Check the steps above.</p></div>`}
