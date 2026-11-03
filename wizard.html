@@ -48,6 +48,13 @@ h3{font:700 1.1rem/1.3 var(--serif);color:var(--ink);margin:28px 0 10px;padding-
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px}
 .grid>div{display:flex;flex-direction:column;justify-content:flex-start;min-width:0}
 .grid .full,.grid .wide-sel{grid-column:1/-1}
+#work{display:grid;gap:0}
+.wyear{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:10px 14px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.wyear:last-child{border-bottom:1px solid var(--line)}
+.wy{font:700 1.15rem/1.2 var(--mono);color:var(--green);padding-top:22px}
+.wy span{display:block;font:400 .8rem var(--serif);color:var(--soft);margin-top:2px}
+.wf{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px;min-width:0}
+@media(max-width:520px){.wyear{grid-template-columns:minmax(0,1fr)}.wy{padding-top:0}.wy span{display:inline;margin-left:6px}}
 select{text-overflow:ellipsis}
 .sel-full{font:600 .88rem var(--serif);color:var(--ink);margin:4px 0 0}
 label{display:block;font-weight:700;color:var(--ink);font-size:.88rem;margin-bottom:3px;line-height:1.3}
@@ -173,7 +180,7 @@ p{max-width:72ch}
   </div>
   <div class="group">Wages and Roth contributions by year</div>
   <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Future years are estimates in that year's dollars.</p>
-  <div class="grid" id="work"></div>
+  <div id="work"></div>
   <div class="group" id="tyHead">This year's other income</div>
   <div class="grid">
     <div><label for="pdate">Latest paystub date</label><input id="pdate" type="date"><div class="help">Paydays counted after it: Oct 2, 16, 30; Nov 13, 27; Dec 11, 25.</div></div>
@@ -214,7 +221,7 @@ p{max-width:72ch}
       <option value="auto">Roth planner Auto: lowest lifetime tax at the best sustainable spending</option>
       <option value="level">Even out: keep the age-75 RMD under a ceiling</option>
       <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div></div>
-    <div data-show="target"><label for="ttype">Tax target</label><select id="ttype">
+    <div data-show="target" class="full"><label for="ttype">Tax target</label><select id="ttype">
       <option value="eff">Effective tax rate</option><option value="brk">Top of a bracket</option><option value="amt">Total tax amount</option></select><div class="explain" id="x-ttype"></div></div>
     <div data-show="target eff"><label for="teff">Effective rate (federal tax ÷ AGI), %</label><input id="teff" type="number" inputmode="decimal" step="0.5" value="17"><div class="help">My usual setting is 17. If my wages alone already put me above it, no conversion fits.</div></div>
     <div data-show="target brk level"><label for="tbrk" id="tbrkLbl">Bracket I fill to</label><select id="tbrk"><option value="12">12% bracket</option><option value="22" selected>22% bracket</option><option value="24">24% bracket</option><option value="32">32% bracket</option></select><div class="explain" id="x-tbrk"></div></div>
@@ -296,8 +303,8 @@ const WK={2026:[210000,71500],2027:[138000,71500],2028:[113000,70000]};
 function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y=+e.dataset.y;(WK[y]=WK[y]||[0,0])[+e.dataset.k]=+e.value||0})}
 function renderWork(){saveWork();const s=num('yr'),l=Math.min(num('lw'),s+30);let h='';
   if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);
-    h+=`<div><label for="w${y}a">${y} wages (before Roth)</label><input id="w${y}a" type="number" inputmode="decimal" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">${y} Roth contribution</label><input id="w${y}b" type="number" inputmode="decimal" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div>`}
-  $('work').innerHTML=h||'<p class="note full">No working years from the plan year on.</p>'}
+    h+=`<div class="wyear"><div class="wy">${y}${y===s?' <span>(this year)</span>':y===s+1?' <span>(next year)</span>':''}</div><div class="wf"><div><label for="w${y}a">Wages (before Roth)</label><input id="w${y}a" type="number" inputmode="decimal" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">Roth contribution</label><input id="w${y}b" type="number" inputmode="decimal" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div></div></div>`}
+  $('work').innerHTML=h||'<p class="note">No working years from the plan year on.</p>'}
 
 /* ---------- Return assumptions (withdrawal calculator) ---------- */
 function mv(){const m=val('meth'),w=num('mix')/100,b=1-w,inf=num('inf')/100;
@@ -707,9 +714,9 @@ function render(R){
 let cur=1,lastKey='';
 const _cv=document.createElement('canvas').getContext&&document.createElement('canvas').getContext('2d');
 function fitSelects(){if(!_cv)return;document.querySelectorAll('#wiz select').forEach(sel=>{const p=sel.parentElement,g=p.parentElement;if(!g||!g.classList.contains('grid'))return;
-  const cs=getComputedStyle(sel);_cv.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;const pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+34,tw=t=>_cv.measureText(t).width+pad;
-  if(!p.classList.contains('full')){p.classList.remove('wide-sel');const w=p.getBoundingClientRect().width;if(!w)return;if(Math.max(...[...sel.options].map(o=>tw(o.text)))>w)p.classList.add('wide-sel')}
-  const fw=sel.getBoundingClientRect().width;if(!fw)return;const txt=sel.options[sel.selectedIndex]?.text||'';let r=p.querySelector('.sel-full');
+  const cs=getComputedStyle(sel);_cv.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;const pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+46,tw=t=>_cv.measureText(t).width+pad;
+  if(!p.classList.contains('full')){p.classList.remove('wide-sel');const w=p.offsetWidth;if(!w)return;if(Math.max(...[...sel.options].map(o=>tw(o.text)))>w)p.classList.add('wide-sel')}
+  const fw=sel.offsetWidth;if(!fw)return;const txt=sel.options[sel.selectedIndex]?.text||'';let r=p.querySelector('.sel-full');
   if(tw(txt)>fw+1){if(!r){r=document.createElement('p');r.className='sel-full';r.setAttribute('aria-hidden','true');sel.insertAdjacentElement('afterend',r)}r.textContent=txt}else if(r)r.remove()})}
 document.addEventListener('change',e=>{if(e.target.tagName==='SELECT')fitSelects()});
 addEventListener('resize',()=>{clearTimeout(fitSelects.t);fitSelects.t=setTimeout(fitSelects,150)});
