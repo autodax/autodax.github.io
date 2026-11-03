@@ -144,7 +144,7 @@ p{max-width:72ch}
     <p><b>What I'll get:</b> how much to spend next year (<span class="y" data-o="1"></span>, January–December) and where it comes from, how much to convert to Roth this year (<span class="y" data-o="0"></span>), the tax that results for the <span class="y" data-o="0"></span> tax year, and whether I need estimated tax payments.</p>
     <p><b>What I'll need:</b> current balances for every account, my brokerage cost basis, my latest paystub, and last year's (<span class="y" data-o="-1"></span>) federal tax return.</p>
   </div>
-  <p class="lead">I should enter each account's current value. The 403(b), 457(b) and IRA pre-tax money is treated as one pool: withdrawals, conversions and required distributions can come from any of them.</p>
+  <p class="lead">Enter each account's current value. The 403(b), 457(b) and IRA pre-tax money is treated as one pool: withdrawals, conversions and required distributions can come from any of them.</p>
   <div class="group">Pre-tax (traditional) money</div>
   <div class="grid">
     <div><label for="p403">403(b) pre-tax</label><input id="p403" type="number" inputmode="decimal" step="1000" value="1500000"><div class="help">The traditional (not Roth) part of my 403(b). Statements usually list it as a separate source.</div></div>
@@ -191,14 +191,14 @@ p{max-width:72ch}
     <div><label for="ytdwh">Federal tax withheld, year to date</label><input id="ytdwh" type="number" inputmode="decimal" step="1" value=""><div class="help">That paystub's year-to-date federal income tax. Not Social Security or Medicare.</div></div>
     <div><label for="perwh">Federal tax withheld per paycheck</label><input id="perwh" type="number" inputmode="decimal" step="1" value=""><div class="help">The same paystub's federal income tax for that one paycheck.</div></div>
     <div><label for="wwh">Or type the full-year total</label><input id="wwh" type="number" inputmode="decimal" step="100" value="" placeholder="calculated"><div class="help" id="wwhHint"></div></div>
-    <div><label for="ltg">Long-term gains, full year</label><input id="ltg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held over a year that I've sold or will sell this year (<span class="y" data-o="0"></span>), including brokerage sales for spending. My brokerage's realized gain/loss or tax page shows the year-to-date total. I shouldn't include the sale that refills the Roth; the wizard adds that. Blank estimates it from this year's (<span class="y" data-o="0"></span>) brokerage withdrawals at my cost basis.</div></div>
+    <div><label for="ltg">Long-term gains, full year</label><input id="ltg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held over a year that I've sold or will sell this year (<span class="y" data-o="0"></span>), including brokerage sales for spending. My brokerage's realized gain/loss or tax page shows the year-to-date total. Don't include the sale that refills the Roth; the wizard adds that. Blank estimates it from this year's (<span class="y" data-o="0"></span>) brokerage withdrawals at my cost basis.</div></div>
     <div><label for="stg">Short-term gains, full year</label><input id="stg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held a year or less. Taxed like wages. Usually zero.</div></div>
     <div><label for="int">Interest income, full year</label><input id="int" type="number" inputmode="decimal" step="100" value="" placeholder="estimate"><div class="help" id="intHint"></div></div>
-    <div><label for="oth">Pre-tax withdrawals already taken this year (<span class="y" data-o="0"></span>)</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year (<span class="y" data-o="0"></span>), including any conversions already done. I should leave out the conversion this wizard is sizing.</div></div>
+    <div><label for="oth">Pre-tax withdrawals already taken this year (<span class="y" data-o="0"></span>)</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year (<span class="y" data-o="0"></span>), including any conversions already done. Leave out the conversion this wizard is sizing.</div></div>
   </div>
   <div class="group">This year (<span class="y" data-o="0"></span>) and next year (<span class="y" data-o="1"></span>)</div>
   <div class="grid">
-    <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value="110000"><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. I should leave out taxes, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this. Blank shows the budget that hits my target chance instead.</div></div>
+    <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value="110000"><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this. Blank shows the budget that hits my target chance instead.</div></div>
     <div><label for="bwd">Brokerage withdrawals this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="bwd" type="number" inputmode="decimal" step="500" value="" placeholder="calculated"><div class="help" id="bwdHint"></div></div>
     <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>)</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. It covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
     <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. Sets the safe-harbor amount that avoids underpayment penalties.</div></div>
@@ -324,7 +324,7 @@ function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B7
   const z=[];for(let i=0;i<2000*n;i+=1){const u=r()||1e-9,w=r();z.push(Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w))}zc={n,z};return z}
 function guardrail(q){const yrs=q.end-q.age;if(yrs<1)return{err:'The plan-to age must be above my age.'};let N,G,src;
   if(q.bt){const w=q.mix/100,RET=HIST.map(r=>1+w*r[1]+(1-w)*r[2]);N=q.wrap?HIST.length:HIST.length-yrs+1;
-    if(N<1)return{err:'My plan runs longer than the history available. I should shorten the plan-to age or use a simulated model.'};
+    if(N<1)return{err:'My plan runs longer than the history available. Shorten the plan-to age or use a simulated model.'};
     G=(n,y)=>RET[(n+y)%RET.length];src=`${N} historical start years (${HIST[0][0]}–${HIST[N-1][0]}), each followed for ${yrs} years`}
   else{const m=q.mean/100,sd=q.vol/100,z=zs(yrs);N=2000;const xx=(1+Math.sqrt(1+4*sd*sd/((1+m)*(1+m))))/2,sg=Math.sqrt(Math.log(xx)),mu=Math.log(1+m);
     const R=z.map(x=>Math.exp(mu+sg*x)/(1+q.inf));G=(n,y)=>R[n*yrs+y];src=`2,000 simulated futures (${q.mean}% return, ${q.vol}% volatility)`}
@@ -475,7 +475,7 @@ const topOf=p=>ORD.find(b=>Math.round(b[0]*100)==p)[2];
 
 /* ---------- Build the plan ---------- */
 function compute(){const I=inputs();
-  if(!(I.yr>=2000&&I.by>=1900&&I.age>=40&&I.age<=100))return{err:'I should check the plan year and birth year on step 2.'};
+  if(!(I.yr>=2000&&I.by>=1900&&I.age>=40&&I.age<=100))return{err:'Check the plan year and birth year on step 2.'};
   const R={I};
   // 1. Spending
   const ssBase=I.ssA&&I.age>=I.ssA?I.ssM*12/(1+I.inf):0;
@@ -561,20 +561,20 @@ function render(R){
     rows.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)}${k==='Take-home pay'&&N.w?` (${fmt(N.w)} wages − ${fmt(N.k)} Roth − ${fmt(N.wh)} federal tax − ${fmt(N.fica)} Social Security and Medicare tax)`:''}${k==='Brokerage'?`${N.typed?' (as entered)':' (what\'s left after the other sources)'}, about ${fmt(N.bwd/12)} a month`:''}</li>`});
     if(N.other>1)li+=`<li class="warn">${fmt(N.other)} isn't covered by these sources${N.typed?'; check the brokerage withdrawals I entered':''}.</li>`;
     li+=`</ul>`;
-    if(N.bwd>0)li+=`<p class="note">${I.ltgTyped?`I entered ${fmt(I.ltg)} of long-term gains; the brokerage withdrawals alone would be about ${fmt(N.gains)} at my ${Math.round(I.bp*100)}% basis.`:`About <b>${fmt(N.gains)}</b> of that is long-term gain at my ${Math.round(I.bp*100)}% basis, and it's included in the ${I.yr} tax year below. I can type actual gains on step 2 to use them instead.`}</p>`;
-    if(N.bwd>0&&m>0)li+=`<p class="note">Through December, I should keep brokerage transfers at about ${fmt(N.bwd/12)} a month.</p>`;
-    if(N.thp>0)li+=`<p class="note">Take-home pay is an estimate that leaves out insurance and other paycheck deductions. My real paychecks will be a bit smaller, so I may need to withdraw a little more from brokerage. If I know my actual withdrawals, I can type them on step 2.</p>`;
+    if(N.bwd>0)li+=`<p class="note">${I.ltgTyped?`I entered ${fmt(I.ltg)} of long-term gains; the brokerage withdrawals alone would be about ${fmt(N.gains)} at my ${Math.round(I.bp*100)}% basis.`:`About <b>${fmt(N.gains)}</b> of that is long-term gain at my ${Math.round(I.bp*100)}% basis, and it's included in the ${I.yr} tax year below. Type actual gains on step 2 to use them instead.`}</p>`;
+    if(N.bwd>0&&m>0)li+=`<p class="note">Through December, keep brokerage transfers at about ${fmt(N.bwd/12)} a month.</p>`;
+    if(N.thp>0)li+=`<p class="note">Take-home pay is an estimate that leaves out insurance and other paycheck deductions. My real paychecks will be a bit smaller, so I may need to withdraw a little more from brokerage. If I know my actual withdrawals, type them on step 2.</p>`;
     todo.push(li)}}
   // Conversion
   if(R.C>0){
-    let li=`<span class="when">By Dec 31, ${I.yr}</span><div>I should convert <b class="amt">${fmt(R.C)}</b> from pre-tax (403(b), 457(b) or IRA) to Roth.</div><ul>`;
-    if(I.pay==='roll'){li+=`<li>I should ask the custodian of the pre-tax account for the conversion with federal tax withheld (often easiest by phone with their retirement team), and tell them I'll replace the withheld amount with a 60-day rollover.</li>
-      <li>I should have them withhold <b class="amt">${fmt(R.Wh)}</b> federal tax: all of ${I.yr}'s tax still owed after paycheck withholding, including tax on capital gains.</li>
-      <li>The same day, I should sell about <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> from brokerage (about ${fmt(Math.min(S.P,R.Wh)*(1-I.bp))} gain at ${Math.round(I.bp*100)}% basis) and deposit <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> cash into the Roth account the conversion went to. If that's a Roth inside a 403(b) or 457(b) that won't take outside deposits, a Roth IRA works.</li>
-      <li>I should have the deposit coded as a <b>60-day indirect rollover</b>, not an annual contribution.</li>`;
+    let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax (403(b), 457(b) or IRA) to Roth.</div><ul>`;
+    if(I.pay==='roll'){li+=`<li>Ask the custodian of the pre-tax account for the conversion with federal tax withheld (often easiest by phone with their retirement team), and tell them I'll replace the withheld amount with a 60-day rollover.</li>
+      <li>Have them withhold <b class="amt">${fmt(R.Wh)}</b> federal tax: all of ${I.yr}'s tax still owed after paycheck withholding, including tax on capital gains.</li>
+      <li>The same day, sell about <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> from brokerage (about ${fmt(Math.min(S.P,R.Wh)*(1-I.bp))} gain at ${Math.round(I.bp*100)}% basis) and deposit <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> cash into the Roth account the conversion went to. If that's a Roth inside a 403(b) or 457(b) that won't take outside deposits, a Roth IRA works.</li>
+      <li>Have the deposit coded as a <b>60-day indirect rollover</b>, not an annual contribution.</li>`;
       if(S.P<R.Wh-1)li+=`<li class="warn">Brokerage covers only ${fmt(S.P)} of the refill; the rest stays withheld and the Roth ends up smaller.</li>`}
-    else if(I.pay==='wh')li+=`<li>I should withhold <b class="amt">${fmt(R.Wh)}</b> federal tax from the conversion. With no refill, ${fmt(R.C-R.Wh)} lands in the Roth.</li>`;
-    else li+=`<li>I should convert with no withholding and pay the tax with estimated payments (below).</li>`;
+    else if(I.pay==='wh')li+=`<li>Withhold <b class="amt">${fmt(R.Wh)}</b> federal tax from the conversion. With no refill, ${fmt(R.C-R.Wh)} lands in the Roth.</li>`;
+    else li+=`<li>Convert with no withholding and pay the tax with estimated payments (below).</li>`;
     if(R.short)li+=`<li class="warn">Tax still owed (${fmt(S.owed)}) is more than the conversion, so withholding can't cover it all.${R.Cmin?` Converting at least ${fmt(R.Cmin)} would let withholding cover everything.`:''}</li>`;
     todo.push(li+'</ul>');
   }else{
@@ -585,20 +585,20 @@ function render(R){
   // Estimated tax
   {const yrs=[[I.yr,3,15],[I.yr,5,15],[I.yr,8,15],[I.yr+1,0,15]];
     let li=`<span class="when">${I.pay==='qtr'?'Quarterly':'Before April 15, '+(I.yr+1)}</span>`;
-    if(I.pay==='qtr'){li+=`<div>I should pay estimated tax of <b class="amt">${fmt(R.qEach)}</b> each quarter (${R.prior==null?'90% of this year\'s ('+I.yr+') tax':'safe harbor'} minus paycheck withholding).</div><ul>`+yrs.map(([y,m,d])=>`<li>${MONTHS[m]} ${d}, ${y}${dt(y,m,d)?' <span class="pill warn">past</span>':''}</li>`).join('')+'</ul>';
+    if(I.pay==='qtr'){li+=`<div>Pay estimated tax of <b class="amt">${fmt(R.qEach)}</b> each quarter (${R.prior==null?'90% of this year\'s ('+I.yr+') tax':'safe harbor'} minus paycheck withholding).</div><ul>`+yrs.map(([y,m,d])=>`<li>${MONTHS[m]} ${d}, ${y}${dt(y,m,d)?' <span class="pill warn">past</span>':''}</li>`).join('')+'</ul>';
       if(yrs.some(([y,m,d])=>dt(y,m,d)))li+=`<p class="note">Missed quarters can be made up: tax withheld from a conversion before Dec 31 counts as paid evenly through the year.</p>`}
-    else li+=R.safe?`<div><span class="pill ok">No estimated payments needed</span> Withholding of ${fmt(R.pays)} covers the ${fmt(R.req)} safe-harbor amount${R.prior==null?' (90% of this year\'s ('+I.yr+') tax; I can enter last year\'s ('+(I.yr-1)+') tax on step 2 to check 110% of it)':''}. Withholding counts as paid evenly through the year.</div>`:
-      `<div><span class="pill warn">Underpayment risk</span> Withholding of ${fmt(R.pays)} is below the ${fmt(R.req)} safe-harbor amount. I should increase the conversion withholding or make an estimated payment of ${fmt(R.req-R.pays)} by Jan 15, ${I.yr+1}.</div>`;
+    else li+=R.safe?`<div><span class="pill ok">No estimated payments needed</span> Withholding of ${fmt(R.pays)} covers the ${fmt(R.req)} safe-harbor amount${R.prior==null?' (90% of this year\'s ('+I.yr+') tax; enter last year\'s ('+(I.yr-1)+') tax on step 2 to check 110% of it)':''}. Withholding counts as paid evenly through the year.</div>`:
+      `<div><span class="pill warn">Underpayment risk</span> Withholding of ${fmt(R.pays)} is below the ${fmt(R.req)} safe-harbor amount. Increase the conversion withholding or make an estimated payment of ${fmt(R.req-R.pays)} by Jan 15, ${I.yr+1}.</div>`;
     todo.push(li)}
   // Spending
-  if(!G.err){const W=G.W,m=W/12;let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>I can spend up to <b class="amt">${fmt(W)}</b> in ${I.yr+1}, January through December${G.ssNow?' plus Social Security':''}.${I.thp>0?` Take-home pay covers about ${fmt(Math.min(W,I.thp))}, so I should draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
+  if(!G.err){const W=G.W,m=W/12;let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>Spend up to <b class="amt">${fmt(W)}</b> in ${I.yr+1}, January through December${G.ssNow?' plus Social Security':''}.${I.thp>0?` Take-home pay covers about ${fmt(Math.min(W,I.thp))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
     R.src.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
-    if(R.src.some(s=>s[0]==='Brokerage'))li+=`<li>I should set up the automatic monthly transfer from brokerage to checking.</li>`;
+    if(R.src.some(s=>s[0]==='Brokerage'))li+=`<li>Set up the automatic monthly transfer from brokerage to checking.</li>`;
     if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting it (plus its tax, withheld) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
     {const M=R.med,Y=I.yr+1;if(M.mo>0){const parts=`${fmt(M.partB)} Part B${M.irm>0?` + ${fmt(M.irm)} IRMAA surcharge`:''}`;
       li+=M.ssN>=M.total?`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}) is deducted from my Social Security, so deposits will be about ${fmt(M.ssN-M.total)} instead of ${fmt(M.ssN)}. It counts as part of my spending.</li>`
         :`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}${M.mo<12?`, ${M.mo} months starting November`:''}) is paid from this budget by bill or automatic payment${M.ssN>0?' until Social Security starts':''}. My Social Security doesn't start until ${I.by+I.ssA}.</li>`;
-      if(M.noAgi)li+=`<li class="warn">I should enter last year's (${I.yr-1}) AGI on step 2 to include any IRMAA surcharge.</li>`}}
+      if(M.noAgi)li+=`<li class="warn">Enter last year's (${I.yr-1}) AGI on step 2 to include any IRMAA surcharge.</li>`}}
     if(I.down)li+=`<li>The market is down: a good year to convert more, since each dollar moves more shares.</li>`;
     if(R.unfunded>1)li+=`<li class="warn">${fmt(R.unfunded)} can't be funded from my accounts.</li>`;
     todo.push(li+'</ul>')}
@@ -615,21 +615,21 @@ function render(R){
     if(tot<1){li+=`<p class="note"><span class="pill ok">Covered</span> Paycheck withholding should cover all of ${Y}'s tax. Nothing else to do.</p>`;todo.push(li)}
     else{
     li+=`<p class="note">Paying all ${fmt(tot)} during ${Y} means nothing is due in April ${Y+1}. ${minX>0?`To avoid an underpayment penalty I must pay at least <b>${fmt(minX)}</b> of it during the year (safe harbor: the smaller of 90% of ${Y}'s tax, ${fmt(.9*NC.tax)}, and ${S.t.tot>150000?'110':'100'}% of ${I.yr}'s, ${fmt(N.prior)}, minus paycheck withholding); the rest can wait until April.`:`Paychecks alone already meet safe harbor, so there's no penalty risk; the ${fmt(tot)} could wait until April ${Y+1}.`}</p>
-    <div class="note" style="margin-top:8px"><b>How I can cover it:</b></div><ul>`;
+    <div class="note" style="margin-top:8px"><b>How to cover it:</b></div><ul>`;
     if(conv){
-      li+=`<li><b>A. All from the conversion.</b> When I convert in Oct–Dec ${Y}, I should withhold <b class="amt">${fmt(Math.min(tot,NC.C))}</b>${tot>NC.C?`, all of the conversion; I'd cover the other ${fmt(tot-NC.C)} with option B or C`:''}. Withholding counts as paid evenly through the year, so no quarterly payments.${I.pay==='roll'?` Then I should refill the Roth with ${fmt(Math.min(tot,NC.C,NC.refill||tot))} from brokerage within 60 days, coded as a 60-day rollover.`:''}</li>`;
-      li+=`<li><b>B. Split: paychecks for the gains, conversion for its own tax.</b> I should add <b class="amt">${fmt(Math.ceil(hp/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c), ${fmt(hp)} total), then withhold <b class="amt">${fmt(NC.convTax)}</b> from the conversion${I.pay==='roll'?' and refill that amount from brokerage within 60 days':''}. Starting the paycheck part later works too: I'd divide ${fmt(hp)} by the paychecks left (${fmt(Math.ceil(hp/13))} each with 13 left).</li>`;
-      li+=`<li><b>C. All from paychecks.</b> I should add <b class="amt">${fmt(Math.ceil(tot/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c)) and convert with no withholding. The whole conversion stays in the Roth with no refill needed, but I'm paying the conversion's tax before I know the final amount.</li>`;
+      li+=`<li><b>A. All from the conversion.</b> When I convert in Oct–Dec ${Y}, withhold <b class="amt">${fmt(Math.min(tot,NC.C))}</b>${tot>NC.C?`, all of the conversion; cover the other ${fmt(tot-NC.C)} with option B or C`:''}. Withholding counts as paid evenly through the year, so no quarterly payments.${I.pay==='roll'?` Then refill the Roth with ${fmt(Math.min(tot,NC.C,NC.refill||tot))} from brokerage within 60 days, coded as a 60-day rollover.`:''}</li>`;
+      li+=`<li><b>B. Split: paychecks for the gains, conversion for its own tax.</b> add <b class="amt">${fmt(Math.ceil(hp/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c), ${fmt(hp)} total), then withhold <b class="amt">${fmt(NC.convTax)}</b> from the conversion${I.pay==='roll'?' and refill that amount from brokerage within 60 days':''}. Starting the paycheck part later works too: divide ${fmt(hp)} by the paychecks left (${fmt(Math.ceil(hp/13))} each with 13 left).</li>`;
+      li+=`<li><b>C. All from paychecks.</b> add <b class="amt">${fmt(Math.ceil(tot/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c)) and convert with no withholding. The whole conversion stays in the Roth with no refill needed, but I'm paying the conversion's tax before I know the final amount.</li>`;
     }else{
-      li+=`<li><b>A. Extra paycheck withholding.</b> I should add <b class="amt">${fmt(Math.ceil(tot/26))}</b> per biweekly paycheck all year (W-4 Step 4(c)), or divide ${fmt(tot)} by the paychecks left if I start later.</li>`;
+      li+=`<li><b>A. Extra paycheck withholding.</b> add <b class="amt">${fmt(Math.ceil(tot/26))}</b> per biweekly paycheck all year (W-4 Step 4(c)), or divide ${fmt(tot)} by the paychecks left if I start later.</li>`;
       if(I.pre>0&&I.age+1<=I.cmax)li+=`<li><b>B. A small conversion, mostly withheld.</b> A late-year conversion with the tax withheld from it covers ${fmt(tot)} without estimated payments. Next fall's (${I.yr+1}) run sizes it.</li>`;
     }
     li+=`<li><b>${conv?'D':'C'}. Quarterly estimated payments.</b> ${fmt(Math.ceil(tot/4))} on Apr 15, Jun 15 and Sep 15, ${Y} and Jan 15, ${Y+1}${minX>0&&minX<tot?` (at least ${fmt(Math.ceil(minX/4))} each to avoid a penalty)`:''}.${conv?' The conversion\'s share isn\'t known until I convert, so this is the least convenient.':''}</li></ul>`;
     li+=`<p class="note">Uses ${I.yr} brackets, the ${fmt(N.brkSale)} brokerage withdrawal shown in item 3 at ${Math.round(I.bp*100)}% basis, and the conversion rule from step 3${NC.tax&&N.niit>0?', including the 3.8% net investment income tax':''}. Next fall's (${I.yr+1}) run replaces this with actual numbers.</p>`;
     todo.push(li)}}
   // Social Security / RMD reminders
-  if(I.ssA&&I.age===I.ssA-1)todo.push(`<span class="when">Aug ${I.yr+1}</span><div>I should apply for Social Security about three months before I turn ${I.ssA} in November ${I.yr+1}.</div>`);
-  if(I.ssA&&I.age===I.ssA)todo.push(`<span class="when">Now</span><div>Social Security starts this year (${I.yr}) if I haven't applied yet. I should apply about three months before my November birthday.</div>`);
+  if(I.ssA&&I.age===I.ssA-1)todo.push(`<span class="when">Aug ${I.yr+1}</span><div>Apply for Social Security about three months before I turn ${I.ssA} in November ${I.yr+1}.</div>`);
+  if(I.ssA&&I.age===I.ssA)todo.push(`<span class="when">Now</span><div>Social Security starts this year (${I.yr}) if I haven't applied yet. Apply about three months before my November birthday.</div>`);
   if(I.age+2>=65){const A=t.tot,ir=irmaaFor(A),i=ir.tier,Y2=I.yr+2;let li=`<span class="when">Medicare ${Y2}</span><div>${I.yr}'s AGI of <b class="amt">${fmt(A)}</b> sets my ${Y2} Medicare surcharge (IRMAA): `;
     if(i===0)li+=`<span class="pill ok">No surcharge</span> I could add up to ${fmt(IRM[1][0]-A)} more income this year (${I.yr}), from a bigger conversion, say, before the first tier.</div>`;
     else{const down=A-IRM[i][0],save=ir.annual-irmaaFor(IRM[i][0]-1).annual,up=IRM[i][1]===Infinity?0:IRM[i][1]-A,cost=up?irmaaFor(IRM[i][1]+1).annual-ir.annual:0;
@@ -637,7 +637,7 @@ function render(R){
     li+=`<p class="note">2026 tiers for a single filer; they rise with inflation, and one dollar over a line triggers the whole tier.</p>`;
     todo.push(li)}
   if(I.age>=74&&I.age<75)todo.push(`<span class="when">Next year (${I.yr+1})</span><div>RMDs start next year (${I.yr+1}) at 75. Conversions should stop after this year (${I.yr}).</div>`);
-  if(I.rmd>0)todo.push(`<span class="when">By Dec 31, ${I.yr}</span><div>I should take my RMD of <b class="amt">${fmt(I.rmd)}</b> from pre-tax accounts. It can't be converted.</div>`);
+  if(I.rmd>0)todo.push(`<span class="when">By Dec 31, ${I.yr}</span><div>Take my RMD of <b class="amt">${fmt(I.rmd)}</b> from pre-tax accounts. It can't be converted.</div>`);
 
   // Spending card
   let spend='';
@@ -650,7 +650,7 @@ function render(R){
     <p class="note">Stays between ${fmt(G.Wraise)} (${Math.round(I.up*100)}% chance) and ${fmt(G.Wcut)} (${Math.round(I.lo*100)}% chance) at today's balance.${!I.lspBlank&&G.ssPrev?` This year (${I.yr}) counted as ${fmt(R.lastDraw)}: ${fmt(I.lsp)} spent − ${fmt(G.ssPrev)} Social Security.`:''}</p>
     <div class="scroll"><table><tr><th>Source</th><th>Year</th><th>Month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${I.yr+1}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), part of this budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
-    <p class="note">Portfolio counted: ${fmt(I.pre+I.roth+I.brk+I.ef)} (pre-tax, Roth, brokerage and emergency fund). Until January, I should keep my current pace. Next fall (${I.yr+1}), I should enter my ${I.yr+1} spending as that year's.</p>`}
+    <p class="note">Portfolio counted: ${fmt(I.pre+I.roth+I.brk+I.ef)} (pre-tax, Roth, brokerage and emergency fund). Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`}
 
   // Conversion card
   const P=R.P,trig=[],safeLine=I.age>=40&&I.age<=74?1.9e6/Math.pow(1.07,75-I.age):0;
@@ -660,7 +660,7 @@ function render(R){
   let conv=`<div class="tiles"><div class="tile"><div class="k">Conversion in ${I.yr}</div><div class="v">${fmt(R.C)}</div></div><div class="tile"><div class="k">Tax withheld</div><div class="v">${fmt(R.Wh)}</div></div><div class="tile"><div class="k">Effective rate</div><div class="v">${pc(t.eff)}</div></div><div class="tile"><div class="k">Top bracket</div><div class="v">${Math.round(t.mar*100)}%</div></div></div>
     <p class="note" style="margin-top:0">${R.cWhy}</p>`;
   if(I.age<=I.cmax&&I.pre>0)conv+=trig.length?`<h3>Should I convert more?</h3><p class="note"><span class="pill warn">Trigger</span> ${trig.join(' ')} Converting up to the top of the 24% bracket would be <b>${fmt(R.C24)}</b> this year (${I.yr}).</p>`:
-    `<p class="note"><span class="pill ok">No triggers</span> Balance is under the safe line${safeLine?` (${fk(safeLine)} at ${I.age})`:''} and RMDs stay inside the 22% bracket even with growth 2 points higher. I should stay with the baseline.</p>`;
+    `<p class="note"><span class="pill ok">No triggers</span> Balance is under the safe line${safeLine?` (${fk(safeLine)} at ${I.age})`:''} and RMDs stay inside the 22% bracket even with growth 2 points higher. Stay with the baseline.</p>`;
   conv+=`<h3>Long-range check</h3><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
     <tr><td>Sustainable spending (keeps the age-95 cushion)</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
@@ -740,16 +740,16 @@ function show(s){cur=s;document.querySelectorAll('section.step').forEach(e=>e.hi
   window.scrollTo(0,0);fitSelects();if(s===5)plan()}
 function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dataset.done)return;lastKey=key;
   $('out').dataset.done='';$('out').innerHTML='<div class="working">Working out my plan…</div>';
-  setTimeout(()=>{let h;try{h=render(compute())}catch(e){h=`<div class="card"><p class="warn">Something in the inputs couldn't be calculated (${e.message}). I should check the steps above.</p></div>`}
+  setTimeout(()=>{let h;try{h=render(compute())}catch(e){h=`<div class="card"><p class="warn">Something in the inputs couldn't be calculated (${e.message}). Check the steps above.</p></div>`}
     $('out').innerHTML=h;$('out').dataset.done='1'},30)}
 
 const OPT={
  down:{no:'Normal year: spending comes from take-home pay first, then brokerage.',
-   yes:'I should spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
+   yes:'Spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
  model:{fixed:'Converts exactly the amount I enter. The plan shows the tax it adds, how much to withhold, the refill and the safe-harbor check. The convert-more check still runs.',target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
    auto:'Runs the Roth planner\'s lifetime search: tries effective-rate caps from 10% to 24% plus low-bracket plans, keeps the ones with the best sustainable spending, and picks the lowest lifetime tax among them. It often shows no conversion while I still have wages. Takes several seconds.',
    level:'Spreads conversions evenly over the years left until 74, sized so my first required distribution at 75 stays under a ceiling I set, without going above a bracket I choose.',
-   none:'Skips the conversion. I\'d use it in a year with unusually high income.'},
+   none:'Skips the conversion. Use it in a year with unusually high income.'},
  ttype:{eff:'Effective rate = total federal income tax ÷ AGI, counting all income including wages, dividends and gains.',
    brk:'Fills ordinary taxable income (after the standard deduction) up to the top of a bracket, so no conversion dollar is taxed above that rate.',
    amt:'Converts until the year\'s total federal income tax reaches a dollar amount I choose.'},
@@ -759,9 +759,9 @@ const OPT={
    qtr:'I convert with no withholding and pay estimated tax in April, June, September and January. Safe harbor: I must pay at least 110% of last year\'s ({Y-1}) total tax (100% if last year\'s AGI was $150,000 or less), minus paycheck withholding, split four ways.'},
  meth:{bt:'Replays real US market history: every retirement that could have started from 1871 on, with the actual stock and bond returns that followed. Same method and data as FI Calc. No forecast to choose; includes real crashes and inflation. Limits: US-only, and periods overlap.',
    his:'Random simulated markets using the average return and volatility of 1871–2022. Similar to the backtest, smoother.',
-   van:'Random simulated markets using Vanguard\'s 10-year forecast (June 30, 2026). Lower returns than history, so a more cautious budget. A snapshot; I should update it in the file when Vanguard publishes new numbers.',
+   van:'Random simulated markets using Vanguard\'s 10-year forecast (June 30, 2026). Lower returns than history, so a more cautious budget. A snapshot; update it in the file when Vanguard publishes new numbers.',
    cus:'Random simulated markets using return and volatility I type in, for example from another firm\'s forecast.'},
- wrap:{0:'Uses only start years with a complete history after them (fewer, but all real).',1:'Lets late start years loop back to 1871 so every year is a start year. Artificial joins; I should treat results with some caution.'}};
+ wrap:{0:'Uses only start years with a complete history after them (fewer, but all real).',1:'Lets late start years loop back to 1871 so every year is a start year. Artificial joins; treat results with some caution.'}};
 function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e)e.textContent=(OPT[k][val(k)]||'').replace(/\{Y(-?\d)\}/g,(m,o)=>yy+ +o)}
   document.querySelectorAll('.y').forEach(e=>{e.textContent=yy?String(yy+ +e.dataset.o):''});
   {const m=$('model');if(m){m.options[0].text=`My tax target for this year (${yy})`;m.querySelector('option[value=none]').text=`No conversion this year (${yy})`}}
@@ -775,14 +775,14 @@ function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
   const brk=num('brk');$('basHint').textContent=brk>0?`${Math.round(Math.min(num('bas'),brk)/brk*100)}% of the balance`:'';
   const M=mv();$('mvNote').textContent=`Expected return ${M.mean}% a year, volatility ${M.vol}% (${M.lbl}).`+(me==='bt'?' The backtest replays actual years instead of using these.':'');
   $('gHint').textContent=`Blank uses ${M.mean}% from my return model. A lower figure, such as 5.5–6%, gives a more conservative read.`;$('g').placeholder=M.mean;
-  {const y=num('yr')+1,w=y<=num('lw')&&WK[y]?WK[y]:[0,0],e=thpEst(w[0],w[1],num('inf')/100);$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`Estimate ${fmt(e)}: ${y} wages ${fmt(w[0])} − Roth ${fmt(w[1])} − federal withholding − Social Security and Medicare tax. I can type my own figure if I know it.`:`No wages in ${y}.`}
+  {const y=num('yr')+1,w=y<=num('lw')&&WK[y]?WK[y]:[0,0],e=thpEst(w[0],w[1],num('inf')/100);$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`Estimate ${fmt(e)}: ${y} wages ${fmt(w[0])} − Roth ${fmt(w[1])} − federal withholding − Social Security and Medicare tax. Type my own figure if I know it.`:`No wages in ${y}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,H=wwhCalc(y,w),dl=H.left?H.left.map(([m,d])=>MO[m]+' '+d).join(', '):'';
-   $('wwhHint').textContent=H.src==='typed'?'Using the total I typed. I can clear it to calculate from my paystub instead.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`If I fill in the three paystub boxes, this is calculated from them. Otherwise it uses an estimate from my wages: ${fmt(H.v)}.`}
+   $('wwhHint').textContent=H.src==='typed'?'Using the total I typed. Clear it to calculate from my paystub instead.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`If I fill in the three paystub boxes, this is calculated from them. Otherwise it uses an estimate from my wages: ${fmt(H.v)}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,ssA=+val('ssa')||0,age=y-num('by'),t=ssTable(),ss=ssA&&age>=ssA?(t[ssA]||0)*12*(age==ssA?1/12:1):0,pre=num('p403')+num('p457')+num('pira'),rmd=age>=75&&DIV[age]?pre/DIV[age]:0,b=num('brk'),N=nowCalc(y,w,wwhCalc(y,w).v,ss,rmd,b,b>0?Math.min(num('bas'),b)/b:1,num('inf')/100);
-   $('bwd').placeholder=Math.round(N.calc);$('bwdHint').textContent=isBlank('lsp')?`Once I enter this year's (${y}) spending, this is calculated.`:`Blank calculates ${fmt(N.calc)}: ${fmt(N.spend)} spending − ${fmt(N.thp)} estimated take-home pay${N.ss?` − ${fmt(N.ss)} Social Security`:''}${N.rmd?` − ${fmt(N.rmd)} RMD`:''}${N.oth?` − ${fmt(N.oth)} other pre-tax withdrawals`:''}. I can type the actual figure if I know it.`}
+   $('bwd').placeholder=Math.round(N.calc);$('bwdHint').textContent=isBlank('lsp')?`Once I enter this year's (${y}) spending, this is calculated.`:`Blank calculates ${fmt(N.calc)}: ${fmt(N.spend)} spending − ${fmt(N.thp)} estimated take-home pay${N.ss?` − ${fmt(N.ss)} Social Security`:''}${N.rmd?` − ${fmt(N.rmd)} RMD`:''}${N.oth?` − ${fmt(N.oth)} other pre-tax withdrawals`:''}. Type the actual figure if I know it.`}
   {const M=mkt(),d=$('down');d.disabled=M.auto;if(M.auto){d.value=M.down?'yes':'no';$('mktHint').textContent=`Change: ${(M.chg*100).toFixed(1)}%, so the market ${M.down?'is':'isn\'t'} down more than 5%. The question below is answered for me.`}else $('mktHint').textContent='If I fill in both, the next question is answered automatically.';explain()}
   {const e=num('ef');$('int').placeholder=Math.round(e*.03);$('intHint').textContent=`Interest from my emergency fund, savings and bonds, taxed like wages. Year-to-date interest is on my statements. Blank estimates 3% of the emergency fund: ${fmt(e*.03)}.`}
-  {const tot=num('p403')+num('p457')+num('pira')+num('r403')+num('r457')+num('rira')+num('brk')+num('ef'),e=num('ef');if($('mixHint'))$('mixHint').textContent=tot>0&&e>0?`With everything else in stocks, my emergency fund is ${(e/tot*100).toFixed(1)}% of the total, so my overall split is about ${Math.round((1-e/tot)*100)} / ${Math.round(e/tot*100)}. I should pick the closest.`:'My overall split across all accounts. I should count money market and Treasury bills as bonds.'}
+  {const tot=num('p403')+num('p457')+num('pira')+num('r403')+num('r457')+num('rira')+num('brk')+num('ef'),e=num('ef');if($('mixHint'))$('mixHint').textContent=tot>0&&e>0?`With everything else in stocks, my emergency fund is ${(e/tot*100).toFixed(1)}% of the total, so my overall split is about ${Math.round((1-e/tot)*100)} / ${Math.round(e/tot*100)}. Pick the closest.`:'My overall split across all accounts. Count money market and Treasury bills as bonds.'}
   const pre=num('p403')+num('p457')+num('pira'),roth=num('r403')+num('r457')+num('rira');
   $('acctSum').textContent=`Pre-tax ${fmt(pre)} · Roth ${fmt(roth)} · Brokerage ${fmt(brk)} · Emergency fund ${fmt(num('ef'))} · Total ${fmt(pre+roth+brk+num('ef'))}`;
   $('modelNote').innerHTML='<b>Settings used:</b> '+{target:{eff:'effective rate and last conversion age.',brk:'bracket and last conversion age.',amt:'total tax amount and last conversion age.'}[tt]+' Sized on this year\'s ('+val('yr')+') actual income with 2026 tax rules.',
@@ -800,7 +800,7 @@ function load(o){if(!o)return;if(o._wk){try{const w=JSON.parse(o._wk);Object.key
 function fromHash(){const h=location.hash.slice(1);if(!h||!h.includes('='))return null;const q=new URLSearchParams(h),o={};q.forEach((v,k)=>o[k]=v);return o}
 function saveLink(){const s=state();delete s._wk;const qs=new URLSearchParams(s).toString();
   try{history.replaceState(null,'','#'+qs)}catch(e){}const u=location.href,i=$('savelink');i.value=u;
-  const done=ok=>{$('savemsg').textContent=ok?'Saved. The link is copied; bookmark it to reopen this plan.':'Saved. I can copy the address from the address bar.'};
+  const done=ok=>{$('savemsg').textContent=ok?'Saved. The link is copied; bookmark it to reopen this plan.':'Saved. Copy the address from the address bar.'};
   try{navigator.clipboard.writeText(u).then(()=>done(true),()=>{try{i.select();done(document.execCommand('copy'))}catch(e){done(false)}})}catch(e){done(false)}}
 
 rebuildSS();
