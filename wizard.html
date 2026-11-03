@@ -48,6 +48,10 @@ h3{font:700 1.1rem/1.3 var(--serif);color:var(--ink);margin:28px 0 10px;padding-
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px}
 .grid>div{display:flex;flex-direction:column;justify-content:flex-start;min-width:0}
 .grid .full,.grid .wide-sel{grid-column:1/-1}
+.rules{list-style:none;padding:0;margin:0;display:grid;gap:0}
+.rules li{padding:9px 0;border-bottom:1px solid var(--line);font-size:.97rem;max-width:72ch}
+.rules li:last-child{border-bottom:0}
+.rules b{color:var(--green)}
 #work{display:grid;gap:0}
 .wyear{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:10px 14px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
 .wyear:last-child{border-bottom:1px solid var(--line)}
@@ -214,7 +218,7 @@ p{max-width:72ch}
 
 <section class="step card" data-s="3" hidden>
   <h2><span class="eyebrow">Step 3 of 5</span>Roth conversion and how to pay the tax</h2>
-  <p class="lead">A Roth conversion moves money from pre-tax to Roth. I pay income tax on it now, and it then grows tax-free, isn't counted toward future required distributions, and is never taxed again. My rule: convert a mild amount each year (about a 17% effective rate) and more only if required distributions are heading somewhere large.</p>
+  <p class="lead">A Roth conversion moves money from pre-tax to Roth. I pay income tax on it now, and it then grows tax-free, isn't counted toward future required distributions, and is never taxed again.</p>
   <div class="grid">
     <div class="full"><label for="model">How to size this year's (<span class="y" data-o="0"></span>) conversion</label><select id="model">
       <option value="target">My tax target for this year</option>
@@ -223,7 +227,7 @@ p{max-width:72ch}
       <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div></div>
     <div data-show="target" class="full"><label for="ttype">Tax target</label><select id="ttype">
       <option value="eff">Effective tax rate</option><option value="brk">Top of a bracket</option><option value="amt">Total tax amount</option></select><div class="explain" id="x-ttype"></div></div>
-    <div data-show="target eff"><label for="teff">Effective rate (federal tax ÷ AGI), %</label><input id="teff" type="number" inputmode="decimal" step="0.5" value="17"><div class="help">My usual setting is 17. If my wages alone already put me above it, no conversion fits.</div></div>
+    <div data-show="target eff"><label for="teff">Effective rate (federal tax ÷ AGI), %</label><input id="teff" type="number" inputmode="decimal" step="0.5" value="17"><div class="help">If my wages alone already put me above it, no conversion fits.</div></div>
     <div data-show="target brk level"><label for="tbrk" id="tbrkLbl">Bracket I fill to</label><select id="tbrk"><option value="12">12% bracket</option><option value="22" selected>22% bracket</option><option value="24">24% bracket</option><option value="32">32% bracket</option></select><div class="explain" id="x-tbrk"></div></div>
     <div data-show="target amt"><label for="tamt">Total federal tax for the year ($)</label><input id="tamt" type="number" inputmode="decimal" step="500" value="40000"><div class="help">Converts until the year's federal income tax, on everything, reaches this amount.</div></div>
     <div data-show="level"><label for="rtgt">Age-75 RMD ceiling (today's $)</label><input id="rtgt" type="number" inputmode="decimal" step="5000" value="40000"><div class="help">The largest first required distribution I'm comfortable with, in today's dollars.</div></div>
@@ -557,7 +561,7 @@ function render(R){
     todo.push(li)}}
   // Conversion
   if(R.C>0){
-    let li=`<span class="when">By Dec 31, ${I.yr}</span><div>I should convert <b class="amt">${fmt(R.C)}</b> from pre-tax (403(b), 457(b) or IRA) to Roth.${R.C<10000?' <span class="pill warn">Under $10k: my checklist says skip the year</span>':''}</div><ul>`;
+    let li=`<span class="when">By Dec 31, ${I.yr}</span><div>I should convert <b class="amt">${fmt(R.C)}</b> from pre-tax (403(b), 457(b) or IRA) to Roth.</div><ul>`;
     if(I.pay==='roll'){li+=`<li>I should ask the custodian of the pre-tax account for the conversion with federal tax withheld (often easiest by phone with their retirement team), and tell them I'll replace the withheld amount with a 60-day rollover.</li>
       <li>I should have them withhold <b class="amt">${fmt(R.Wh)}</b> federal tax: all of ${I.yr}'s tax still owed after paycheck withholding, including tax on capital gains.</li>
       <li>The same day, I should sell about <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> from brokerage (about ${fmt(Math.min(S.P,R.Wh)*(1-I.bp))} gain at ${Math.round(I.bp*100)}% basis) and deposit <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> cash into the Roth account the conversion went to. If that's a Roth inside a 403(b) or 457(b) that won't take outside deposits, a Roth IRA works.</li>
@@ -607,7 +611,7 @@ function render(R){
     li+=`<p class="note">Paying all ${fmt(tot)} during ${Y} means nothing is due in April ${Y+1}. ${minX>0?`To avoid an underpayment penalty I must pay at least <b>${fmt(minX)}</b> of it during the year (safe harbor: the smaller of 90% of ${Y}'s tax, ${fmt(.9*NC.tax)}, and ${S.t.tot>150000?'110':'100'}% of ${I.yr}'s, ${fmt(N.prior)}, minus paycheck withholding); the rest can wait until April.`:`Paychecks alone already meet safe harbor, so there's no penalty risk; the ${fmt(tot)} could wait until April ${Y+1}.`}</p>
     <div class="note" style="margin-top:8px"><b>How I can cover it:</b></div><ul>`;
     if(conv){
-      li+=`<li><b>A. All from the conversion (my usual method).</b> When I convert in Oct–Dec ${Y}, I should withhold <b class="amt">${fmt(Math.min(tot,NC.C))}</b>${tot>NC.C?`, all of the conversion; I'd cover the other ${fmt(tot-NC.C)} with option B or C`:''}. Withholding counts as paid evenly through the year, so no quarterly payments.${I.pay==='roll'?` Then I should refill the Roth with ${fmt(Math.min(tot,NC.C,NC.refill||tot))} from brokerage within 60 days, coded as a 60-day rollover.`:''}</li>`;
+      li+=`<li><b>A. All from the conversion.</b> When I convert in Oct–Dec ${Y}, I should withhold <b class="amt">${fmt(Math.min(tot,NC.C))}</b>${tot>NC.C?`, all of the conversion; I'd cover the other ${fmt(tot-NC.C)} with option B or C`:''}. Withholding counts as paid evenly through the year, so no quarterly payments.${I.pay==='roll'?` Then I should refill the Roth with ${fmt(Math.min(tot,NC.C,NC.refill||tot))} from brokerage within 60 days, coded as a 60-day rollover.`:''}</li>`;
       li+=`<li><b>B. Split: paychecks for the gains, conversion for its own tax.</b> I should add <b class="amt">${fmt(Math.ceil(hp/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c), ${fmt(hp)} total), then withhold <b class="amt">${fmt(NC.convTax)}</b> from the conversion${I.pay==='roll'?' and refill that amount from brokerage within 60 days':''}. Starting the paycheck part later works too: I'd divide ${fmt(hp)} by the paychecks left (${fmt(Math.ceil(hp/13))} each with 13 left).</li>`;
       li+=`<li><b>C. All from paychecks.</b> I should add <b class="amt">${fmt(Math.ceil(tot/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c)) and convert with no withholding. The whole conversion stays in the Roth with no refill needed, but I'm paying the conversion's tax before I know the final amount.</li>`;
     }else{
@@ -624,7 +628,7 @@ function render(R){
     if(i===0)li+=`<span class="pill ok">No surcharge</span> I could add up to ${fmt(IRM[1][0]-A)} more income this year (${I.yr}), from a bigger conversion, say, before the first tier.</div>`;
     else{const down=A-IRM[i][0],save=ir.annual-irmaaFor(IRM[i][0]-1).annual,up=IRM[i][1]===Infinity?0:IRM[i][1]-A,cost=up?irmaaFor(IRM[i][1]+1).annual-ir.annual:0;
       li+=`<span class="pill warn">Tier ${i}</span> about <b class="amt">${fmt(ir.annual)}</b> a year in surcharges.</div><ul><li>${fmt(down)} less income would drop a tier and save ${fmt(save)} a year.</li>${up?`<li>${fmt(up)} more would reach the next tier, adding ${fmt(cost)} a year.</li>`:''}</ul>`}
-    li+=`<p class="note">2026 tiers for a single filer; they rise with inflation, and one dollar over a line triggers the whole tier. My notes say IRMAA is a cost to weigh, not something to contort the plan around.</p>`;
+    li+=`<p class="note">2026 tiers for a single filer; they rise with inflation, and one dollar over a line triggers the whole tier.</p>`;
     todo.push(li)}
   if(I.age>=74&&I.age<75)todo.push(`<span class="when">Next year (${I.yr+1})</span><div>RMDs start next year (${I.yr+1}) at 75. Conversions should stop after this year (${I.yr}).</div>`);
   if(I.rmd>0)todo.push(`<span class="when">By Dec 31, ${I.yr}</span><div>I should take my RMD of <b class="amt">${fmt(I.rmd)}</b> from pre-tax accounts. It can't be converted.</div>`);
@@ -649,7 +653,7 @@ function render(R){
   if(P.N0)trig.push(`At my normal growth, RMDs pass the 22% bracket limit in ${P.N0}.`);
   let conv=`<div class="tiles"><div class="tile"><div class="k">Conversion in ${I.yr}</div><div class="v">${fmt(R.C)}</div></div><div class="tile"><div class="k">Tax withheld</div><div class="v">${fmt(R.Wh)}</div></div><div class="tile"><div class="k">Effective rate</div><div class="v">${pc(t.eff)}</div></div><div class="tile"><div class="k">Top bracket</div><div class="v">${Math.round(t.mar*100)}%</div></div></div>
     <p class="note" style="margin-top:0">${R.cWhy}</p>`;
-  if(I.age<=I.cmax&&I.pre>0)conv+=trig.length?`<h3>Should I convert more?</h3><p class="note"><span class="pill warn">Trigger</span> ${trig.join(' ')} My rule: convert more, up to the top of the 24% bracket, which is <b>${fmt(R.C24)}</b> this year (${I.yr}).</p>`:
+  if(I.age<=I.cmax&&I.pre>0)conv+=trig.length?`<h3>Should I convert more?</h3><p class="note"><span class="pill warn">Trigger</span> ${trig.join(' ')} Converting up to the top of the 24% bracket would be <b>${fmt(R.C24)}</b> this year (${I.yr}).</p>`:
     `<p class="note"><span class="pill ok">No triggers</span> Balance is under the safe line${safeLine?` (${fk(safeLine)} at ${I.age})`:''} and RMDs stay inside the 22% bracket even with growth 2 points higher. I should stay with the baseline.</p>`;
   conv+=`<h3>Long-range check</h3><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
@@ -701,12 +705,17 @@ function render(R){
   <div class="card"><h2>Roth conversion</h2>${conv}</div>
   <div class="card span"><h2>${I.yr} tax scenario</h2>${tax}</div>
   <div class="card span"><h2>Cross-checking in my apps</h2>${links}</div>
-  <div class="card span"><h2>My rules</h2><ul class="note" style="padding-left:18px;margin:0">
-    <li>I should decide year by year; long projections give false precision.</li>
-    <li>I should live off salary and brokerage while they last, then fund living costs through Roth conversions with tax withheld. I should never take a direct IRA distribution.</li>
-    <li>I should convert a mild amount every year (about a 17% effective rate) and more only if growth or the balance says RMDs are heading somewhere large.</li>
-    <li>If the market is down more than 5% from last year, I should spend from the emergency fund instead of selling low, and convert more.</li>
-    <li>I should delay Social Security to 70 and keep last year's tool versions as HTML files.</li></ul>
+  <div class="card span"><h2>My rules</h2><ul class="rules">
+    <li><b>Planning.</b> I decide year by year. Long projections give false precision.</li>
+    <li><b>Paying for living costs.</b> I live off salary and brokerage while they last.</li>
+    <li><b>After brokerage runs out.</b> I fund living costs through Roth conversions with tax withheld.</li>
+    <li><b>Withdrawals.</b> I never take a direct IRA distribution.</li>
+    <li><b>Yearly conversions.</b> I convert a mild amount every year, about a 17% effective rate.</li>
+    <li><b>Converting more.</b> Only if growth or the balance says RMDs are heading somewhere large.</li>
+    <li><b>Down markets.</b> If the market is down more than 5% from a year earlier, I spend from the emergency fund instead of selling low.</li>
+    <li><b>Conversions in down markets.</b> A down year is a good time to convert more, since each dollar moves more shares.</li>
+    <li><b>Social Security.</b> I delay it to 70.</li>
+    <li><b>Records.</b> I keep each year's version of my tools as HTML files.</li></ul>
     <p class="note">General information, not tax or investment advice. Today's tax law.</p></div>
   </div>`}
 
@@ -731,15 +740,15 @@ function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dat
 const OPT={
  down:{no:'Normal year: spending comes from take-home pay first, then brokerage.',
    yes:'I should spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
- model:{target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. This is my usual approach (a 17% effective rate). Simple and year-by-year.',
+ model:{target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
    auto:'Runs the Roth planner\'s lifetime search: tries effective-rate caps from 10% to 24% plus low-bracket plans, keeps the ones with the best sustainable spending, and picks the lowest lifetime tax among them. It often shows no conversion while I still have wages. Takes several seconds.',
    level:'Spreads conversions evenly over the years left until 74, sized so my first required distribution at 75 stays under a ceiling I set, without going above a bracket I choose.',
    none:'Skips the conversion. I\'d use it in a year with unusually high income.'},
- ttype:{eff:'Effective rate = total federal income tax ÷ AGI, counting all income including wages, dividends and gains. 17% is my usual target.',
+ ttype:{eff:'Effective rate = total federal income tax ÷ AGI, counting all income including wages, dividends and gains.',
    brk:'Fills ordinary taxable income (after the standard deduction) up to the top of a bracket, so no conversion dollar is taxed above that rate.',
    amt:'Converts until the year\'s total federal income tax reaches a dollar amount I choose.'},
- tbrk:{12:'Top of the 12% bracket: $50,400 of taxable income in 2026.',22:'Top of the 22% bracket: $105,700 of taxable income in 2026. My notes: filling this every year keeps lifetime RMDs reasonable at normal growth.',24:'Top of the 24% bracket: $201,775 of taxable income in 2026. My rule for when RMDs look like they\'re heading somewhere large.',32:'Top of the 32% bracket: $256,225. My notes: paying 32–35% to chase lower future rates cost spending in tests.'},
- pay:{roll:'My preferred method. The custodian withholds all of this year\'s ({Y0}) remaining tax from the conversion, including tax on capital gains. Withholding counts as paid evenly through the year, so no quarterly payments. Within 60 days I deposit the same amount from brokerage into the Roth, coded as a 60-day rollover, so the whole conversion ends up in the Roth. The plan lists the exact steps.',
+ tbrk:{12:'Top of the 12% bracket: $50,400 of taxable income in 2026.',22:'Top of the 22% bracket: $105,700 of taxable income in 2026.',24:'Top of the 24% bracket: $201,775 of taxable income in 2026.',32:'Top of the 32% bracket: $256,225.'},
+ pay:{roll:'The custodian withholds all of this year\'s ({Y0}) remaining tax from the conversion, including tax on capital gains. Withholding counts as paid evenly through the year, so no quarterly payments. Within 60 days I deposit the same amount from brokerage into the Roth, coded as a 60-day rollover, so the whole conversion ends up in the Roth. The plan lists the exact steps.',
    wh:'The custodian withholds the tax from the conversion and I don\'t refill it. Simpler, but less lands in the Roth, and the withheld part counts as income anyway. Mainly for when brokerage money has run out.',
    qtr:'I convert with no withholding and pay estimated tax in April, June, September and January. Safe harbor: I must pay at least 110% of last year\'s ({Y-1}) total tax (100% if last year\'s AGI was $150,000 or less), minus paycheck withholding, split four ways.'},
  meth:{bt:'Replays real US market history: every retirement that could have started from 1871 on, with the actual stock and bond returns that followed. Same method and data as FI Calc. No forecast to choose; includes real crashes and inflation. Limits: US-only, and periods overlap.',
@@ -750,7 +759,7 @@ const OPT={
 function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e)e.textContent=(OPT[k][val(k)]||'').replace(/\{Y(-?\d)\}/g,(m,o)=>yy+ +o)}
   document.querySelectorAll('.y').forEach(e=>{e.textContent=yy?String(yy+ +e.dataset.o):''});
   {const m=$('model');if(m){m.options[0].text=`My tax target for this year (${yy})`;m.options[3].text=`No conversion this year (${yy})`}}
-  const t=ssTable(),a=+val('ssa');if($('x-ssa'))$('x-ssa').textContent=a?`Benefits start in November ${num('by')+a}, the month I turn ${a}, so the wizard counts one month in that first year. ${a===70?'My plan: 70 gives the largest benefit for life and works like an inflation-protected annuity.':'Claiming before 70 gives a smaller benefit for life.'} Amounts come from my statement below.`:'';}
+  const t=ssTable(),a=+val('ssa');if($('x-ssa'))$('x-ssa').textContent=a?`Benefits start in November ${num('by')+a}, the month I turn ${a}, so the wizard counts one month in that first year. ${a===70?'Claiming at 70 gives the largest benefit for life, and it works like an inflation-protected annuity.':'Claiming before 70 gives a smaller benefit for life.'} Amounts come from my statement below.`:'';}
 
 function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
   const VIS={ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
@@ -759,7 +768,7 @@ function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
   $('yrpill').textContent=val('yr');$('tyHead').textContent=`${val('yr')} other income`;
   const brk=num('brk');$('basHint').textContent=brk>0?`${Math.round(Math.min(num('bas'),brk)/brk*100)}% of the balance`:'';
   const M=mv();$('mvNote').textContent=`Expected return ${M.mean}% a year, volatility ${M.vol}% (${M.lbl}).`+(me==='bt'?' The backtest replays actual years instead of using these.':'');
-  $('gHint').textContent=`Blank uses ${M.mean}% from my return model. My checklist suggests 5.5–6% for a conservative read.`;$('g').placeholder=M.mean;
+  $('gHint').textContent=`Blank uses ${M.mean}% from my return model. A lower figure, such as 5.5–6%, gives a more conservative read.`;$('g').placeholder=M.mean;
   {const y=num('yr')+1,w=y<=num('lw')&&WK[y]?WK[y]:[0,0],e=thpEst(w[0],w[1],num('inf')/100);$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`Estimate ${fmt(e)}: ${y} wages ${fmt(w[0])} − Roth ${fmt(w[1])} − federal withholding − Social Security and Medicare tax. I can type my own figure if I know it.`:`No wages in ${y}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,H=wwhCalc(y,w),dl=H.left?H.left.map(([m,d])=>MO[m]+' '+d).join(', '):'';
    $('wwhHint').textContent=H.src==='typed'?'Using the total I typed. I can clear it to calculate from my paystub instead.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`If I fill in the three paystub boxes, this is calculated from them. Otherwise it uses an estimate from my wages: ${fmt(H.v)}.`}
