@@ -222,6 +222,7 @@ p{max-width:72ch}
   <div class="grid">
     <div class="full"><label for="model">How to size this year's (<span class="y" data-o="0"></span>) conversion</label><select id="model">
       <option value="target">My tax target for this year</option>
+      <option value="fixed">A set amount</option>
       <option value="auto">Roth planner Auto: lowest lifetime tax at the best sustainable spending</option>
       <option value="level">Even out: keep the age-75 RMD under a ceiling</option>
       <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div></div>
@@ -230,6 +231,8 @@ p{max-width:72ch}
     <div data-show="target eff"><label for="teff">Effective rate (federal tax ÷ AGI), %</label><input id="teff" type="number" inputmode="decimal" step="0.5" value="17"><div class="help">If my wages alone already put me above it, no conversion fits.</div></div>
     <div data-show="target brk level"><label for="tbrk" id="tbrkLbl">Bracket I fill to</label><select id="tbrk"><option value="12">12% bracket</option><option value="22" selected>22% bracket</option><option value="24">24% bracket</option><option value="32">32% bracket</option></select><div class="explain" id="x-tbrk"></div></div>
     <div data-show="target amt"><label for="tamt">Total federal tax for the year ($)</label><input id="tamt" type="number" inputmode="decimal" step="500" value="40000"><div class="help">Converts until the year's federal income tax, on everything, reaches this amount.</div></div>
+    <div data-show="fixed"><label for="camt">Conversion this year (<span class="y" data-o="0"></span>), $</label><input id="camt" type="number" inputmode="decimal" step="500" value=""><div class="help">The amount to move from pre-tax to Roth before December 31. The plan works out the tax and withholding for it.</div></div>
+    <div data-show="fixed"><label for="camtN">Conversion next year (<span class="y" data-o="1"></span>), $</label><input id="camtN" type="number" inputmode="decimal" step="500" value="" placeholder="same"><div class="help">Used for next year's tax estimate. Blank assumes the same amount as this year.</div></div>
     <div data-show="level"><label for="rtgt">Age-75 RMD ceiling (today's $)</label><input id="rtgt" type="number" inputmode="decimal" step="5000" value="40000"><div class="help">The largest first required distribution I'm comfortable with, in today's dollars.</div></div>
     <div data-show="x"><label for="cmax">Last conversion age</label><input id="cmax" type="number" inputmode="numeric" step="1" value="74"><div class="help">Required distributions start at 75 for my birth year, and they can't be converted, so 74 is the usual last year.</div></div>
   </div>
@@ -435,7 +438,7 @@ function projection(I){
     else if(rm(Infinity)>I.rtgt){p.Lv=null;note=`The ceiling can't be reached while staying inside the ${I.tbrk}% bracket, so this converts the most allowed each year.`}
     else{let lo=0,hi=2e6;for(let i=0;i<30;i++){const m=(lo+hi)/2;rm(m)>I.rtgt?lo=m:hi=m}p.Lv=Math.ceil(hi/500)*500;note=`Even conversions of about ${fmt(p.Lv)} a year (today's dollars) bring the age-75 RMD to ${fmt(I.rtgt)}.`}
   }else{
-    if(I.ttype==='brk'){p.ttype='brk';p.lim=top(I.tbrk)}else{p.ttype='eff';p.lim=I.effPlan}
+    if(I.ttype==='brk'&&I.model!=='fixed'){p.ttype='brk';p.lim=top(I.tbrk)}else{p.ttype='eff';p.lim=I.effPlan}
   }
   const zliving=susP(0,p,18);if(tau)p.living=susP(1,p,18);else p.living=zliving;
   const raw=sim(tau,p),zraw=sim(0,{...p,living:zliving}),row=raw.find(x=>x.yr==I.yr)||raw[0];
@@ -456,7 +459,7 @@ function inputs(){saveWork();
   const _r={yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,down:mkt().auto?mkt().down:val('down')==='yes',div:num('div'),
     wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),int:isBlank('int')?num('ef')*.03:num('int'),intEst:isBlank('int'),stg:num('stg'),oth:num('oth'),rmd,ssThis,
     NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?WK[yr+1][1]:0,inf):num('thp'),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
-    model:val('model'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:val('pay'),
+    model:val('model'),camt:num('camt'),camtN:isBlank('camtN')?num('camt'):num('camtN'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:val('pay'),
     meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,g,cush:num('cush'),
     WK:JSON.parse(JSON.stringify(WK)),lw:num('lw'),T:ssTable()};
   _r.ltg=_r.ltgTyped?num('ltg'):_r.NOW.gains;return _r}
@@ -490,9 +493,11 @@ function compute(){const I=inputs();
       R.C>0?(I.ttype==='eff'?`This brings ${I.yr}'s effective rate (federal tax ÷ AGI) to ${I.teff}%.`:I.ttype==='brk'?`This fills ordinary taxable income to the top of the ${I.tbrk}% bracket (${fmt(lim)}).`:`This brings ${I.yr}'s federal tax to ${fmt(lim)}.`):
       (I.ttype==='eff'?`My effective rate is already ${pc(R.base.t.eff)} before any conversion, above my ${I.teff}% target.`:I.ttype==='brk'?`Ordinary taxable income (${fmt(R.base.t.ordT)}) is already above the top of the ${I.tbrk}% bracket.`:`Tax is already ${fmt(R.base.t.tax)} before any conversion, above my ${fmt(lim)} target.`);
   }
+  if(I.model==='fixed'){const mx=Math.max(0,I.pre-I.rmd);R.C=canConv?Math.min(I.camt,mx):0;
+    R.cWhy=!canConv?(I.pre>0?`I'm past my last conversion age (${I.cmax}).`:'No pre-tax money to convert.'):I.camt<=0?'No amount entered on step 3.':`The amount I set${I.camt>mx?`, capped at the ${fmt(mx)} of pre-tax money available`:''}. It brings ${I.yr}'s effective rate to ${pc(scenario(I,R.C).t.eff)}.`}
   // 3. Projection (also sizes the conversion for planner models)
-  const sTmp=I.model==='target'?scenario(I,R.C||0):R.base;
-  I.effPlan=I.model==='target'&&I.ttype==='amt'?Math.max(.05,sTmp.t.eff):I.teff/100;
+  const sTmp=I.model==='target'||I.model==='fixed'?scenario(I,R.C||0):R.base;
+  I.effPlan=(I.model==='target'&&I.ttype==='amt')||I.model==='fixed'?Math.max(.05,sTmp.t.eff):I.teff/100;
   R.P=projection(I);
   if(I.model==='auto'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C,Math.max(0,I.pre-I.rmd))/100)*100:0;
     R.cWhy=(canConv?R.P.note:`I'm past my last conversion age (${I.cmax}).`)+(canConv&&R.C===0?` The planner has no conversion in ${I.yr}${I.wage>0?', mostly because of my wages':''}.`:'')}
@@ -534,6 +539,7 @@ function compute(){const I=inputs();
    const sc=C=>{let g2=0,t;for(let k=0;k<40;k++){t=tx(C,gN+g2);const P=I.pay==='roll'?Math.min(brkLeft,Math.max(0,Math.min(C,t.tax-wh))):0,ng=P*(1-I.bp);if(Math.abs(ng-g2)<.5)break;g2=ng}return{t,g2}};
    const preN=Math.max(0,I.pre-R.C-I.rmd-rmdN-R.viaConv),canN=ageN<=I.cmax&&preN>0;let Cn=0,why='';
    if(!canN)why=preN>0?`I'll be past my last conversion age (${I.cmax}).`:'No pre-tax money left to convert.';
+   else if(I.model==='fixed'){Cn=Math.floor(Math.min(I.camtN,preN)/100)*100;why=Cn>0?'the amount I set on step 3':'no amount set for next year'}
    else if(I.model==='none')why=`I chose no conversion this year (${I.yr}), so none is assumed for next year (${I.yr+1})`;
    else if(I.model==='target'){const lim=I.ttype==='eff'?I.teff/100:I.ttype==='brk'?topOf(I.tbrk):I.tamt,ok=x=>I.ttype==='eff'?x.t.eff<=lim+1e-9:I.ttype==='brk'?x.t.ordT<=lim:x.t.tax<=lim;
      if(ok(sc(0))){let lo=0,hi=preN;if(ok(sc(hi)))lo=hi;else for(let i=0;i<40;i++){const m=(lo+hi)/2;ok(sc(m))?lo=m:hi=m}Cn=Math.floor(lo/100)*100}
@@ -740,7 +746,7 @@ function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dat
 const OPT={
  down:{no:'Normal year: spending comes from take-home pay first, then brokerage.',
    yes:'I should spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
- model:{target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
+ model:{fixed:'Converts exactly the amount I enter. The plan shows the tax it adds, how much to withhold, the refill and the safe-harbor check. The convert-more check still runs.',target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
    auto:'Runs the Roth planner\'s lifetime search: tries effective-rate caps from 10% to 24% plus low-bracket plans, keeps the ones with the best sustainable spending, and picks the lowest lifetime tax among them. It often shows no conversion while I still have wages. Takes several seconds.',
    level:'Spreads conversions evenly over the years left until 74, sized so my first required distribution at 75 stays under a ceiling I set, without going above a bracket I choose.',
    none:'Skips the conversion. I\'d use it in a year with unusually high income.'},
@@ -758,11 +764,11 @@ const OPT={
  wrap:{0:'Uses only start years with a complete history after them (fewer, but all real).',1:'Lets late start years loop back to 1871 so every year is a start year. Artificial joins; I should treat results with some caution.'}};
 function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e)e.textContent=(OPT[k][val(k)]||'').replace(/\{Y(-?\d)\}/g,(m,o)=>yy+ +o)}
   document.querySelectorAll('.y').forEach(e=>{e.textContent=yy?String(yy+ +e.dataset.o):''});
-  {const m=$('model');if(m){m.options[0].text=`My tax target for this year (${yy})`;m.options[3].text=`No conversion this year (${yy})`}}
+  {const m=$('model');if(m){m.options[0].text=`My tax target for this year (${yy})`;m.querySelector('option[value=none]').text=`No conversion this year (${yy})`}}
   const t=ssTable(),a=+val('ssa');if($('x-ssa'))$('x-ssa').textContent=a?`Benefits start in November ${num('by')+a}, the month I turn ${a}, so the wizard counts one month in that first year. ${a===70?'Claiming at 70 gives the largest benefit for life, and it works like an inflation-protected annuity.':'Claiming before 70 gives a smaller benefit for life.'} Amounts come from my statement below.`:'';}
 
 function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
-  const VIS={ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
+  const VIS={camt:m==='fixed',camtN:m==='fixed',ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
   for(const id in VIS){const e=$(id);if(e&&e.parentElement)e.parentElement.hidden=!VIS[id]}
   $('tbrkLbl').textContent=m==='level'?'Bracket I won\'t go above':'Bracket I fill to';
   $('yrpill').textContent=val('yr');$('tyHead').textContent=`${val('yr')} other income`;
@@ -782,6 +788,7 @@ function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
   $('modelNote').innerHTML='<b>Settings used:</b> '+{target:{eff:'effective rate and last conversion age.',brk:'bracket and last conversion age.',amt:'total tax amount and last conversion age.'}[tt]+' Sized on this year\'s ('+val('yr')+') actual income with 2026 tax rules.',
     auto:'last conversion age, plus growth rate and age-95 cushion on step 4. No other settings on this step apply.',
     level:'RMD ceiling, bracket cap and last conversion age, plus growth rate and cushion on step 4.',
+    fixed:'conversion amounts and last conversion age.',
     none:'none on this step. How I pay the tax still matters if I owe more than my paychecks withhold.'}[m]}
 function fields(){return[...document.querySelectorAll('#wiz input[id],#wiz select[id]')]}
 function state(){saveWork();const o={};fields().forEach(e=>{if(e.value!=='')o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
