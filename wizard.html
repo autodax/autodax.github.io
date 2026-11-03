@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Retirement Planning Wizard</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <script>
@@ -93,6 +98,9 @@ p{max-width:72ch}
 .phone{font-family:var(--mono);user-select:all}
 @media(prefers-reduced-motion:no-preference){section.step{animation:fade .18s ease-out}@keyframes fade{from{opacity:.4}to{opacity:1}}}
 </style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+</head>
+<body>
 
 <div class="wrap" id="page">
 <header class="top">
@@ -701,3 +709,6 @@ $('savebtn').addEventListener('click',saveLink);
 addEventListener('hashchange',()=>{const o=fromHash();if(o){load(o);sync();if(cur===5)plan()}});
 show(1);
 </script>
+
+</body>
+</html>
