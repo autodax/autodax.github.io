@@ -541,7 +541,7 @@ function render(R){
     li+=`</ul>`;
     if(N.bwd>0)li+=`<p class="note">${I.ltgTyped?`You entered ${fmt(I.ltg)} of long-term gains; the brokerage withdrawals alone would be about ${fmt(N.gains)} at your ${Math.round(I.bp*100)}% basis.`:`About <b>${fmt(N.gains)}</b> of that is long-term gain at your ${Math.round(I.bp*100)}% basis, and it's included in this year's tax below. Type actual gains on step 2 to use them instead.`}</p>`;
     if(N.bwd>0&&m>0)li+=`<p class="note">Through December, keep brokerage transfers at about ${fmt(N.bwd/12)} a month.</p>`;
-    if(N.thp>0)li+=`<p class="note">Take-home pay is estimated and leaves out insurance and other paycheck deductions, so the real brokerage need may be a bit higher. Type the actual withdrawals on step 2 if you know them.</p>`;
+    if(N.thp>0)li+=`<p class="note">Take-home pay is an estimate that leaves out insurance and other paycheck deductions. Your real paychecks will be a bit smaller, so you may need to withdraw a little more from brokerage. If you know your actual withdrawals, type them on step 2.</p>`;
     todo.push(li)}}
   // Conversion
   if(R.C>0){
