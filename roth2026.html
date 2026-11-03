@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Roth Conversion Planner</title>
+<style>
+:root{--bg:#FAF6EE;--card:#FFFDF8;--line:#E4DCC9;--ink:#1F2A24;--soft:#5B6B60;--green:#2E4034;--band:#EFE7D3;--owe:#8C3B2E;--brown:#E3D2B6;--brown-line:#C4A97F;--brown-ink:#4A3622;--on-green:#FFFDF8;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="dark"]{--bg:#1A1715;--card:#221F1B;--line:#36312A;--ink:#D9D0C0;--soft:#9A9285;--green:#B89E6A;--band:#2B2620;--owe:#C48A78;--brown:#3A3128;--brown-line:#6E5F46;--brown-ink:#D8C7A4;--on-green:#1E1A14;color-scheme:dark}
+#themebtn{margin-left:8px;width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--green);background:var(--card);color:var(--green);cursor:pointer;vertical-align:middle;line-height:0}
+#themebtn svg{width:16px;height:16px}
+html.safari{zoom:1.3}
+*,*::before,*::after{box-sizing:border-box}
+html,body{width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+.wrap,.card,.grid>div{min-width:0;max-width:100%}
+.scroll{max-width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 Georgia,'Times New Roman',serif;padding:10px max(6px,env(safe-area-inset-right,0px)) 16px max(6px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1500px;margin:0 auto}
+h1 .ty{display:inline-block;margin-left:10px;padding:3px 12px;border-radius:999px;background:var(--green);color:var(--on-green);font-size:.95rem;font-weight:700;vertical-align:middle;white-space:nowrap}
+.tynote{margin:0 4px 6px;font-size:.8rem;color:var(--soft)}
+h1{font-size:1.25rem;margin:4px 4px 2px;color:var(--green)}
+.sub{margin:0 4px 10px;color:var(--soft);font-size:.82rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+h2{font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin:0 0 8px}
+.grid>div{display:flex;flex-direction:column;justify-content:flex-end}
+@media(min-width:1000px){#inputs{grid-template-columns:repeat(9,minmax(0,1fr))}#work{grid-template-columns:repeat(9,minmax(0,1fr))}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+label{display:block;font-size:.7rem;color:var(--soft);margin-bottom:2px}
+input,select{width:100%;box-sizing:border-box;font:.9rem ui-monospace,Menlo,monospace;padding:6px 8px;border:1px solid var(--brown-line);border-radius:9px;background:var(--bg);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font:.72rem ui-monospace,Menlo,monospace}
+th{font-weight:600;color:var(--soft);text-align:right;padding:3px 4px;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:3px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.scroll{overflow-x:auto}
+tr.conv td{font-weight:700}
+#tbl td:nth-child(10),#tbl th:nth-child(10){background:var(--brown);color:var(--brown-ink);font-weight:700;border-left:2px solid var(--brown-line);border-right:2px solid var(--brown-line)}
+tr.rmd td{color:var(--green)}
+.sum td:first-child,.sum th:first-child{white-space:normal}
+.sum td{font-size:.78rem;white-space:normal}
+.sum td:first-child{text-align:left}
+.sum td+td{white-space:nowrap}
+.warn{color:var(--owe);font-size:.8rem;margin:6px 0 0}
+details p,details li{font-size:.78rem;color:var(--soft);margin:4px 0}
+summary{cursor:pointer;font-size:.8rem;color:var(--soft)}
+dialog#chk{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;width:min(700px,94vw);max-height:86vh;padding:16px 20px;overflow:auto}
+dialog#chk::backdrop{background:rgba(0,0,0,.5)}
+#chk h2{font-size:1.05rem;margin:0 0 6px;color:var(--green)}#chk h3{font-size:.9rem;margin:14px 0 4px;color:var(--green)}
+#chk p,#chk li{font-size:.84rem;line-height:1.5}#chk ol,#chk ul{padding-left:20px;margin:4px 0}
+#chk table{margin:6px 0;font:.8rem ui-monospace,Menlo,monospace}#chk td,#chk th{padding:3px 8px;text-align:left;white-space:normal}
+
+:root{--year-stripe:#E8DEC7}
+:root[data-theme="dark"]{--year-stripe:#44392D}
+#results{width:fit-content;max-width:100%}
+#results .warn{max-width:76ch}
+#sum{width:auto;max-width:100%}
+#sum th,#sum td{padding:3px 10px}
+#sum tr:nth-child(even)>td{background:var(--band)}
+#sum tr.emphasis>td:not(:first-child){font-weight:700}
+
+#chk > div:first-child{gap:10px;align-items:flex-start!important}
+#chk > div:first-child h2{min-width:0}
+#chk > div:first-child button{flex-shrink:0}
+dialog#chk{padding-bottom:28px}
+#chk .safe-balances{margin:6px 0;padding-left:20px}
+#chk .safe-balances li{margin:3px 0}
+@media(max-width:600px){
+  dialog#chk{width:calc(100% - 12px);max-width:calc(100% - 12px);
+    max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);
+    margin:auto;padding:40px 12px 28px;
+    padding-top:calc(40px + env(safe-area-inset-top, 0px));
+    border-radius:10px;overflow-wrap:anywhere}
+  #chk h2{font-size:.95rem;line-height:1.3;margin:0}
+  #chk h3{margin:10px 0 4px}
+  #chk p{margin:8px 0}
+  #chk ol,#chk ul{padding-left:18px}
+  #chk > :last-child{margin-bottom:0}
+}
+
+.planner-dashboard{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start;margin-bottom:10px}
+.planner-dashboard > .card{min-width:0;margin:0;width:100%;max-width:100%}
+#planner-inputs{padding:10px}
+#planner-inputs .grid{gap:6px 8px}
+#planner-inputs #inputs,#planner-inputs #strategy{grid-template-columns:repeat(3,minmax(0,1fr))}
+#planner-inputs #work{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0!important}
+#planner-inputs label{font-size:.68rem;line-height:1.25;margin-bottom:3px}
+#planner-inputs input,#planner-inputs select{font-size:.8rem;padding:5px 7px;border-radius:6px;min-width:0}
+.input-section-title{font-size:.73rem;margin:10px 0 6px;padding-top:8px;border-top:1px solid var(--line)}
+#strategy > .dropdown-field{grid-column:1 / -1}
+#strategy > div{justify-content:flex-start}
+#strategy select{width:100%;padding-right:25px}
+.dropdown-selection{display:none;color:var(--soft);font-size:.74rem;line-height:1.3;margin:3px 0 0;overflow-wrap:anywhere}
+#results{padding:10px}
+#results #sum{width:100%;max-width:100%}
+#results #sum td,#results #sum th{padding:3px 5px;font-size:.74rem}
+#results #sum td:first-child{width:54%}
+#results .warn{font-size:.74rem;line-height:1.35}
+@media(min-width:1000px){
+ .planner-dashboard{grid-template-columns:minmax(400px,.9fr) minmax(500px,1.1fr)}
+ .planner-dashboard > .card{max-height:calc(100vh - 145px);max-height:calc(100dvh - 145px);overflow-y:auto;scrollbar-gutter:stable;overscroll-behavior-y:contain}
+ .planner-dashboard > .card > h2:first-child{position:sticky;top:-10px;z-index:1;background:var(--card);padding:6px 0;margin-top:-6px}
+}
+@media(max-width:700px){#planner-inputs #inputs,#planner-inputs #strategy{grid-template-columns:repeat(2,minmax(0,1fr))}.dropdown-selection{display:block}}
+@media(max-width:360px){#planner-inputs #inputs,#planner-inputs #strategy{grid-template-columns:minmax(0,1fr)}}
+</style>
+<script>
+if(/^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent))document.documentElement.className+=' safari';
+var DAY=[7,19],ov=null;
+function isDay(){var h=new Date().getHours();return h>=DAY[0]&&h<DAY[1]}
+function nextChange(){var n=new Date(),d=new Date(n);d.setHours(isDay()?DAY[1]:DAY[0],0,0,0);if(d<=n)d.setDate(d.getDate()+1);return d.getTime()}
+function applyTheme(){var o=ov;if(!o){try{o=JSON.parse(localStorage.getItem('themeOverride')||'null')}catch(e){}}
+  if(o&&Date.now()>=o.until){o=ov=null}
+  document.documentElement.setAttribute('data-theme',o?o.t:(isDay()?'light':'dark'))}
+function toggleTheme(){var n=document.documentElement.getAttribute('data-theme')=='dark'?'light':'dark';ov={t:n,until:nextChange()};
+  try{localStorage.setItem('themeOverride',JSON.stringify(ov))}catch(e){}applyTheme()}
+applyTheme();setInterval(applyTheme,60000);
+</script>
+</head>
+<body>
+<div class="wrap">
+<h1>Roth Conversion Planner <span class="ty">2026 tax year</span><button id="savebtn" type="button" onclick="saveBtn()" style="margin-left:10px;padding:4px 12px;border-radius:8px;border:1px solid var(--green);background:var(--card);color:var(--green);font-size:.85rem;font-weight:600;cursor:pointer;vertical-align:middle;white-space:nowrap">Save to link</button><button id="themebtn" type="button" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Light 7am–7pm, dark otherwise (your local time). Click to override until the next switch."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button><button id="chkbtn" type="button" onclick="openChk()" style="margin-left:8px;padding:4px 12px;border-radius:8px;border:1px solid var(--green);background:var(--card);color:var(--green);font-size:.85rem;font-weight:600;cursor:pointer;vertical-align:middle;white-space:nowrap">Checklist</button></h1>
+<input id="savelink" readonly tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;top:0;opacity:0">
+<dialog id="chk"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Yearly checklist (about 5 minutes, each Oct–Nov)</h2><button type="button" onclick="document.getElementById('chk').close()" style="border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:2px 10px;cursor:pointer" aria-label="Close">✕</button></div>
+<p>The idea: convert a mild amount every year (the Auto plan, about a 17% effective rate), and convert more only if growth or your balance says RMDs are heading somewhere large. Your actual balance already reflects past gains and losses, but future spending and RMD estimates still depend on assumed growth. Update your balances each year, compare several growth assumptions, and adjust the plan rather than relying on a single forecast.</p>
+<ol>
+<li><b>Update the inputs.</b> Set the start year to this year, enter your actual 403(b), Roth and brokerage balances, brokerage basis, and your year-to-date income. For a conservative spending read, set growth to about 5.5–6%.</li>
+<li><b>Set next year's spending.</b> Read "Sustainable annual spending" (it keeps your age-95 cushion) and spend no more than that. Set "Plan at" to "Maximum sustainable spending" to run the whole table, conversions, RMDs and stress test at that spending level, so you see the actual drain-down path. Rerun every year: trim if returns disappoint, raise if they boom.</li>
+<li><b>Baseline conversion.</b> Use this year's amount from the Conversion column in the year-by-year table. Re-estimate it from your actual income so the year's effective tax rate (federal income tax ÷ AGI) lands at the plan's cap.</li>
+<li><b>Check the triggers.</b> Convert <i>more</i>, up to the top of the 24% bracket (taxable income of $201,775 in 2026, indexed each year), if any of these is true:
+<ul><li>Your 403(b) balance, in today's dollars, is above the safe line for your age (<span id="safeNow"></span>).</li>
+<li>The stress test (growth +2 points) says your RMD would exceed the 22%-bracket limit (<span id="limNow">run the planner first</span> at age 75, counting your Social Security).</li>
+<li>At your normal growth setting, the row "first year the RMD exceeds that limit" shows a year instead of "never."</li></ul>
+If none is true, stay with the baseline. If less than about $10k of room is left, skip the year.</li>
+<li><b>Pay and time it.</b> Finish the conversion before December 31 (your plan may cut off earlier). Pay the tax from brokerage cash. If you hold at least 110% of last year's total tax in withholding for 2026 (100% if your 2025 AGI was $150k or less), the tax is due by April 15 with no underpayment penalty.</li>
+<li><b>Stop at age 74.</b> RMDs start at 75 for your birth year.</li></ol>
+<h3>Safe line (largest 403(b) balance, today's dollars, that keeps the age-75 RMD in the 22% bracket)</h3>
+<ul class="safe-balances" aria-label="Safe-line balances by age">
+<li>Age 60: balance under $0.69M</li>
+<li>Age 65: balance under $0.97M</li>
+<li>Age 70: balance under $1.35M</li>
+<li>Age 74: balance under $1.78M</li>
+</ul>
+<p>It assumes the balance grows 7% a year above inflation with no withdrawals, so it errs toward converting. For the 24% bracket instead, multiply by about 2.2.</p>
+<h3>Watch-outs</h3>
+<ul><li>Your plan must allow in-service distributions or in-plan Roth conversions while you work.</li>
+<li>From about age 63, conversion income raises your Medicare IRMAA two years later.</li>
+<li>Paying 32–35% to chase low future rates cost real spending in the tests. Stay at 24% or below.</li>
+<li>Everything assumes today's tax law. This is general information, not tax advice.</li></ul></dialog>
+<p class="tynote">Click <b>Save to link</b> (top) to store your inputs in this page's web address, then bookmark it. Opening a saved address fills everything back in.<span id="savemsg"></span></p>
+<p class="sub" id="hdr">Born Nov 1966 · Single · Florida · Federal tax only · RMDs start at 75 (2041) · All dollar amounts in today's (2026) dollars · Medicare IRMAA is taken out of your Social Security payment</p>
+<div class="planner-dashboard"><div class="card" id="planner-inputs"><h2>Inputs</h2><div class="grid" id="inputs"></div><h2 class="input-section-title">Yearly wages &amp; Roth contributions</h2><div class="grid" id="work"></div><h2 class="input-section-title">Model &amp; strategy settings</h2><div class="grid" id="strategy"></div></div>
+<div class="card" id="results"><h2>Result</h2><div class="scroll"><table class="sum" id="sum"></table></div><p class="warn" id="warn"></p></div></div>
+<div class="card"><h2 id="ttl">Year by year (today's 2026 dollars)</h2><div class="scroll"><table id="tbl"></table></div>
+<p class="sub" style="margin:6px 0 0">Alternating shading helps track rows · bold = conversion year · green/gold text = RMD year. RMD = 403(b) start-of-year balance ÷ the IRS divisor for your age that year. Other 403(b) withdrawals cover living costs and taxes beyond the RMD (conversions are shown separately), so total withdrawals are the larger of the RMD or what you need. Taxable income is ordinary income (including taxable Social Security) after deductions. IRMAA: Medicare starts the November you turn 65 and each year's surcharge is based on AGI from two years earlier (2026 tiers and surcharges, inflated). It is deducted from your Social Security check once you claim, and billed directly before that, so it counts as a cash need. It is not a tax deduction.</p></div>
+<div class="card"><details><summary>Assumptions & method</summary><ul>
+<li><b>Plan at</b> chooses what spending the whole plan runs at. "My spending input" uses your Total spending figure. "Maximum sustainable spending" ignores that figure and runs the table, conversions, RMDs and stress test at the highest flat spending that never runs short and leaves your age-95 cushion. Each column is run at its own maximum, so compare the sustainable-spending row first; totals such as lifetime tax are then at different spending levels.</li><li>FICA is charged on the wages you enter: 6.2% Social Security up to the wage base ($184,500 in 2026, indexed at your inflation rate), 1.45% Medicare, plus 0.9% above $200,000. It is cash that goes out, is not income-tax deductible, and is not available to spend. Pretax 403(b) deferrals are not modeled, so enter gross wages.</li><li><b>Auto</b> (default) tests effective-rate caps (10% to 24%, converting through your last conversion age) and low-bracket lifetime plans (12% and 22%), and picks the one with the lowest lifetime income tax plus IRMAA among those whose sustainable spending is within 0.1% of the best. The year-by-year table lists what to convert each year; it is a projection, so redo it each November with your actual income.</li><li><b>Low-bracket lifetime</b> caps pretax withdrawals plus conversions at the top of the chosen bracket every year, for life. Conversions fill whatever room is left, and the rest of your spending comes from Roth and brokerage (pretax is tapped beyond the cap only if those run out). "Last conversion age" lets other strategies keep converting after 75 on top of the RMD.</li><li>Conversion modes: <b>Convert fully by age</b> (default) finds the smallest level yearly amount (start-year dollars, inflating) that empties the 403(b) by the year you reach that age, with no bracket limit. <b>Even out</b> finds the smallest level annual amount (in start-year dollars, inflating) that brings the age-75 RMD to your ceiling, never taking taxable income above the chosen bracket and never converting outside the first/last year window. Fill modes convert as much as fits each year (front-loaded). An optional AGI cap for ages 63+ keeps conversions under an IRMAA tier two years ahead. Sustainable spending is the highest spending that never runs out and leaves the age-95 cushion.</li>
+<li>Balances are entered as of Jan 1 of the start year, which is the first projected year. Growth and inflation compound once a year; results are shown in start-year dollars. Brackets, deductions and the age-65 extra deduction are 2026 IRS figures inflated at your inflation rate; Social Security thresholds and the $200k NIIT threshold do not inflate. The temporary senior bonus deduction (2025–2028) is not modeled.</li>
+<li>Living expenses and Social Security are entered in start-year dollars and inflate. Wages are taxable and entered before Roth contributions; Roth contributions come from after-tax cash. IRMAA starts the November you turn 65 and is based on AGI from two years earlier, so it is left out for any Medicare year whose income two years back is before your start year.</li>
+<li>Cash needs (living + Roth contributions + tax − wages − Social Security − RMD) come from the brokerage first (gains at the basis share, taxed at capital-gain rates). Once it is gone, living costs come from the 403(b) (only the tax caused by the conversion itself is withheld out of it; tax on the other withdrawals comes out of those withdrawals), and from the Roth only if the 403(b) runs out. The planner does not minimize lifetime taxes. The first Social Security year pays one month (November birthday).</li>
+<li>Dividends are qualified, reinvested and taxed each year; the growth rate is total return. RMDs use the IRS Uniform Lifetime Table. Same rules as the tax estimator. IRMAA is paid from SS (or cash) and is not deducted for tax.</li></ul></details></div>
+</div>
+<script>
+const IN=[['living',"Total spending / yr (start-year $; SS is applied against it)",120000,500],['infl','Inflation %',2.5,.1],['t403','403(b) balance at start',1500000,5000],['g','403(b) / Roth growth %',8,.1],['roth','Roth balance at start',258000,500],['brk','Brokerage balance at start',344000,5000],['gb','Brokerage growth %',8,.1],['div','Dividends / yr (on starting balance)',4000,100],['basis','Brokerage cost basis %',50,1],['start','Start year (balances as of Jan 1)',2026,1],['by','Birth year (Nov birthday)',1966,1],['lw','Last working year',2028,1],['firstc','First conversion year',2027,1],['lastc','Last conversion year (not used in convert-fully mode)',2035,1]];
+const WK={};
+function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y=+e.dataset.y;(WK[y]=WK[y]||[0,0])[+e.dataset.k]=+e.value||0})}
+function renderWork(){saveWork();const g=id=>+document.getElementById(id).value||0,s=g('start'),l=Math.min(g('lw'),s+30);let h='';
+if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label for="w${y}a">${y} wages (taxable, before Roth, nominal)</label><input id="w${y}a" type="number" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">${y} Roth contribution (nominal)</label><input id="w${y}b" type="number" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div>`}
+document.getElementById('work').innerHTML=h}
+const SSTBL={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
+const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="auto" selected>Auto: lowest tax within 0.1% of max spending</option><option value="low">Low-bracket lifetime (fill bracket, spend Roth/brokerage)</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="74" step="1" inputmode="decimal"></div><div><label for="autosafe">Auto: keep RMDs inside the 22% limit?</label><select id="autosafe"><option value="yes" selected>Yes (even at +2 pts growth)</option><option value="no">No (maximize spending)</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="planat">Plan at</label><select id="planat"><option value="mine" selected>My spending input</option><option value="max">Maximum sustainable spending (drain to cushion)</option></select></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
+document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="" step="${s}" inputmode="decimal"></div>`).join('');
+document.getElementById('strategy').innerHTML=TGT;
+const IR=[[109000,95.7],[137000,240.4],[171000,385],[205000,529.6],[500000,578]];
+const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
+const OB=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
+const QB=[[0,0,49450],[.15,49450,545500],[.2,545500,Infinity]];
+const fmt=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
+const prog=(a,base,br,f)=>br.reduce((s,[r,lo,hi])=>s+r*Math.max(0,Math.min(base+a,hi*f)-Math.max(base,lo*f)),0);
+function ssTax(ss,o){if(ss<=0)return 0;const c=o+.5*ss;const b50=Math.min(.5*Math.max(0,Math.min(c,34000)-25000),.5*ss);return Math.min(.85*ss,b50+.85*Math.max(0,c-34000));}
+function taxCalc(f,age,ord,pref,ss){const st=ssTax(ss,ord+pref),oi=ord+st,std=(16100+(age>=65?2050:0))*f;
+const ot=Math.max(0,oi-std),pt=Math.max(0,pref-Math.max(0,std-oi)),agi=oi+pref;
+return{tax:prog(ot,0,OB,f)+prog(pt,ot,QB,f)+.038*Math.min(pref,Math.max(0,agi-200000)),ot,st,agi};}
+// one year's cash flow given conversion C
+function yc(c,C){let X=0,S=0,W=0,Xc=0,sp=0,RW=0,sh=0,r;
+for(let i=0;i<22;i++){r=taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss);X=r.tax;const Xi=Math.max(0,X-taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).tax);
+const need=c.L+c.K+c.irm+c.fica+X-c.w-c.ss-c.rmd;
+if(need<=0){S=0;sp=-need;W=0;Xc=0;RW=0;sh=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,Xi,C);const wn=R-Xc;W=Math.min(wn,Math.max(0,c.T-c.rmd-C));
+if(c.cap&&W>0&&taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).ot>c.cap){let lo=0,hi=W;for(let k=0;k<12;k++){const m=(lo+hi)/2;taxCalc(c.f,c.age,c.w+c.rmd+m,c.div+S*(1-c.bf),c.ss).ot<=c.cap?lo=m:hi=m}W=lo}
+RW=Math.min(wn-W,c.Rav);sh=wn-W-RW;
+if(c.cap&&sh>0){const e=Math.min(sh,Math.max(0,c.T-c.rmd-C-W));W+=e;sh-=e}}}
+return{X,S,W,Xc,sp,RW,sh,ot:r.ot,st:r.st,agi:r.agi}}
+function sim(tau,p,schedule){
+  let T=p.t403,R=p.roth,B=p.brk,bs=B*p.basis,rows=[];
+  const sched=schedule||null;
+  for(let yr=p.start;yr<=p.by+100;yr++){
+    const age=yr-p.by,f=Math.pow(1+p.infl,yr-2026),u=Math.pow(1+p.infl,yr-p.start);
+    const q=rows[rows.length-2];let irm=0;
+    if(yr>=p.by+65&&q){
+      const t=IR.filter(([th])=>q.agi>th*f);
+      irm=t.length?12*(yr==p.by+65?2/12:1)*t[t.length-1][1]*f:0
+    }
+    const wk=yr<=p.lw&&p.wk[yr]?p.wk[yr]:[0,0];
+    const c={f,age,w:wk[0],K:wk[1],ss:age>=p.ssage?p.ss*12*u*(age==p.ssage?1/12:1):0,
+      fica:wk[0]*.0145+.062*Math.min(wk[0],184500*f)+.009*Math.max(0,wk[0]-2e5),rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*u,irm,T,Rav:R,B,bf:B>0?bs/B:1,cap:p.capOn?p.lim*f-.5:0};
+    let C=0;
+    if(sched){
+      C=Math.max(0,Math.min(T,sched[yr]||0));
+    }else if(yr>=p.firstc&&yr<=p.lastc&&age<=(p.cmaxAge||74)&&T>0&&tau>0){
+      const brk=p.ttype!='eff',lim=brk?p.lim*f:p.lim,cp=age>=63&&p.agicap?p.agicap*f:0;
+      const ok=r=>{const y=yc(c,r);return (brk?y.ot:(y.agi>0?y.X/y.agi:0))<lim&&(!cp||y.agi<cp)};
+      if(p.ttype=='full'){C=Math.min(Math.max(0,T-c.rmd),p.Lv*u)}else if(ok(0)){
+        let lo=0,hi=Math.max(0,T-c.rmd);
+        for(let i=0;i<24;i++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}
+        C=Math.min(lo,(p.Lv==null?Infinity:p.Lv)*u)
+      }
+    }
+    const y=yc(c,C),W=y.W,short=y.sh;
+    const t0=T,r0=R;
+    rows.push({yr,age,f,u,br:mr(y.ot,f),w:c.w,ss:c.ss,st:y.st,agi:y.agi,
+      eff:y.agi>0?y.X/y.agi:0,irm,net:Math.max(0,c.ss-irm),S:y.S,dist:W+c.rmd,RW:y.RW,
+      rmd:c.rmd,C,X:y.X,ot:y.ot,t0,r0,short,B0:B,fica:c.fica});
+    bs=B-y.S<1?0:bs-y.S*c.bf+y.sp+c.div;
+    B=B-y.S+y.sp<1?0:(B-y.S+y.sp)*(1+p.gb);if(B==0)bs=0;
+    T=Math.max(0,T-c.rmd-C-W)*(1+p.g);
+    R=(R+c.K+C-y.Xc-y.RW)*(1+p.g);
+    Object.assign(rows[rows.length-1],{T,B,R})
+  }
+  return rows
+}
+
+const mr=(ot,f)=>{if(ot<=0)return'—';const o=OB.find(([r,lo,hi])=>ot/f>=lo&&ot/f<hi);return Math.round(o[0]*100)+'%'};
+const REL={auto:['cmax','autosafe','agicap'],low:['tval','agicap'],brk:['tval','cmax','agicap'],eff:['tval','cmax','agicap'],level:['tval','rtgt','cmax','agicap'],full:['byage','cmax']};
+function syncInputs(){const t=document.getElementById('ttype').value,on=REL[t]||[];
+  for(const id of ['cmax','autosafe','byage','tval','rtgt','agicap']){const e=document.getElementById(id);if(e&&e.parentElement)e.parentElement.style.display=on.includes(id)?'':'none'}
+  const lv=document.getElementById('living');if(lv&&lv.parentElement)lv.parentElement.style.display=document.getElementById('planat').value=='max'?'none':'';
+  const l=document.querySelector('label[for=tval]');if(l)l.textContent=t=='eff'?'Effective tax rate cap %':'Bracket ceiling % (top of this bracket)'}
+function run(){syncInputs();
+  saveWork();
+  const v=id=>+document.getElementById(id).value||0;
+  const p={wk:WK,start:v('start'),by:v('by'),lw:v('lw'),firstc:v('firstc'),living:v('living'),
+    infl:v('infl')/100,t403:v('t403'),g:v('g')/100,roth:v('roth'),brk:v('brk'),gb:v('gb')/100,
+    yld:v('brk')>0?v('div')/v('brk'):0,basis:v('basis')/100,ssage:+v('ssclaim')||70,ss:SSTBL[+v('ssclaim')||70],lastc:v('lastc'),
+    cushion:v('cushion'),agicap:v('agicap'),Lv:null,cmaxAge:Math.min(100,Math.max(60,v('cmax')||74)),capOn:false};
+
+  if(!v('start')||!v('by')){document.getElementById('warn').textContent='Enter your inputs above, or open a saved link, to see results.';document.getElementById('sum').innerHTML='';document.getElementById('tbl').innerHTML='';return}
+  if(!(p.start>=2000&&p.start<=p.by+75&&p.by>=1900)){
+    document.getElementById('warn').textContent='Start year must be between 2000 and the year you turn 75.';return
+  }
+
+  const tt=document.getElementById('ttype').value,tv=v('tval');p.ttype=tt;
+  const susP=(t,pp,it=22)=>{let a=20000,b=200000;
+    const feasible=sp=>{const r=sim(t,{...pp,living:sp}),last=r[r.length-1],r95=r.find(x=>x.age==95)||last;
+      return !r.some(x=>x.short>1)&&(r95.T+r95.R+r95.B)/(r95.u*(1+pp.infl))>=pp.cushion};
+    while(feasible(b)&&b<2e6)b*=1.5;
+    for(let i=0;i<it;i++){const m=(a+b)/2;feasible(m)?a=m:b=m}return a};
+  const planMax=document.getElementById('planat').value=='max';
+  if(planMax)p.living=susP(0,p,14);
+  let brRate=0;
+  if(tt!='eff'){
+    const bb=OB.filter(x=>x[0]*100<=tv+.01),o=bb.length?bb[bb.length-1]:OB[0];
+    brRate=o[0];p.lim=o[2]===Infinity?1e9:o[2];
+  }else p.lim=tv/100;
+  if(tt=='low'){p.capOn=true;p.cmaxAge=100;p.lastc=p.by+100}
+  let Lnote='';
+  if(tt=='full'){p.lastc=p.by+Math.min(v('byage'),p.cmaxAge);
+    if(p.lastc<p.firstc)Lnote='Last conversion year is before the first; nothing converted.';
+    const te=L=>{const r=sim(1,{...p,Lv:L}).find(x=>x.yr==p.lastc);return r?r.T:0};
+    let lo=0,hi=5e6;for(let i=0;i<40;i++){const m=(lo+hi)/2;te(m)>1?lo=m:hi=m}p.Lv=Math.ceil(hi/500)*500}
+  if(tt=='level'){const rt=v('rtgt'),rm=L=>{const x=sim(1,{...p,Lv:L}).find(x=>x.age==75);return x?x.rmd/x.u:0};
+    if(rm(0)<=rt){p.Lv=0;Lnote='RMD ceiling is already met without conversions.'}
+    else if(rm(Infinity)>rt){p.Lv=null;Lnote='Ceiling not reachable inside the bracket and window; converting the maximum allowed each year.'}
+    else{let lo=0,hi=2e6;for(let i=0;i<30;i++){const m=(lo+hi)/2;rm(m)>rt?lo=m:hi=m}p.Lv=Math.ceil(hi/500)*500}}
+
+  const top22=f=>OB.find(b=>Math.round(b[0]*100)==22)[2]*f;
+  const lim22=x=>{const pref=Math.max(0,x.agi-(x.w+x.C+x.dist+x.st));let lo=0,hi=1e9;for(let i=0;i<45;i++){const m=(lo+hi)/2;taxCalc(x.f,x.age,m,pref,x.ss).ot<=top22(x.f)?lo=m:hi=m}return lo};
+  const over=raw=>raw.find(x=>x.age>=75&&x.rmd>lim22(x)+1);
+  let autoNote='',safeNote='';
+  if(tt=='auto'){
+    p.ttype='eff';p.lastc=p.by+p.cmaxAge;
+    const cost=pp=>sim(1,pp).filter(x=>x.yr>pp.lw).reduce((s,x)=>s+(x.X+x.irm)/x.u,0);
+    const base=susP(0,p,12),cs=[],lowP=r=>({...p,ttype:'brk',lim:OB.find(b=>Math.round(b[0]*100)==r)[2],capOn:true,cmaxAge:100,lastc:p.by+100});
+    for(const c of [10,12,14,15,16,17,18,19,20,22,24]){const pp={...p,lim:c/100};cs.push({k:'eff',c,pp,sp:susP(1,pp,12),tx:cost(pp)})}
+    for(const r of [12,22]){const pp=lowP(r);cs.push({k:'low',c:r,pp,sp:susP(1,pp,12),tx:cost(pp)})}
+    const hi=pp=>({...pp,g:pp.g+.02,gb:pp.gb+.02});
+    cs.forEach(x=>{x.safe=!over(sim(1,x.pp))&&!over(sim(1,hi(x.pp)))});
+    const guard=document.getElementById('autosafe').value!='no',pool=guard&&cs.some(x=>x.safe)?cs.filter(x=>x.safe):cs,best=Math.max(...pool.map(x=>x.sp)),pick=pool.filter(x=>x.sp>=best*.999).sort((a,b)=>a.tx-b.tx)[0];
+    safeNote=!guard?' The RMD safety check is off, so this maximizes spending and may leave large RMDs.':!pick.safe?' No tested plan kept RMDs inside the 22%-bracket limit with growth +2 points, so this is the best spending among all of them.':' It keeps RMDs inside the 22%-bracket limit, even with growth +2 points.';
+    Object.assign(p,pick.pp);
+    autoNote=pick.k=='low'?`Auto-selected plan: low-bracket lifetime at the ${pick.c}% bracket (pretax money only up to the top of that bracket each year, the rest from Roth and brokerage). `:`Auto-selected plan: convert up to a ${pick.c}% effective tax rate each year, through age ${p.cmaxAge}. `;
+    if(pick.k=='low')brRate=pick.c/100;
+  }
+
+  const ar=r=>{const q=r.filter(x=>x.yr>p.lw),a=tot(q,'agi');return a>0?tot(q,'X')/a:0};
+  const ar2=r=>{const q=r.filter(x=>x.yr>p.lw),a=tot(q,'agi')+tot(q,'RW')+q.reduce((s,x)=>s+x.ss-x.st,0);return a>0?tot(q,'X')/a:0};
+  const pk=r=>Math.max(...r.filter(x=>x.age>=75).map(x=>x.eff));
+  const re=rs=>rs.map(x=>{const y={...x};['w','fica','ss','st','agi','irm','net','S','dist','RW','rmd','C','X','ot','t0','r0','T','B','R','B0','short'].forEach(k=>y[k]=x[k]/x.u);['T','B','R'].forEach(k=>y[k]=x[k]/(x.u*(1+p.infl)));return y});
+  const Y0=p.start,Y1=p.by+100,Y75=p.by+75;
+
+  const zliving=planMax?susP(0,p,18):p.living;if(planMax)p.living=susP(1,p,18);
+  const maxNote=planMax?' Planned at maximum sustainable spending: '+fmt(p.living)+' a year (no-conversion column: '+fmt(zliving)+'), draining to your age-95 cushion.':'';
+  let A,Z;const Araw=sim(1,p);A=re(Araw);
+  Z=re(sim(0,{...p,living:zliving}));
+  const a75=A.find(x=>x.age==75),z75=Z.find(x=>x.age==75);
+  const lA=A[A.length-1],lZ=Z[Z.length-1];
+  const tot=(r,k)=>r.reduce((s,x)=>s+x[k],0);
+  const dep=r=>{const x=r.find(x=>x.B<1);return x?x.yr:'after '+Y1};
+  const sus=t=>susP(t,p);
+
+  const st=t=>{const raw=sim(t,{...p,living:t?p.living:zliving,g:p.g+.02,gb:p.gb+.02}).filter(x=>x.age>=75),r=re(raw),x75=raw.find(x=>x.age==75),ex=over(raw);return{r75:(r.find(x=>x.age==75)||{rmd:0}).rmd,pk:Math.max(0,...r.map(x=>x.rmd)),br:Math.max(0,...r.map(x=>x.br=='—'?0:parseInt(x.br))),lim75:x75?lim22(x75)/x75.u:0,ex:ex?ex.yr:0}};
+  const SA=st(1),SZ=st(0),bf=o=>o.br?o.br+'%':'—',N0=over(Araw),NZ=over(sim(0,{...p,living:zliving}));window.LIM75=SA.lim75;
+  const stressNote=SA.ex?' Stress test (growth +2 points): RMDs would exceed the '+fmt(SA.lim75)+' that fits in the 22% bracket with your Social Security (from '+SA.ex+'). Consider converting more, up to the top of the 24% bracket.':' Stress test (growth +2 points) stays inside the 22% bracket: age-75 RMD '+fmt(SA.r75)+' vs a limit of '+fmt(SA.lim75)+'.';
+  const row=(l,a,b)=>`<tr${/<b[ >]|<strong[ >]/i.test(l)?' class="emphasis"':''}><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
+  let headline=tt=='low'?`Low-bracket plan: pretax money is taken only up to the top of the ${Math.round(brRate*100)}% bracket each year (conversions fill any room). Everything else comes from Roth and brokerage, through age 100.`:tt=='auto'?autoNote+'It is the lowest-tax plan among those whose sustainable spending is within 0.1% of the best tested (effective-rate caps and low-bracket plans).'+safeNote:tt=='full'?`Level conversions that fully empty the 403(b) by age ${Math.min(v('byage'),p.cmaxAge)} (${p.lastc}). No bracket limit: taxes are whatever that produces.`:tt=='level'?`Level conversions, sized to keep the age-75 RMD at or below ${fmt(v('rtgt'))} (today's $) without going above the top of the ${Math.round(brRate*100)}% bracket.`:'Conversions fill each year up to the selected tax limit.';
+  document.getElementById('hdr').textContent=`Born Nov ${p.by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${Y0} dollars · IRMAA comes out of your Social Security`;
+  document.getElementById('ttl').textContent=`Year by year (${Y0} dollars)`;
+
+  let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>';
+  {
+    sum+=row(tt=='full'?'Convert fully by age '+Math.min(v('byage'),p.cmaxAge)+': level amount':tt=='level'?'Even conversions: level amount':'Conversions fill each year up to',tt=='full'?fmt(p.Lv)+'/yr (today\'s $), no bracket limit':tt=='level'?(p.Lv==null?'Max allowed each year':fmt(p.Lv)+'/yr (today\'s $), capped at the top of the '+Math.round(brRate*100)+'% bracket'):(p.ttype!='eff'?'Top of the '+Math.round(brRate*100)+'% bracket':(p.lim*100).toFixed(1)+'% effective rate'),'—')+
+      row('Total converted',fmt(tot(A,'C')),'$0')+
+      row('403(b) at start of '+Y75,fmt(a75.t0),fmt(z75.t0))+
+      row('Roth at start of '+Y75,fmt(a75.r0),fmt(z75.r0))+
+      row('Age-75 RMD ('+Y75+')',fmt(a75.rmd),fmt(z75.rmd))+
+      row('Total federal income tax, retirement ('+(p.lw+1)+'–'+(p.by+100)+')',fmt(tot(A.filter(x=>x.yr>p.lw),'X')),fmt(tot(Z.filter(x=>x.yr>p.lw),'X')))+
+      row('<b>Avg effective rate on all retirement income</b> (AGI + untaxed SS + Roth withdrawals)',(ar2(A)*100).toFixed(1)+'%',(ar2(Z)*100).toFixed(1)+'%')+
+      row('Avg effective rate on AGI only (low-income years carry little weight)',(ar(A)*100).toFixed(1)+'%',(ar(Z)*100).toFixed(1)+'%')+
+      row('Total FICA paid on wages (not available as cash)',fmt(tot(A,'fica')),fmt(tot(Z,'fica')))+
+      row('<b>Total IRMAA surcharges, lifetime</b>',fmt(tot(A,'irm')),fmt(tot(Z,'irm')))+
+      row('RMD limit to stay in the 22% bracket, age 75 (with Social Security)',fmt(SA.lim75),fmt(SZ.lim75))+
+      row('Normal growth: first year the RMD exceeds that limit',N0?N0.yr:'never',NZ?NZ.yr:'never')+
+      row('Stress, growth +2 pts: age-75 RMD',fmt(SA.r75),fmt(SZ.r75))+
+      row('Stress, growth +2 pts: first year the RMD exceeds the limit',SA.ex||'never',SZ.ex||'never')+
+      row('Stress, growth +2 pts: peak RMD, ages 75–100',fmt(SA.pk),fmt(SZ.pk))+
+      row('Stress, growth +2 pts: highest bracket, ages 75–100',bf(SA),bf(SZ))+
+      row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
+      row('Brokerage runs out',dep(A),dep(Z))+
+      row('<b>Sustainable annual spending</b>',fmt(sus(1)),fmt(sus(0)))+
+      row('Ending portfolio, '+Y1+' (403(b) + Roth + brokerage)',fmt(lA.T+lA.R+lA.B),fmt(lZ.T+lZ.R+lZ.B));
+  }
+  document.getElementById('sum').innerHTML=sum;
+
+  const yrs=A.filter(x=>x.C>0),convNote=(yrs.length?' Converting '+yrs[0].yr+'–'+yrs[yrs.length-1].yr+' ('+yrs.length+' years). ':' No conversion room in the window. ')+Lnote;
+  document.getElementById('warn').textContent=headline+convNote+stressNote+maxNote+(A.some(x=>x.short>1)?' Warning: assets are insufficient under this scenario.':'');
+
+  document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Total tax','IRMAA','Brokerage sold','403(b) start','RMD','Other 403(b) withdrawals','Roth paid out','403(b) end','Brokerage end','Roth end','Total assets','FICA'].map(h=>`<th>${h}</th>`).join('')+
+    '</tr>'+A.map((x,i)=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.yr}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(x.net)}</td><td>${fmt(x.st)}</td><td>${fmt(x.ot)}</td><td>${x.br}</td><td>${(x.eff*100).toFixed(1)}%</td><td>${fmt(x.C)}</td><td>${fmt(x.X)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.S)}</td><td>${fmt(x.t0)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.dist-x.rmd)}</td><td>${fmt(x.RW)}</td><td>${fmt(x.T)}</td><td>${fmt(x.B)}</td><td>${fmt(x.R)}</td><td>${fmt(x.T+x.B+x.R)}</td><td>${fmt(x.fica)}</td></tr>`.replace(/<td>/g,(_,j)=>'<td style="background-color:'+((i%2)?'var(--year-stripe)':'var(--card)')+'">')).join('');
+}
+let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?(e.target.value=='low'?12:24):20}clearTimeout(tm);tm=setTimeout(run,450);dirty(1)});
+const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input,#strategy input,#strategy select')];
+const sb=()=>document.getElementById('savebtn'),sm=()=>document.getElementById('savemsg');
+function dirty(d){if(sb()){sb().textContent=d?'Save to link ●':'Saved ✓';if(d)sm().textContent=''}}
+function saveBtn(){saveURL();dirty(0);const u=location.href,i=document.getElementById('savelink');i.value=u;
+  const fb=()=>{try{i.focus();i.select();i.setSelectionRange(0,99999);return document.execCommand('copy')}catch(e){return false}};
+  const done=ok=>{sm().textContent=ok?' Saved, and the link is copied to your clipboard.':' Saved, but the browser blocked copying. Copy the address from the address bar instead.'};
+  try{navigator.clipboard.writeText(u).then(()=>done(true),()=>done(fb()))}catch(e){done(fb())}}
+function openChk(){const d=document.getElementById('chk'),age=(+document.getElementById('start').value||0)-(+document.getElementById('by').value||0);
+  const L=document.getElementById('limNow');if(L&&window.LIM75)L.textContent='about $'+Math.round(window.LIM75/1000)+'k in today\'s dollars';
+  const s=document.getElementById('safeNow');s.textContent=age>=40&&age<=74?'about $'+(1.9/Math.pow(1.07,75-age)).toFixed(2)+'M at age '+age:'enter your start year and birth year to see it';
+  try{d.showModal()}catch(e){d.setAttribute('open','')}}
+function saveURL(){try{const q=new URLSearchParams();fields().forEach(e=>{if(e.value!=='')q.set(e.id,e.value)});const s=q.toString();history.replaceState(null,'',s?'#'+s:location.pathname+location.search)}catch(e){}}
+function loadURL(){const q=new URLSearchParams(location.hash.slice(1));if(![...q.keys()].length)return;
+  fields().forEach(e=>{if(e.tagName=='INPUT')e.value=e.id=='cmax'?'74':''});Object.keys(WK).forEach(k=>delete WK[k]);
+  const set=id=>{const e=document.getElementById(id);if(e&&q.has(id))e.value=q.get(id)};
+  [...IN.map(a=>a[0]),'ssclaim','ttype','planat','cmax','autosafe','byage','tval','rtgt','agicap','cushion'].forEach(set);
+  if(document.getElementById('cmax').value==='')document.getElementById('cmax').value='74';
+  if(!q.has('ssclaim')&&q.has('ssage')&&SSTBL[q.get('ssage')])document.getElementById('ssclaim').value=q.get('ssage');
+  renderWork();q.forEach((x,id)=>{if(/^w\d{4}[ab]$/.test(id))set(id)});saveWork()}
+addEventListener('hashchange',()=>{loadURL();run()});
+loadURL();renderWork();run();
+
+(() => {
+  const dialog = document.getElementById('chk');
+  let startedOutside = false;
+  const isOutside = event => {
+    const r = dialog.getBoundingClientRect();
+    return event.clientX < r.left || event.clientX > r.right ||
+           event.clientY < r.top || event.clientY > r.bottom;
+  };
+  document.addEventListener('pointerdown', event => {
+    startedOutside = dialog.open && isOutside(event);
+  }, true);
+  document.addEventListener('click', event => {
+    if (dialog.open && startedOutside && isOutside(event)) dialog.close();
+    startedOutside = false;
+  }, true);
+  dialog.addEventListener('close', () => { startedOutside = false; });
+})();
+
+function updateDropdownReadouts(){
+ document.querySelectorAll('#strategy select').forEach(select=>{
+  select.parentElement.classList.add('dropdown-field');
+  let note=document.getElementById(select.id+'-selection');
+  if(!note){note=document.createElement('p');note.id=select.id+'-selection';note.className='dropdown-selection';note.setAttribute('aria-hidden','true');select.insertAdjacentElement('afterend',note);}
+  const text=select.options[select.selectedIndex]?.text||'';select.title=text;note.textContent=text;
+ });
+}
+document.addEventListener('input',updateDropdownReadouts);
+document.addEventListener('change',updateDropdownReadouts);
+addEventListener('hashchange',updateDropdownReadouts);
+updateDropdownReadouts();
+</script>
+</body>
+</html>
