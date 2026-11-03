@@ -155,6 +155,8 @@ p{max-width:72ch}
   <div class="group">Emergency fund</div>
   <div class="grid">
     <div><label for="ef">Emergency fund (VBIL, CREF Money Market)</label><input id="ef" type="number" inputmode="decimal" step="1000" value=""><div class="help">Cash-like holdings set aside for bad market years. Counted in your total portfolio.</div></div>
+    <div><label for="mkt0">Market value a year ago (optional)</label><input id="mkt0" type="number" inputmode="decimal" step="any" value=""><div class="help">Your main stock fund's price on this date last year, or the S&amp;P 500 level. Any measure works if both boxes use the same one. Dividends aren't counted, which makes a drop look slightly bigger.</div></div>
+    <div><label for="mkt1">Market value now (optional)</label><input id="mkt1" type="number" inputmode="decimal" step="any" value=""><div class="help" id="mktHint">Fill in both to answer the next question automatically.</div></div>
     <div><label for="down">Is the market down more than 5% from a year ago?</label><select id="down"><option value="no">No</option><option value="yes">Yes: spend from the emergency fund</option></select><div class="explain" id="x-down"></div></div>
   </div>
   <p class="note" id="acctSum"></p>
@@ -180,6 +182,7 @@ p{max-width:72ch}
     <div><label for="wwh">Or type the full-year total</label><input id="wwh" type="number" inputmode="decimal" step="100" value="" placeholder="calculated"><div class="help" id="wwhHint"></div></div>
     <div><label for="ltg">Long-term gains, full year</label><input id="ltg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held over a year that you've sold or will sell this year, including brokerage sales for spending. Your brokerage's realized gain/loss or tax page shows the year-to-date total. Don't include the sale that refills the Roth; the wizard adds that. Blank estimates it from this year's brokerage withdrawals at your cost basis.</div></div>
     <div><label for="stg">Short-term gains, full year</label><input id="stg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held a year or less. Taxed like wages. Usually zero.</div></div>
+    <div><label for="int">Interest income, full year</label><input id="int" type="number" inputmode="decimal" step="100" value="" placeholder="estimate"><div class="help" id="intHint"></div></div>
     <div><label for="oth">Pre-tax withdrawals already taken this year</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year, including any conversions already done. Leave out the conversion this wizard is sizing.</div></div>
   </div>
   <div class="group">This year and next year</div>
@@ -239,7 +242,7 @@ p{max-width:72ch}
       <option value="his">Historical averages, 1871–2022 (simulated)</option>
       <option value="van">Vanguard forecast, June 30, 2026 (simulated)</option>
       <option value="cus">My own return and volatility (simulated)</option></select><div class="explain" id="x-meth"></div></div>
-    <div><label for="mix">Stocks / bonds</label><select id="mix"></select><div class="help">Your overall split across all accounts. Count money market and Treasury bills as bonds.</div></div>
+    <div><label for="mix">Stocks / bonds</label><select id="mix"></select><div class="help" id="mixHint"></div></div>
     <div data-show="cus"><label for="mean">Expected return, %/yr</label><input id="mean" type="number" inputmode="decimal" step="0.1" value="6"><div class="help">Average yearly return before inflation. Vanguard, BlackRock and Capital Group publish 10-year forecasts.</div></div>
     <div data-show="cus"><label for="vol">Volatility, %</label><input id="vol" type="number" inputmode="decimal" step="0.1" value="14"><div class="help">How much returns swing year to year (standard deviation). About 15–17 for 90% stocks.</div></div>
     <div data-show="bt"><label for="wrap">When the history runs out</label><select id="wrap"><option value="0">Stop at 2022</option><option value="1">Wrap around to 1871</option></select><div class="explain" id="x-wrap"></div></div>
@@ -286,7 +289,7 @@ function ssTable(){const t={};AGES.forEach(a=>{const x=num('ss'+a);if(x>0)t[a]=x
 function rebuildSS(){const cur=val('ssa')||'70',t=ssTable(),av=AGES.filter(a=>t[a]);
   $('ssa').innerHTML=av.length?av.map(a=>`<option value="${a}">Age ${a}: $${Math.round(t[a]).toLocaleString('en-US')}/mo</option>`).join(''):'<option value="0">No benefit entered</option>';
   $('ssa').value=av.includes(+cur)?cur:(av.includes(70)?'70':String(av[av.length-1]||0));if(typeof fitSelects==='function')fitSelects()}
-$('mix').innerHTML=[100,90,80,70,60,50,40,30,20].map(p=>`<option value="${p}"${p==90?' selected':''}>${p} / ${100-p}</option>`).join('');
+$('mix').innerHTML=[100,95,90,85,80,70,60,50,40,30,20].map(p=>`<option value="${p}"${p==90?' selected':''}>${p} / ${100-p}</option>`).join('');
 
 /* ---------- Wages by year ---------- */
 const WK={2026:[210000,71500],2027:[138000,71500],2028:[113000,70000]};
@@ -330,6 +333,7 @@ function stdDed(magi,o65){if(!o65)return 16100;return 16100+2050+Math.max(0,6000
 const employerEst=w=>sumT(split(0,Math.max(0,w-16100),ORD));
 const PAYDAYS=[[9,2],[9,16],[9,30],[10,13],[10,27],[11,11],[11,25]];
 const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function mkt(){const a=num('mkt0'),b=num('mkt1');if(a>0&&b>0){const c=b/a-1;return{auto:true,chg:c,down:c<-.05}}return{auto:false}}
 function wwhCalc(yr,wage){
   if(!isBlank('wwh'))return{v:num('wwh'),src:'typed'};
   const p=val('pdate').split('-').map(Number);
@@ -341,16 +345,16 @@ const thpEst=(w,k,inf)=>w>0?Math.max(0,w-k-employerEst(w)-ficaOf(w,inf)):0;
 function nowCalc(yr,w,wh,ss,rmd,brk,bp,inf){const k=yr<=num('lw')&&WK[yr]?WK[yr][1]:0,fica=w>0?ficaOf(w,inf):0,thp=Math.max(0,w-k-wh-fica),spend=num('lsp'),oth=num('oth');
   const calc=Math.min(brk,Math.max(0,spend-thp-ss-rmd-oth)),typed=!isBlank('bwd'),bwd=typed?num('bwd'):calc;
   return{spend,thp,w,k,wh,fica,ss,rmd,oth,calc,typed,bwd,gains:bwd*(1-bp),other:Math.max(0,spend-thp-ss-rmd-oth-bwd)}}
-function taxOf(v){const w=Math.max(0,v.wages),i=Math.max(0,v.ira),qd=Math.max(0,v.qdiv),st=Math.max(0,v.stcg),lt=Math.max(0,v.ltcg),ss=Math.max(0,v.ss);
-  const S=ssTaxable(ss,w+i+qd+st+lt),tss=S.taxable,ord=w+i+st+tss,qual=qd+lt,tot=ord+qual,ded=stdDed(tot,v.o65);
+function taxOf(v){const w=Math.max(0,v.wages),i=Math.max(0,v.ira),qd=Math.max(0,v.qdiv),st=Math.max(0,v.stcg),lt=Math.max(0,v.ltcg),ss=Math.max(0,v.ss),it=Math.max(0,v.int||0);
+  const S=ssTaxable(ss,w+i+it+qd+st+lt),tss=S.taxable,ord=w+i+it+st+tss,qual=qd+lt,tot=ord+qual,ded=stdDed(tot,v.o65);
   const ordT=Math.max(0,ord-ded),left=Math.max(0,ded-ord),qualT=Math.max(0,qual-left);
   const oRows=split(0,ordT,ORD),qRows=split(ordT,qualT,QUAL),oTax=sumT(oRows),qTax=qualT>0?sumT(qRows):0;
-  const nii=qd+st+lt,niitBase=Math.min(nii,Math.max(0,tot-200000)),niit=niitBase*.038,tax=oTax+qTax+niit;
-  const ordAt=c=>sumT(split(0,Math.max(0,c-ded),ORD)),lay=[w,tss,st,i],lt_=[];let cum=0,prev=0;for(const L of lay){cum+=L;const t=ordAt(cum);lt_.push(t-prev);prev=t}
+  const nii=it+qd+st+lt,niitBase=Math.min(nii,Math.max(0,tot-200000)),niit=niitBase*.038,tax=oTax+qTax+niit;
+  const ordAt=c=>sumT(split(0,Math.max(0,c-ded),ORD)),lay=[w,tss,it,st,i],lt_=[];let cum=0,prev=0;for(const L of lay){cum+=L;const t=ordAt(cum);lt_.push(t-prev);prev=t}
   const qdT=Math.max(0,qd-left),ltT=Math.max(0,lt-Math.max(0,left-qd)),qdTax=qdT>0?sumT(split(ordT,qdT,QUAL)):0,ltTax=ltT>0?sumT(split(ordT+qdT,ltT,QUAL)):0;
-  const nd=nii>0?niit*qd/nii:0,ng=nii>0?niit*(st+lt)/nii:0;let mar=0;for(const [r,lo] of ORD)if(ordT>lo)mar=r;
-  return{w,i,qd,st,lt,ss,tss,S,ord,qual,tot,ded,ordT,qualT,oRows,qRows,oTax,qTax,niit,niitBase,tax,mar,eff:tot>0?tax/tot:0,
-    src:[['Wages',w,lt_[0]],['Taxable Social Security',tss,lt_[1]],['Pre-tax withdrawals and conversion',i,lt_[3]],['Dividends',qd,qdTax+nd],['Capital gains',st+lt,lt_[2]+ltTax+ng]]}}
+  const ni=nii>0?niit*it/nii:0,nd=nii>0?niit*qd/nii:0,ng=nii>0?niit*(st+lt)/nii:0;let mar=0;for(const [r,lo] of ORD)if(ordT>lo)mar=r;
+  return{w,i,it,qd,st,lt,ss,tss,S,ord,qual,tot,ded,ordT,qualT,oRows,qRows,oTax,qTax,niit,niitBase,tax,mar,eff:tot>0?tax/tot:0,
+    src:[['Wages',w,lt_[0]],['Taxable Social Security',tss,lt_[1]],['Pre-tax withdrawals and conversion',i,lt_[4]],['Interest',it,lt_[2]+ni],['Dividends',qd,qdTax+nd],['Capital gains',st+lt,lt_[3]+ltTax+ng]]}}
 
 /* ---------- Long-range projection (Roth Conversion Planner engine) ---------- */
 const OB=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
@@ -438,8 +442,8 @@ function inputs(){saveWork();
   const rmd=age>=75&&DIV[age]?pre/DIV[age]:0;
   const ssThis=ssA&&age>=ssA?ssM*12*(age==ssA?1/12:1):0;
   const inf=num('inf')/100,g=isBlank('g')?M.mean/100:num('g')/100;
-  const _r={yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,down:val('down')==='yes',div:num('div'),
-    wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),stg:num('stg'),oth:num('oth'),rmd,ssThis,
+  const _r={yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,down:mkt().auto?mkt().down:val('down')==='yes',div:num('div'),
+    wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),int:isBlank('int')?num('ef')*.03:num('int'),intEst:isBlank('int'),stg:num('stg'),oth:num('oth'),rmd,ssThis,
     NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?WK[yr+1][1]:0,inf):num('thp'),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
     model:val('model'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:val('pay'),
     meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,g,cush:num('cush'),
@@ -448,7 +452,7 @@ function inputs(){saveWork();
 
 /* ---------- This year's scenario for a given conversion ---------- */
 function scenario(I,C){const ira=C+I.rmd+I.oth;let g=0,s;
-  for(let k=0;k<40;k++){const t=taxOf({wages:I.wage,ira,qdiv:I.div,stcg:I.stg,ltcg:I.ltg+g,ss:I.ssThis,o65:I.o65});
+  for(let k=0;k<40;k++){const t=taxOf({wages:I.wage,ira,int:I.int,qdiv:I.div,stcg:I.stg,ltcg:I.ltg+g,ss:I.ssThis,o65:I.o65});
     const owed=Math.max(0,t.tax-I.wwh),P=I.pay==='wh'?0:Math.min(I.brk,owed),ng=P*(1-I.bp);s={C,t,owed,P,g};if(Math.abs(ng-g)<.5)break;g=ng}
   return s}
 function solveC(I,pred){const hi0=Math.max(0,I.pre-I.rmd);if(hi0<=0||!pred(scenario(I,0)))return 0;if(pred(scenario(I,hi0)))return hi0;
@@ -509,11 +513,12 @@ function compute(){const I=inputs();
   // 6. Next year's tax preview (2026 brackets, next year's income)
   {const brkSale=(R.src.find(x=>x[0]==='Brokerage')||[0,0])[1],efUse=(R.src.find(x=>x[0].startsWith('Emergency'))||[0,0])[1];
    const ageN=I.age+1,ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*(1+I.inf)*(ageN==I.ssA?1/12:1):0,rmdN=ageN>=75&&DIV[ageN]?I.pre/DIV[ageN]:0;
-   const gN=brkSale*(1-I.bp),tN=taxOf({wages:I.wageNext,ira:rmdN+R.viaConv,qdiv:I.div,stcg:0,ltcg:gN,ss:ssN,o65:ageN>=65});
+   const intN=I.ef>0?I.int*Math.max(0,I.ef-efUse)/I.ef:I.int;
+   const gN=brkSale*(1-I.bp),tN=taxOf({wages:I.wageNext,ira:rmdN+R.viaConv,int:intN,qdiv:I.div,stcg:0,ltcg:gN,ss:ssN,o65:ageN>=65});
    const req=Math.min(.9*tN.tax,R.nextReq),wh=R.nextWH,short=Math.max(0,req-wh),owe=Math.max(0,tN.tax-wh);
    R.N={brkSale,gN,tax:tN.tax,eff:tN.eff,agi:tN.tot,req,wh,short,owe,ok:short<1||owe<1000,pct90:.9*tN.tax,prior:R.nextReq,niit:tN.niit};
    // Estimated conversion next year, sized by the same rule, and the withholding it should carry
-   const tx=(C,g)=>taxOf({wages:I.wageNext,ira:rmdN+R.viaConv+C,qdiv:I.div,stcg:0,ltcg:g,ss:ssN,o65:ageN>=65});
+   const tx=(C,g)=>taxOf({wages:I.wageNext,ira:rmdN+R.viaConv+C,int:intN,qdiv:I.div,stcg:0,ltcg:g,ss:ssN,o65:ageN>=65});
    const brkLeft=Math.max(0,I.brk-S.P-brkSale);
    const sc=C=>{let g2=0,t;for(let k=0;k<40;k++){t=tx(C,gN+g2);const P=I.pay==='roll'?Math.min(brkLeft,Math.max(0,Math.min(C,t.tax-wh))):0,ng=P*(1-I.bp);if(Math.abs(ng-g2)<.5)break;g2=ng}return{t,g2}};
    const preN=Math.max(0,I.pre-R.C-I.rmd-rmdN-R.viaConv),canN=ageN<=I.cmax&&preN>0;let Cn=0,why='';
@@ -653,7 +658,7 @@ function render(R){
   const irThis=I.o65?irmaaFor(I.agi2).annual:0;
   let tax=`<div class="tiles"><div class="tile"><div class="k">Federal tax</div><div class="v">${fmt(t.tax)}</div></div><div class="tile"><div class="k">AGI</div><div class="v">${fmt(t.tot)}</div></div><div class="tile"><div class="k">Taxable income</div><div class="v">${fmt(Math.max(0,t.tot-t.ded))}</div></div><div class="tile"><div class="k">Still owed after paychecks</div><div class="v">${fmt(S.owed)}</div></div></div>
   <div class="scroll"><table><tr><th>Income</th><th>${I.yr}</th></tr>
-    ${row('Wages',fmt(t.w))}${row('Pre-tax withdrawals and conversion',fmt(t.i))}${t.ss?row(`Social Security (${fmt(t.tss)} taxable)`,fmt(t.ss)):''}${row('Dividends (qualified)',fmt(t.qd))}${row(S.g>0?`Long-term gains (incl. ${fmt(S.g)} on the sale that pays the tax)`:'Long-term gains',fmt(t.lt))}${t.st?row('Short-term gains',fmt(t.st)):''}
+    ${row('Wages',fmt(t.w))}${row('Pre-tax withdrawals and conversion',fmt(t.i))}${t.ss?row(`Social Security (${fmt(t.tss)} taxable)`,fmt(t.ss)):''}${(t.it?row('Interest',fmt(t.it)):'')+row('Dividends (qualified)',fmt(t.qd))}${row(S.g>0?`Long-term gains (incl. ${fmt(S.g)} on the sale that pays the tax)`:'Long-term gains',fmt(t.lt))}${t.st?row('Short-term gains',fmt(t.st)):''}
     ${row('Standard deduction','−'+fmt(t.ded))}${row('Taxable income',fmt(Math.max(0,t.tot-t.ded)),'tot')}</table></div>
   <h3>Ordinary income</h3><div class="scroll"><table><tr><th>Rate</th><th>Bracket</th><th>Taxed</th><th>Tax</th></tr>${brT(t.oRows)}<tr class="tot"><td colspan="3">Ordinary tax</td><td>${fmt(t.oTax)}</td></tr></table></div>
   ${t.qualT>0?`<h3>Qualified dividends and long-term gains</h3><div class="scroll"><table><tr><th>Rate</th><th>Bracket</th><th>Taxed</th><th>Tax</th></tr>${brT(t.qRows)}<tr class="tot"><td colspan="3">Capital gains tax</td><td>${fmt(t.qTax)}</td></tr></table></div>`:''}
@@ -672,7 +677,8 @@ function render(R){
   const q=o=>Object.entries(o).filter(([k,v])=>v!==''&&v!=null).map(([k,v])=>k+'='+encodeURIComponent(clean(k,v))).join('&');
   const taxL='https://autodax.github.io/#'+q({wages:Math.round(t.w),wrate:Math.round(I.wwh),wtype:'amt',ira:Math.round(t.i),ssa:Math.round(t.ss),qdiv:Math.round(t.qd),stcg:Math.round(t.st)||'',ltcgPlan:Math.round(I.ltg)||'',ltcg:Math.round(S.g)||'',magi2yr:I.agi2||'',age:I.o65?'over65':'under65',solveBasis:I.bp*100,bracketSel:I.tbrk,rateSel:Math.min(22,Math.max(15,Math.round(I.teff)))});
   const ssAmts=AGES.map(a=>I.T[a]||'').join(','),sp={age:I.age+1,bal:Math.round(I.pre+I.roth+I.brk+I.ef),inf:I.inf*100,lastW:I.lspBlank?'':Math.round(R.lastDraw),end:I.end,ssPick:I.ssA,tgt:I.tg*100,lowP:I.lo*100,upP:I.up*100};
-  if(I.meth==='bt')Object.assign(sp,{method:'bt',mix:I.mix,wrap:I.wrap?1:0});else if(I.meth==='cus')Object.assign(sp,{method:'mc',mix:'custom',src:'van',mean:I.M.mean,vol:I.M.vol});else Object.assign(sp,{method:'mc',mix:I.mix,src:I.meth});
+  const mx=I.mix%10?Math.floor(I.mix/10)*10:I.mix;R.mixNote=I.mix%10?(I.meth==='bt'?`The withdrawal calculator has no ${I.mix}/${100-I.mix} setting, so its backtest link uses ${mx}/${100-mx}.`:`The withdrawal calculator has no ${I.mix}/${100-I.mix} setting, so its link sends the return and volatility as custom figures.`):'';
+  if(I.meth==='bt')Object.assign(sp,{method:'bt',mix:mx,wrap:I.wrap?1:0});else if(I.meth==='cus'||I.mix%10)Object.assign(sp,{method:'mc',mix:'custom',src:'van',mean:I.M.mean,vol:I.M.vol});else Object.assign(sp,{method:'mc',mix:I.mix,src:I.meth});
   if(ssAmts!==DEFAMT.join(','))sp.ssAmts=ssAmts;
   const spendL='https://autodax.github.io/spend#'+q(sp);
   const rp={living:Math.round(P.living),infl:I.inf*100,t403:Math.round(I.pre),g:I.g*100,roth:Math.round(I.roth),brk:Math.round(I.brk),gb:I.g*100,div:Math.round(I.div),basis:I.bp*100,start:I.yr,by:I.by,lw:I.lw,firstc:I.yr,lastc:I.by+I.cmax};
@@ -680,7 +686,7 @@ function render(R){
   Object.assign(rp,{ssclaim:I.ssA||70,ttype:I.model==='auto'?'auto':I.model==='level'?'level':I.ttype==='brk'?'brk':'eff',cmax:I.cmax,autosafe:'yes',tval:I.model==='level'||I.ttype==='brk'?I.tbrk:I.effPlan*100,rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush});
   const rothL='https://autodax.github.io/roth.html#'+q(rp);
   const links=`<div class="links"><a href="${spendL}" target="_blank" rel="noopener">What to Withdraw This Year<span>Same balance, guardrails and returns</span></a><a href="${rothL}" target="_blank" rel="noopener">Roth Conversion Planner<span>Same accounts, wages and strategy</span></a><a href="${taxL}" target="_blank" rel="noopener">2026 Federal Tax Estimator<span>This year's income, conversion and withholding</span></a></div>
-  <p class="note">The planner uses its own built-in Social Security amounts.</p>`;
+  <p class="note">The planner uses its own built-in Social Security amounts. ${R.mixNote||''}</p>`;
 
   return`<div class="plan">
   <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · Your plan</span>Your ${I.yr} to-do list</h2><ol class="todo">${todo.map(x=>`<li><div>${x}</div></li>`).join('')}</ol></div>
@@ -750,6 +756,9 @@ function sync(){explain();const m=val('model'),tt=val('ttype'),me=val('meth');
    $('wwhHint').textContent=H.src==='typed'?'Using the total you typed. Clear it to calculate from your paystub.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`Fill in the three paystub boxes, or this uses an estimate from your wages: ${fmt(H.v)}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,ssA=+val('ssa')||0,age=y-num('by'),t=ssTable(),ss=ssA&&age>=ssA?(t[ssA]||0)*12*(age==ssA?1/12:1):0,pre=num('p403')+num('p457')+num('pira'),rmd=age>=75&&DIV[age]?pre/DIV[age]:0,b=num('brk'),N=nowCalc(y,w,wwhCalc(y,w).v,ss,rmd,b,b>0?Math.min(num('bas'),b)/b:1,num('inf')/100);
    $('bwd').placeholder=Math.round(N.calc);$('bwdHint').textContent=isBlank('lsp')?'Enter this year\'s spending to calculate it.':`Blank calculates ${fmt(N.calc)}: ${fmt(N.spend)} spending − ${fmt(N.thp)} estimated take-home pay${N.ss?` − ${fmt(N.ss)} Social Security`:''}${N.rmd?` − ${fmt(N.rmd)} RMD`:''}${N.oth?` − ${fmt(N.oth)} other pre-tax withdrawals`:''}. Type the actual figure if you know it.`}
+  {const M=mkt(),d=$('down');d.disabled=M.auto;if(M.auto){d.value=M.down?'yes':'no';$('mktHint').textContent=`Change: ${(M.chg*100).toFixed(1)}%, so the market ${M.down?'is':'isn\'t'} down more than 5%. The question below is answered for you.`}else $('mktHint').textContent='Fill in both to answer the next question automatically.'explain()}
+  {const e=num('ef');$('int').placeholder=Math.round(e*.03);$('intHint').textContent=`Interest from your emergency fund, savings and bonds, taxed like wages. Year-to-date interest is on your statements. Blank estimates 3% of the emergency fund: ${fmt(e*.03)}.`}
+  {const tot=num('p403')+num('p457')+num('pira')+num('r403')+num('r457')+num('rira')+num('brk')+num('ef'),e=num('ef');if($('mixHint'))$('mixHint').textContent=tot>0&&e>0?`With everything else in stocks, your emergency fund is ${(e/tot*100).toFixed(1)}% of the total, so your overall split is about ${Math.round((1-e/tot)*100)} / ${Math.round(e/tot*100)}. Pick the closest.`:'Your overall split across all accounts. Count money market and Treasury bills as bonds.'}
   const pre=num('p403')+num('p457')+num('pira'),roth=num('r403')+num('r457')+num('rira');
   $('acctSum').textContent=`Pre-tax ${fmt(pre)} · Roth ${fmt(roth)} · Brokerage ${fmt(brk)} · Emergency fund ${fmt(num('ef'))} · Total ${fmt(pre+roth+brk+num('ef'))}`;
   $('modelNote').innerHTML='<b>Settings used:</b> '+{target:{eff:'effective rate and last conversion age.',brk:'bracket and last conversion age.',amt:'total tax amount and last conversion age.'}[tt]+' Sized on this year\'s actual income with 2026 tax rules.',
