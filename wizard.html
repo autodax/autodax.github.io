@@ -421,7 +421,7 @@ function projection(I){
   const st=t=>{const r=sim(t,{...p,living:t?p.living:zliving,g:p.g+.02,gb:p.gb+.02}).filter(x=>x.age>=75),x75=r.find(x=>x.age==75),ex=over(r);
     return{r75:x75?x75.rmd/x75.u:0,lim75:x75?lim22(x75)/x75.u:0,ex:ex?ex.yr:0}};
   const SA=st(tau),N0=over(raw),dep=raw.find(x=>x.B<1),short=raw.some(x=>x.short>1);
-  return{C:row.C,note,living:p.living,zliving,a75:a75?{rmd:a75.rmd/a75.u,T:a75.t0/a75.u,R:a75.r0/a75.u}:null,z75:z75?{rmd:z75.rmd/z75.u}:null,SA,N0:N0?N0.yr:0,dep:dep?dep.yr:0,short,tau}}
+  return{C:row.C,Cnext:(raw.find(x=>x.yr==I.yr+1)||{C:0}).C,note,living:p.living,zliving,a75:a75?{rmd:a75.rmd/a75.u,T:a75.t0/a75.u,R:a75.r0/a75.u}:null,z75:z75?{rmd:z75.rmd/z75.u}:null,SA,N0:N0?N0.yr:0,dep:dep?dep.yr:0,short,tau}}
 
 /* ---------- Inputs ---------- */
 function inputs(){saveWork();
@@ -503,7 +503,20 @@ function compute(){const I=inputs();
    const ageN=I.age+1,ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*(1+I.inf)*(ageN==I.ssA?1/12:1):0,rmdN=ageN>=75&&DIV[ageN]?I.pre/DIV[ageN]:0;
    const gN=brkSale*(1-I.bp),tN=taxOf({wages:I.wageNext,ira:rmdN+R.viaConv,qdiv:I.div,stcg:0,ltcg:gN,ss:ssN,o65:ageN>=65});
    const req=Math.min(.9*tN.tax,R.nextReq),wh=R.nextWH,short=Math.max(0,req-wh),owe=Math.max(0,tN.tax-wh);
-   R.N={brkSale,gN,tax:tN.tax,eff:tN.eff,agi:tN.tot,req,wh,short,owe,ok:short<1||owe<1000,pct90:.9*tN.tax,prior:R.nextReq,niit:tN.niit}}
+   R.N={brkSale,gN,tax:tN.tax,eff:tN.eff,agi:tN.tot,req,wh,short,owe,ok:short<1||owe<1000,pct90:.9*tN.tax,prior:R.nextReq,niit:tN.niit};
+   // Estimated conversion next year, sized by the same rule, and the withholding it should carry
+   const tx=(C,g)=>taxOf({wages:I.wageNext,ira:rmdN+R.viaConv+C,qdiv:I.div,stcg:0,ltcg:g,ss:ssN,o65:ageN>=65});
+   const brkLeft=Math.max(0,I.brk-S.P-brkSale);
+   const sc=C=>{let g2=0,t;for(let k=0;k<40;k++){t=tx(C,gN+g2);const P=I.pay==='roll'?Math.min(brkLeft,Math.max(0,Math.min(C,t.tax-wh))):0,ng=P*(1-I.bp);if(Math.abs(ng-g2)<.5)break;g2=ng}return{t,g2}};
+   const preN=Math.max(0,I.pre-R.C-I.rmd-rmdN-R.viaConv),canN=ageN<=I.cmax&&preN>0;let Cn=0,why='';
+   if(!canN)why=preN>0?`You'll be past your last conversion age (${I.cmax}).`:'No pre-tax money left to convert.';
+   else if(I.model==='none')why='You chose no conversion this year; this assumes the same next year.';
+   else if(I.model==='target'){const lim=I.ttype==='eff'?I.teff/100:I.ttype==='brk'?topOf(I.tbrk):I.tamt,ok=x=>I.ttype==='eff'?x.t.eff<=lim+1e-9:I.ttype==='brk'?x.t.ordT<=lim:x.t.tax<=lim;
+     if(ok(sc(0))){let lo=0,hi=preN;if(ok(sc(hi)))lo=hi;else for(let i=0;i<40;i++){const m=(lo+hi)/2;ok(sc(m))?lo=m:hi=m}Cn=Math.floor(lo/100)*100}
+     why=I.ttype==='eff'?`sized to your ${I.teff}% effective-rate target`:I.ttype==='brk'?`sized to fill the ${I.tbrk}% bracket`:`sized to a ${fmt(I.tamt)} total tax`}
+   else{Cn=Math.floor(Math.min(R.P.Cnext||0,preN)/100)*100;why=I.model==='auto'?'from the Roth planner Auto plan':'from the Roth planner even-out plan'}
+   const A=sc(Cn),noC=tx(0,gN+A.g2),base=tx(0,0);
+   R.NC={C:Cn,why,canN,convTax:A.t.tax-noC.tax,gainTax:noC.tax-base.tax,other:base.tax-wh,total:Math.max(0,A.t.tax-wh),tax:A.t.tax,eff:A.t.eff,gains:gN+A.g2,refillGain:A.g2,refill:I.pay==='roll'?Math.min(brkLeft,Math.max(0,Math.min(Cn,A.t.tax-wh))):0}}
   return R}
 
 /* ---------- Render ---------- */
@@ -553,9 +566,19 @@ function render(R){
   // Next year estimate reminder
   {const N=R.N,Y=I.yr+1;let li=`<span class="when">Plan now for ${Y}'s tax</span>`;
     li+=`<div>${Y} estimate: about <b class="amt">${fmt(N.tax)}</b> federal tax on ${fmt(N.agi)} of income${N.gN>0?`, including about ${fmt(N.gN)} of gains from selling ${fmt(N.brkSale)} of brokerage`:''}. Paychecks will withhold about ${fmt(N.wh)}.</div>`;
-    if(N.ok)li+=`<ul><li><span class="pill ok">Covered</span> Paycheck withholding should meet the safe harbor (${fmt(N.req)}), so no estimated payments are needed for ${Y}.</li><li>Still settle the rest (about ${fmt(N.owe)}) by April ${Y+1}; adding it to a ${Y} conversion's withholding keeps it simple.</li></ul>`;
+    const NC=R.NC,cv=(()=>{if(!NC.canN)return`<b>Conversion withholding.</b> No ${Y} conversion: ${NC.why}`;
+      if(NC.C<=0)return`<b>Conversion withholding (your usual method).</b> Estimate: no room for a ${Y} conversion (${NC.why}), so cover the tax with paycheck withholding or quarterly payments, or make a small conversion with most of it withheld.`;
+      const rw=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
+      return`<b>Conversion withholding (your usual method).</b> <span class="pill info">Estimate for now</span> A ${Y} conversion of about <b class="amt">${fmt(NC.C)}</b> (${NC.why}). Ask for this withholding when you convert in Oct–Dec ${Y}:
+      <div class="scroll" style="margin:6px 0"><table>
+      ${rw('Tax on the conversion itself',fmt(NC.convTax))}
+      ${rw(`Tax on long-term gains (about ${fmt(NC.gains)}${NC.refillGain>0?`, including ${fmt(NC.refillGain)} from the sale that refills the Roth`:''})`,'+ '+fmt(NC.gainTax))}
+      ${Math.abs(NC.other)>=1?rw(NC.other>0?'Tax on wages and dividends that paychecks don\'t cover':'Paychecks over-withhold on wages and dividends',(NC.other>0?'+ ':'− ')+fmt(Math.abs(NC.other))):''}
+      ${rw('Total to withhold from the conversion',fmt(NC.total),'tot')}</table></div>
+      That settles all of ${Y}'s federal tax (about ${fmt(NC.tax)}, ${pc(NC.eff)} effective) with nothing due in April.${N.short>0?` The minimum for safe harbor is ${fmt(Math.ceil(N.short))}.`:''}${NC.total>NC.C?` <span class="warn">That's more than the conversion, so part has to come from paychecks or quarterly payments.</span>`:''}${I.pay==='roll'&&NC.refill>0?` Then refill the Roth with ${fmt(NC.refill)} from brokerage within 60 days.`:''} Next fall's run replaces this with actual numbers.`})();
+    if(N.ok)li+=`<ul><li><span class="pill ok">Covered</span> Paycheck withholding should meet the safe harbor (${fmt(N.req)}), so no estimated payments are needed for ${Y}.</li><li>${cv}</li></ul>`;
     else li+=`<ul><li><span class="pill warn">${fmt(N.short)} short</span> To avoid an underpayment penalty, ${Y} withholding needs to reach about <b class="amt">${fmt(N.req)}</b>: the smaller of 90% of ${Y}'s tax (${fmt(N.pct90)}) and ${S.t.tot>150000?'110':'100'}% of ${I.yr}'s (${fmt(N.prior)}). The 90% figure depends on this estimate holding; reaching ${fmt(N.prior)} is safe whatever ${Y} brings. Any one of these works:</li>
-      <li><b>Conversion withholding (your usual method).</b> When you convert in Oct–Dec ${Y}, add <b class="amt">${fmt(Math.ceil(N.short))}</b> to the federal withholding on top of the tax on the conversion itself. Example: a conversion that adds $10,000 of tax gets ${fmt(10000+Math.ceil(N.short))} withheld. Adding ${fmt(Math.ceil(N.owe))} instead means nothing is due in April. Next fall's run of this wizard includes it automatically, because it withholds all tax still owed for the year. If you'd otherwise skip converting, a small conversion with most of it withheld does the job.</li>
+      <li>${cv}</li>
       <li><b>Paycheck withholding.</b> On a new W-4 for your employer, enter an extra amount per paycheck (Step 4(c), "Extra withholding"): <b class="amt">${fmt(Math.ceil(N.short/26))}</b> per biweekly paycheck if it starts with the first paycheck of ${Y} (26 paychecks). Starting later works too, since paycheck withholding also counts as paid evenly: divide ${fmt(Math.ceil(N.short))} by the paychecks left, for example ${fmt(Math.ceil(N.short/13))} each with 13 left or ${fmt(Math.ceil(N.short/6))} with 6 left.</li>
       <li><b>Quarterly payments.</b> ${fmt(N.short/4)} on Apr 15, Jun 15 and Sep 15, ${Y} and Jan 15, ${Y+1}.</li></ul>`;
     li+=`<p class="note">Uses ${I.yr} brackets and assumes Jan–Dec ${Y} spending is funded as shown above${N.niit>0?', including the 3.8% net investment income tax':''}. Rerun next fall with actual numbers.</p>`;
