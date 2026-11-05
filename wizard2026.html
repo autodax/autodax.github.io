@@ -858,7 +858,7 @@ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=
 $('savebtn').addEventListener('click',saveLink);
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='saveplan')savePlan()});
 async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchParams(st).toString(),yr=val('yr');
-  const base=location.hostname==='autodax.github.io'?location.origin+location.pathname:'https://autodax.github.io/wizard.html';
+  const base=location.hostname==='autodax.github.io'?location.origin+location.pathname:'https://autodax.github.io/wizard2026.html';
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let ins='';document.querySelectorAll('section.step[data-s]').forEach(sec=>{if(+sec.dataset.s>4)return;const h=sec.querySelector('h2');const t=h?[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim():'';let rows='';
     sec.querySelectorAll('input[id],select[id]').forEach(el=>{const w=el.closest('div');if(!w||w.hidden||el.closest('[hidden]')&&!el.closest('section.step'))return;if(w.closest('[hidden]')&&w.closest('[hidden]')!==sec)return;
