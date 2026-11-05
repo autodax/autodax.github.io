@@ -751,7 +751,7 @@ function render(R){
   <div class="card"><h2>Roth conversion</h2>${conv}</div>
   <div class="card span"><h2>${I.yr} tax scenario</h2>${tax}</div>
   <div class="card span"><h2>Cross-checking in my apps</h2>${links}</div>
-  <div class="card span no-save"><h2>Keep a record</h2><p class="note" style="margin-top:0">Saves a dated copy of this plan, with everything I entered and a link to reopen it, as one HTML file to keep with this year's tools.</p><div class="btns" style="justify-content:flex-start"><button class="btn" type="button" id="saveplan">Save this year's plan</button></div><p class="note" id="saveplanmsg">Saving a file works on the GitHub copy (autodax.github.io), not inside claude.ai.</p></div>
+  <div class="card span no-save"><h2>Keep a record</h2><p class="note" style="margin-top:0">Saves a dated copy of this plan, with everything I entered and a link to reopen it, as one HTML file to keep with this year's tools.</p><div class="btns" style="justify-content:flex-start"><button class="btn" type="button" id="saveplan">Save this year's plan</button></div><p class="note" id="saveplanmsg"></p></div>
   <div class="card span"><h2>My rules</h2><ul class="rules">
     <li><b>Planning.</b> I decide year by year. Long projections give false precision.</li>
     <li><b>Paying for living costs.</b> I live off salary and brokerage while they last.</li>
@@ -857,7 +857,7 @@ document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click'
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>show(+b.dataset.go)));
 $('savebtn').addEventListener('click',saveLink);
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='saveplan')savePlan()});
-function savePlan(){const st=state();delete st._wk;const qs=new URLSearchParams(st).toString(),yr=val('yr');
+async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchParams(st).toString(),yr=val('yr');
   const base=location.hostname==='autodax.github.io'?location.origin+location.pathname:'https://autodax.github.io/wizard.html';
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let ins='';document.querySelectorAll('section.step[data-s]').forEach(sec=>{if(+sec.dataset.s>4)return;const h=sec.querySelector('h2');const t=h?[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim():'';let rows='';
@@ -870,8 +870,10 @@ function savePlan(){const st=state();delete st._wk;const qs=new URLSearchParams(
   const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retirement plan ${esc(yr)} (saved ${ds})</title><style>${css}\n.inp td{text-align:left;white-space:normal}.inp td:first-child{font-family:var(--serif);width:60%}.inp td:last-child{font-family:var(--mono)}</style></head><body><div class="wrap">
     <header class="top"><h1>Retirement plan for ${esc(yr)}</h1></header><p class="sub">Saved ${dl} from the Retirement Planning Wizard. <a href="${esc(base+'#'+qs)}">Reopen this plan in the wizard</a>.</p>
     ${out.innerHTML}<div class="card"><h2>What I entered</h2>${ins}</div></div></body></html>`;
-  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=`plan${yr}-saved-${ds}.html`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
-    const m=$('saveplanmsg');if(m)m.textContent=`Saved as plan${yr}-saved-${ds}.html in my downloads. If nothing downloaded, I'm probably in claude.ai; use the GitHub copy.`}catch(e){const m=$('saveplanmsg');if(m)m.textContent='This browser blocked the download. Use the GitHub copy (autodax.github.io).'}}
+  const fn=`plan${yr}-saved-${ds}.html`,msg=t=>{const m=$('saveplanmsg');if(m)m.textContent=t};
+  let dlc=null;try{dlc=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){dlc=null}
+  if(dlc){try{await dlc.save({filename:fn,data:html});msg(`Saved as ${fn}.`)}catch(e){msg(e&&e.code==='declined'?'Not saved.':e&&e.code==='rate_limited'?'A save is already waiting for an answer. Try again in a moment.':'Saving a file isn\'t available here. The GitHub copy (autodax.github.io) can save it.')}return}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);msg(`Saved as ${fn} in my downloads.`)}catch(e){msg('This browser blocked the download.')}}
 addEventListener('hashchange',()=>{const o=fromHash();if(o){load(o);sync();if(cur===5)plan()}});
 show(1);
 </script>
