@@ -203,6 +203,9 @@ p{max-width:72ch}
     <div><label for="mkt0">Market value a year ago (optional)</label><input id="mkt0" type="number" inputmode="decimal" step="any" value=""><div class="help">My main stock fund's price on this date last year (<span class="y" data-o="-1"></span>), or the S&amp;P 500 level. Any measure works if both boxes use the same one. S&amp;P 500 closes for every day of the past year: <a href="https://finance.yahoo.com/quote/%5EGSPC/history/" target="_blank" rel="noopener">Yahoo Finance</a> or <a href="https://fred.stlouisfed.org/series/SP500" target="_blank" rel="noopener">FRED</a>. On a weekend or holiday, use the last trading day before it. Dividends aren't counted, which makes a drop look slightly bigger.</div></div>
     <div><label for="mkt1">Market value now (optional)</label><input id="mkt1" type="number" inputmode="decimal" step="any" value=""><div class="help" id="mktHint">If I fill in both, the next question is answered automatically.</div></div>
   </div>
+  <details id="fredBox" open style="margin-top:8px"><summary>S&amp;P 500 chart (FRED). Hover or tap the line to read a day's close.</summary>
+    <div id="fredWrap" style="width:100%;max-width:670px"></div>
+  </details>
   <div class="grid" style="margin-top:10px">
     <div><label for="down">Is the market down more than 5% from a year ago?</label><select id="down"><option value="no">No</option><option value="yes">Yes: I'll spend from the emergency fund</option></select><div class="explain" id="x-down"></div></div>
   </div>
@@ -932,6 +935,12 @@ async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchP
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);msg(`Saved as ${fn} in my downloads.`)}catch(e){msg('This browser blocked the download.')}}
 addEventListener('hashchange',()=>{const o=fromHash();if(o){load(o);sync();if(cur===5)plan()}});
 show(1);
+
+/* FRED S&P 500 chart: sized to fit the page, loaded once the box is visible and open */
+(()=>{const w=document.getElementById('fredWrap'),box=document.getElementById('fredBox');if(!w||!window.ResizeObserver)return;let cur=0;
+  const load=()=>{if(!box.open)return;const W=Math.min(670,Math.floor(w.clientWidth));if(W<200||Math.abs(W-cur)<40)return;cur=W;const H=Math.round(W*475/670);
+    w.innerHTML=`<iframe src="https://fred.stlouisfed.org/graph/graph-landing.php?g=20Jdm&width=${W}&height=${H}" scrolling="no" frameborder="0" style="overflow:hidden;width:${W}px;height:${H+50}px;border:0;display:block" allowtransparency="true" loading="lazy" title="S&P 500 daily closes from FRED"></iframe>`};
+  new ResizeObserver(load).observe(w);box.addEventListener('toggle',load)})();
 </script>
 
 </body>
