@@ -861,7 +861,7 @@ function saveLink(){const s=state();delete s._wk;const qs=new URLSearchParams(s)
 rebuildSS();
 let initial=fromHash();if(!initial){try{initial=JSON.parse(localStorage.getItem('rpwState')||'null')}catch(e){}}
 load(initial);renderWork();sync();
-document.addEventListener('input',e=>{if(e.target.id==='yr'||e.target.id==='lw')renderWork();if(/^ss\d\d$/.test(e.target.id))rebuildSS();sync();save();$('out').dataset.done=''});
+document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#work'))saveWork();if(e.target.id==='yr'||e.target.id==='lw')renderWork();if(/^ss\d\d$/.test(e.target.id))rebuildSS();sync();save();$('out').dataset.done=''});
 document.addEventListener('change',()=>{sync();save()});
 document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>show(+b.dataset.s)));
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>show(+b.dataset.go)));
