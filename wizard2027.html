@@ -940,7 +940,7 @@ show(1);
 /* FRED S&P 500 chart: sized to fit the page, loaded once the box is visible and open */
 (()=>{const w=document.getElementById('fredWrap'),box=document.getElementById('fredBox');if(!w||!window.ResizeObserver)return;let cur=0;
   const load=()=>{if(!box.open)return;const W=Math.min(670,Math.floor(w.clientWidth));if(W<200||Math.abs(W-cur)<40)return;cur=W;const H=Math.round(W*475/670);
-    w.innerHTML=`<iframe src="https://fred.stlouisfed.org/graph/graph-landing.php?g=20Jdm&width=${W}&height=${H}" scrolling="no" frameborder="0" style="overflow:hidden;width:${W}px;height:${H+50}px;border:0;display:block" allowtransparency="true" loading="lazy" title="S&P 500 daily closes from FRED"></iframe>`};
+    w.innerHTML=`<iframe src="https://fred.stlouisfed.org/graph/graph-landing.php?g=20JdR&width=${W}&height=${H}" scrolling="no" frameborder="0" style="overflow:hidden;width:${W}px;height:${H+50}px;border:0;display:block" allowtransparency="true" loading="lazy" title="S&P 500 daily closes from FRED"></iframe>`};
   new ResizeObserver(load).observe(w);box.addEventListener('toggle',load)})();
 </script>
 
