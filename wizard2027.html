@@ -591,6 +591,8 @@ function compute(){const I=inputs();
   if(I.model==='none'){R.C=0;R.cWhy=`I chose not to convert this year (${I.yr}).`}
   R.S=scenario(I,R.C);
   R.C24=canConv?solveC(I,s=>s.t.ordT<=topOf(24)):0;
+  // Down market: suggest converting up to the next bracket top above this plan's conversion
+  R.dn=null;if(I.down&&canConv&&I.age<=I.cmax&&I.pre>0){for(const b of [12,22,24]){const c=b===24?R.C24:solveC(I,s=>s.t.ordT<=topOf(b));if(c>R.C+1000){R.dn={b,c};break}}}
   // 4. Withholding and safe harbor
   const S=R.S;R.Wh=I.pay==='qtr'?0:Math.min(S.owed,R.C);R.short=I.pay!=='qtr'&&S.owed>R.C+1;
   if(R.short&&canConv){let lo=R.C,hi=Math.max(R.C,I.pre-I.rmd);if(hi>lo){for(let i=0;i<40;i++){const m=(lo+hi)/2;m>=scenario(I,m).owed?hi=m:lo=m}R.Cmin=Math.ceil(hi/100)*100}}
@@ -692,7 +694,7 @@ function render(R){
       li+=M.ssN>=M.total?`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}) is deducted from my Social Security, so deposits will be about ${fmt(M.ssN-M.total)} instead of ${fmt(M.ssN)}. It's paid on top of my spending budget.</li>`
         :`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}${M.mo<12?`, ${M.mo} months starting November`:''}) is paid on top of my spending budget, by bill or automatic payment${M.ssN>0?' until Social Security starts':''}. My Social Security doesn't start until ${I.by+I.ssA}.</li>`;
       if(M.noAgi)li+=`<li class="warn">Enter last year's (${I.yr-1}) AGI on step 2 to include any IRMAA surcharge.</li>`}}
-    if(I.down)li+=`<li>The market is down: a good year to convert more, since each dollar moves more shares.</li>`;
+    if(I.down)li+=R.dn?`<li class="warn"><b>The market is down more than 5%: consider converting more this year (${I.yr}).</b> Converting up to the top of the ${R.dn.b}% bracket allows ${fmt(R.dn.c)}, ${fmt(R.dn.c-R.C)} more than the plan. Convert stock-fund shares while prices are low, and withhold the extra tax the same way.</li>`:I.age<=I.cmax&&I.pre>0?`<li>The market is down more than 5%, but this plan's conversion already reaches the top of the 24% bracket, so converting more would be taxed at 32% or more.</li>`:'';
     if(R.unfunded>1)li+=`<li class="warn">${fmt(R.unfunded)} can't be funded from my accounts.</li>`;
     todo.push(li+'</ul>')}
   // Next year estimate reminder
@@ -760,6 +762,7 @@ function render(R){
     <p class="note" style="margin-top:0">${R.cWhy}</p>`;
   if(I.age<=I.cmax&&I.pre>0)conv+=trig.length?`<h3>Should I convert more?</h3><p class="note"><span class="pill warn">Trigger</span> ${trig.join(' ')} ${R.C24<=0?`My income is already above the 24% bracket before any conversion, so any conversion this year (${I.yr}) is taxed at 32% or more.`:R.C>=R.C24-50?`This plan's ${fmt(R.C)} conversion already reaches the top of the 24% bracket (${fmt(R.C24)})${R.C>R.C24+50?`, and ${fmt(R.C-R.C24)} of it is taxed at ${Math.round(t.mar*100)}%`:''}, so there's no room to convert more without a higher rate.`:`The top of the 24% bracket allows <b>${fmt(R.C24)}</b> of conversion this year (${I.yr}), <b>${fmt(R.C24-R.C)}</b> more than this plan's ${fmt(R.C)}.`}</p>`:
     `<p class="note"><span class="pill ok">No triggers</span> Balance is under the safe line${safeLine?` (${fk(safeLine)} at ${I.age})`:''} and RMDs stay inside the 22% bracket even with growth 2 points higher. Stay with the baseline.</p>`;
+  if(R.dn)conv+=`<h3>Down market: convert more?</h3><p class="note"><span class="pill warn">Market down</span> Prices are down more than 5% from a year ago. Each dollar converted now moves more shares into the Roth, and their recovery grows tax-free. Converting up to the top of the ${R.dn.b}% bracket allows <b>${fmt(R.dn.c)}</b> this year (${I.yr}), <b>${fmt(R.dn.c-R.C)}</b> more than this plan's ${fmt(R.C)}. If I do, I should convert shares of my stock fund (not cash), soon rather than after a rebound, and withhold the tax on the extra amount too.</p>`;
   conv+=`<h3>Long-range check</h3><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
     <tr><td>Sustainable after-tax spending, today's $ (keeps the age-95 cushion)</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
