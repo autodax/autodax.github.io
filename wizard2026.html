@@ -256,6 +256,7 @@ p{max-width:72ch}
       <option value="target">My tax target for this year</option>
       <option value="fixed">A set amount</option>
       <option value="auto">Auto: the most sustainable after-tax spending</option>
+      <option value="autog">Auto with guardrails: the most after-tax spending at my target chance</option>
       <option value="level">Even out: keep the age-75 RMD under a ceiling</option>
       <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div></div>
     <div data-show="target" class="full"><label for="ttype">Tax target</label><select id="ttype">
@@ -496,7 +497,14 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
   const thisC=p=>{if(!canConv||p.k==='none')return 0;if(p.k==='eff')return solveC(I,s=>s.t.eff<=p.v+1e-9);if(p.k==='brk')return solveC(I,s=>s.t.ordT<=topOf(p.v));
     if(p.k==='amt')return solveC(I,s=>s.t.tax<=p.v);if(p.k==='fixed')return R.C||0;if(p.k==='level')return Math.min(Math.round(p.v),solveC(I,s=>s.t.ordT<=topOf(p.cap)));return 0};
   const zP=prep(I,0),zS=susSpend(zP,{k:'none'},gR,cush,I.down);let pol,C0,note='',cands=null,living;
-  if(I.model==='auto'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
+  let pickG=null;
+  if(I.model==='autog'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
+    cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;c.S=c.k==='none'?zS:susSpend(c.P,c,gR,cush,I.down);const o=runYears(c.P,{S:c.S,pol:c,g:gR,end:100,rec:true,down0:I.down});c.tax=o.tax+o.irm;
+      c.G=guardrailAT(I,c.P,{k:'sched',a:o.rows.map(x=>x.C)});c.score=c.G.err?0:c.G.at(I.tg)});
+    const best=Math.max(...cands.map(c=>c.score)),pick=cands.filter(c=>c.score>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0],zc=cands[0];pol=pick;C0=pick.C0;living=pick.S;pickG=pick.G;
+    note=(pick.k==='none'?'Auto with guardrails found that not converting supports the most after-tax spending.':pick.k==='eff'?`Auto with guardrails picked conversions up to a ${Math.round(pick.v*100)}% effective rate each year through age ${I.cmax}.`:`Auto with guardrails picked filling the ${pick.v}% bracket each year through age ${I.cmax}.`)+
+      ` At my ${Math.round(I.tg*100)}% target chance, it supports ${fmt(pick.score)} a year of after-tax spending in today's dollars across ${pick.G.src||'the market futures'}${pick.score>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zc.score)}`}. Among strategies that close, it has the lowest lifetime federal tax and IRMAA.`}
+  else if(I.model==='auto'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
     cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;c.S=c.k==='none'?zS:susSpend(c.P,c,gR,cush,I.down);const o=runYears(c.P,{S:c.S,pol:c,g:gR,end:100,down0:I.down});c.tax=o.tax+o.irm});
     const best=Math.max(...cands.map(c=>c.S)),pick=cands.filter(c=>c.S>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0];pol=pick;C0=pick.C0;living=pick.S;
     note=(pick.k==='none'?'Auto found that not converting gives the highest sustainable after-tax spending.':pick.k==='eff'?`Auto picked conversions up to a ${Math.round(pick.v*100)}% effective rate each year through age ${I.cmax}.`:`Auto picked filling the ${pick.v}% bracket each year through age ${I.cmax}.`)+
@@ -513,7 +521,7 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
     if(!f(0))return 0;let lo=0,hi=5e6;for(let n=0;n<40;n++){const m=(lo+hi)/2;f(m)?lo=m:hi=m}return lo};
   const over=rows=>rows.find(x=>x.age>=75&&x.rmd>lim22(x)+1),r75=rows=>rows.find(x=>x.age===75);
   const m75=r75(main.rows),z75=r75(zero.rows),h75=r75(hi2.rows),ex=over(hi2.rows),N0=over(main.rows);
-  const G=guardrailAT(I,P,{k:'sched',a:main.rows.map(x=>x.C)});
+  const G=pickG||guardrailAT(I,P,{k:'sched',a:main.rows.map(x=>x.C)});
   return{pol,C0,note,living,zliving:zS,main,zero,Cnext:(main.rows[0]?main.rows[0].C:0)*(1+I.inf),a75:m75?{rmd:m75.rmd}:null,z75:z75?{rmd:z75.rmd}:null,
     SA:{r75:h75?h75.rmd:0,lim75:h75?lim22(h75):0,ex:ex?ex.y:0},N0:N0?N0.y:0,dep:main.dep,short:main.short,tax:main.tax+main.irm,ztax:zero.tax+zero.irm,imb:Math.max(main.imb,zero.imb,hi2.imb),gR,G}}
 
@@ -567,7 +575,7 @@ function compute(){const I=inputs();
   R.P=longRange(I,canConv,R);
   {const G0=R.P.G,f=1+I.inf;if(G0.err)R.G={err:G0.err};else if(I.lspBlank){const S=G0.at(I.tg);R.G={mode:'target',W:S*f,P1:G0.prob(S),Wcut:G0.at(I.lo)*f,Wraise:G0.at(I.up)*f,src:G0.src}}
     else{const S0=I.lsp,P0=G0.prob(S0),Sc=G0.at(I.lo),Sr=G0.at(I.up),S=Math.min(Math.max(S0,Sr),Sc);R.G={mode:S0>Sc?'cut':S0<Sr?'raise':'hold',W:S*f,W0:S0*f,P0,P1:G0.prob(S),Wcut:Sc*f,Wraise:Sr*f,Tlast:I.lsp,src:G0.src}}}
-  if(I.model==='auto'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C0,Math.max(0,I.pre-I.rmd))/100)*100:0;
+  if(I.model==='auto'||I.model==='autog'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C0,Math.max(0,I.pre-I.rmd))/100)*100:0;
     R.cWhy=(canConv?R.P.note:`I'm past my last conversion age (${I.cmax}).`)+(canConv&&R.C===0?` The planner has no conversion in ${I.yr}${I.wage>0?', mostly because of my wages':''}.`:'')}
   if(I.model==='none'){R.C=0;R.cWhy=`I chose not to convert this year (${I.yr}).`}
   R.S=scenario(I,R.C);
@@ -614,7 +622,7 @@ function compute(){const I=inputs();
    else if(I.model==='target'){const lim=I.ttype==='eff'?I.teff/100:I.ttype==='brk'?(R.NR?R.NR.ord:ORD).find(b=>Math.round(b[0]*100)==I.tbrk)[2]:I.tamt,ok=x=>I.ttype==='eff'?x.t.eff<=lim+1e-9:I.ttype==='brk'?x.t.ordT<=lim:x.t.tax<=lim;
      if(ok(sc(0))){let lo=0,hi=preN;if(ok(sc(hi)))lo=hi;else for(let i=0;i<40;i++){const m=(lo+hi)/2;ok(sc(m))?lo=m:hi=m}Cn=Math.floor(lo/100)*100}
      why=I.ttype==='eff'?`sized to my ${I.teff}% effective-rate target`:I.ttype==='brk'?`sized to fill the ${I.tbrk}% bracket`:`sized to a ${fmt(I.tamt)} total tax`}
-   else{Cn=Math.floor(Math.min(R.P.Cnext||0,preN)/100)*100;why=I.model==='auto'?'from the Roth planner Auto plan':'from the Roth planner even-out plan'}
+   else{Cn=Math.floor(Math.min(R.P.Cnext||0,preN)/100)*100;why=I.model==='auto'?'from the Auto plan':I.model==='autog'?'from the Auto with guardrails plan':'from the even-out plan'}
    const A=sc(Cn),noC=tx(0,gN+A.g2),base=tx(0,0);
    R.NC={C:Cn,why,canN,convTax:A.t.tax-noC.tax,gainTax:noC.tax-base.tax,other:base.tax-wh,total:Math.max(0,A.t.tax-wh),tax:A.t.tax,eff:A.t.eff,gains:gN+A.g2,refillGain:A.g2,refill:I.pay==='roll'?Math.min(brkLeft,Math.max(0,Math.min(Cn,A.t.tax-wh))):0}}
   return R}
@@ -781,7 +789,7 @@ function render(R){
   const spendL='https://autodax.github.io/spend2026.html#'+q(sp);
   const rp={living:Math.round(P.living),infl:I.inf*100,t403:Math.round(I.pre),g:I.g*100,roth:Math.round(I.roth),brk:Math.round(I.brk),gb:I.g*100,div:Math.round(I.div),basis:I.bp*100,start:I.yr,by:I.by,lw:I.lw,firstc:I.yr,lastc:I.by+I.cmax};
   for(let y=I.yr;y<=I.lw;y++)if(I.WK[y]){rp['w'+y+'a']=I.WK[y][0]||'';rp['w'+y+'b']=I.WK[y][1]||''}
-  Object.assign(rp,{ssclaim:I.ssA||70,ttype:I.model==='auto'?'auto':I.model==='level'?'level':I.ttype==='brk'?'brk':'eff',cmax:I.cmax,autosafe:'yes',tval:I.model==='level'||I.ttype==='brk'?I.tbrk:I.effPlan*100,rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush});
+  Object.assign(rp,{ssclaim:I.ssA||70,ttype:I.model==='auto'||I.model==='autog'?'auto':I.model==='level'?'level':I.ttype==='brk'?'brk':'eff',cmax:I.cmax,autosafe:'yes',tval:I.model==='level'||I.ttype==='brk'?I.tbrk:I.effPlan*100,rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush});
   const rothL='https://autodax.github.io/roth2026.html#'+q(rp);
   const links=`<div class="links"><a href="${spendL}" target="_blank" rel="noopener">What to Withdraw This Year<span>Same balance, guardrails and returns</span></a><a href="${rothL}" target="_blank" rel="noopener">Roth Conversion Planner<span>Same accounts, wages and strategy</span></a><a href="${taxL}" target="_blank" rel="noopener">2026 Federal Tax Estimator<span>This year's (${I.yr}) income, conversion and withholding</span></a></div>
   <p class="note">The planner uses its own built-in Social Security amounts. ${R.mixNote||''}</p>`;
@@ -833,7 +841,8 @@ const OPT={
    yes:'Spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
  corder:{small:'Takes the conversion from the account with the smallest pre-tax balance first, so accounts empty out and close sooner on the way to one Roth account.',ira:'Takes the conversion from the traditional IRA first, then the smallest of the rest.','457':'Takes the conversion from the 457(b) first, then the smallest of the rest.','403':'Takes the conversion from the 403(b) first, then the smallest of the rest.'},
  model:{fixed:'Converts exactly the amount I enter. The plan shows the tax it adds, how much to withhold, the refill and the safe-harbor check. The convert-more check still runs.',target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
-   auto:'Tries 15 strategies (no conversions, effective-rate caps from 10% to 24%, and filling the 12%, 22% or 24% bracket each year), runs each one year by year to age 100 with taxes, Medicare and my withdrawals, and picks the one that supports the most after-tax spending. When strategies are within 0.2% of each other, it picks the one with the lowest lifetime tax.',
+   autog:'Tries the same 15 strategies as Auto, but scores each one across the guardrail futures (historical or simulated, from step 4) instead of one steady growth rate: the after-tax spending it supports at my target chance of lasting. Picks the best score; near-ties go to the lowest lifetime tax. Each strategy follows its own conversion schedule in every future. Takes a few seconds.',
+ auto:'Tries 15 strategies (no conversions, effective-rate caps from 10% to 24%, and filling the 12%, 22% or 24% bracket each year), runs each one year by year to age 100 with taxes, Medicare and my withdrawals, and picks the one that supports the most after-tax spending. When strategies are within 0.2% of each other, it picks the one with the lowest lifetime tax.',
    level:'Spreads conversions evenly over the years left until 74, sized so my first required distribution at 75 stays under a ceiling I set, without going above a bracket I choose.',
    none:'Skips the conversion. Use it in a year with unusually high income.'},
  ttype:{eff:'Effective rate = total federal income tax ÷ AGI, counting all income including wages, dividends and gains.',
@@ -874,6 +883,7 @@ function sync(){explain();
   $('acctSum').textContent=`Pre-tax ${fmt(pre)} · Roth ${fmt(roth)} · Brokerage ${fmt(brk)} · Cash ${fmt(num('cash'))} · Emergency fund ${fmt(num('ef'))} · Total ${fmt(pre+roth+brk+num('cash')+num('ef'))}`;
   $('modelNote').innerHTML='<b>Settings used:</b> '+{target:{eff:'effective rate and last conversion age.',brk:'bracket and last conversion age.',amt:'total tax amount and last conversion age.'}[tt]+' Sized on this year\'s ('+val('yr')+') actual income with 2026 tax rules.',
     auto:'last conversion age, plus growth rate and age-95 cushion on step 4. No other settings on this step apply.',
+    autog:'last conversion age, plus the return model, guardrails and target chance on step 4, and growth rate and cushion for each strategy\'s conversion schedule. No other settings on this step apply.',
     level:'RMD ceiling, bracket cap and last conversion age, plus growth rate and cushion on step 4.',
     fixed:'conversion amounts and last conversion age.',
     none:'none on this step. How I pay the tax still matters if I owe more than my paychecks withhold.'}[m]}
