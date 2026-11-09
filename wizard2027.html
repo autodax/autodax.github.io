@@ -23,6 +23,9 @@ applyTheme();setInterval(applyTheme,60000);
 --serif:Georgia,'Times New Roman',serif;--mono:ui-monospace,Menlo,Consolas,monospace}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1A1715;--card:#221F1B;--line:#36312A;--ink:#D9D0C0;--soft:#9A9285;--green:#B89E6A;--band:#2B2620;--owe:#C48A78;--ok:#9DB98A;--brown:#3A3128;--brown-line:#6E5F46;--brown-ink:#D8C7A4;--on-green:#1E1A14;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#1A1715;--card:#221F1B;--line:#36312A;--ink:#D9D0C0;--soft:#9A9285;--green:#B89E6A;--band:#2B2620;--owe:#C48A78;--ok:#9DB98A;--brown:#3A3128;--brown-line:#6E5F46;--brown-ink:#D8C7A4;--on-green:#1E1A14;color-scheme:dark}
+#fredWrap iframe{transition:filter .2s}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #fredWrap iframe{filter:invert(.9) hue-rotate(180deg)}}
+:root[data-theme="dark"] #fredWrap iframe{filter:invert(.9) hue-rotate(180deg)}
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{max-width:100%}
