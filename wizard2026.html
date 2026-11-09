@@ -230,7 +230,7 @@ p{max-width:72ch}
   </div>
   <div class="group">This year (<span class="y" data-o="0"></span>) and next year (<span class="y" data-o="1"></span>)</div>
   <div class="grid">
-    <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value="110000"><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this. Blank shows the budget that hits my target chance instead.</div></div>
+    <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value="110000"><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Medicare premiums, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this. Blank shows the budget that hits my target chance instead.</div></div>
     <div><label for="bwd">Brokerage withdrawals this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="bwd" type="number" inputmode="decimal" step="500" value="" placeholder="calculated"><div class="help" id="bwdHint"></div></div>
     <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>)</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. It covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
     <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. Sets the safe-harbor amount that avoids underpayment penalties.</div></div>
@@ -255,7 +255,7 @@ p{max-width:72ch}
     <div class="full"><label for="model">How to size this year's (<span class="y" data-o="0"></span>) conversion</label><select id="model">
       <option value="target">My tax target for this year</option>
       <option value="fixed">A set amount</option>
-      <option value="auto">Roth planner Auto: lowest lifetime tax at the best sustainable spending</option>
+      <option value="auto">Auto: the most sustainable after-tax spending</option>
       <option value="level">Even out: keep the age-75 RMD under a ceiling</option>
       <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div></div>
     <div data-show="target" class="full"><label for="ttype">Tax target</label><select id="ttype">
@@ -282,7 +282,7 @@ p{max-width:72ch}
 
 <section class="step card" data-s="4" hidden>
   <h2><span class="eyebrow">Step 4 of 5</span>Market returns and spending guardrails</h2>
-  <p class="lead">Next year's (<span class="y" data-o="1"></span>) budget comes from risk-based guardrails: the wizard asks how likely my money is to last at a given spending level, and adjusts spending only when that chance leaves my comfort band. These settings say how to model markets and where the band is.</p>
+  <p class="lead">Next year's (<span class="y" data-o="1"></span>) budget comes from risk-based guardrails: the wizard asks how likely my money is to last at a given level of after-tax spending, running each possible future year by year with my taxes, Roth conversions and Medicare, and adjusts spending only when that chance leaves my comfort band. These settings say how to model markets and where the band is.</p>
   <div class="grid">
     <div class="full"><label for="meth">Model future returns with</label><select id="meth">
       <option value="bt">Historical backtest: replay every start year since 1871</option>
@@ -355,20 +355,6 @@ function mv(){const m=val('meth'),w=num('mix')/100,b=1-w,inf=num('inf')/100;
 let zc={n:0,z:null};
 function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B79F5|0;let x=Math.imul(t^t>>>15,1|t);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296};
   const z=[];for(let i=0;i<2000*n;i+=1){const u=r()||1e-9,w=r();z.push(Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w))}zc={n,z};return z}
-function guardrail(q){const yrs=q.end-q.age;if(yrs<1)return{err:'The plan-to age must be above my age.'};let N,G,src;
-  if(q.bt){const w=q.mix/100,RET=HIST.map(r=>1+w*r[1]+(1-w)*r[2]);N=q.wrap?HIST.length:HIST.length-yrs+1;
-    if(N<1)return{err:'My plan runs longer than the history available. Shorten the plan-to age or use a simulated model.'};
-    G=(n,y)=>RET[(n+y)%RET.length];src=`${N} historical start years (${HIST[0][0]}–${HIST[N-1][0]}), each followed for ${yrs} years`}
-  else{const m=q.mean/100,sd=q.vol/100,z=zs(yrs);N=2000;const xx=(1+Math.sqrt(1+4*sd*sd/((1+m)*(1+m))))/2,sg=Math.sqrt(Math.log(xx)),mu=Math.log(1+m);
-    const R=z.map(x=>Math.exp(mu+sg*x)/(1+q.inf));G=(n,y)=>R[n*yrs+y];src=`2,000 simulated futures (${q.mean}% return, ${q.vol}% volatility)`}
-  const ssAt=a=>a>=q.ssA?q.ss:0,ssNow=ssAt(q.age),ssPrev=q.age-1>=q.ssA?q.ss/(1+q.inf):0;
-  const prob=W=>{const T=W+ssNow;let ok=0;for(let n=0;n<N;n++){let B=q.B,good=true;for(let y=0;y<yrs;y++){const d=Math.max(0,T-ssAt(q.age+y));if(d>B){good=false;break}B=(B-d)*G(n,y)}if(good)ok++}return ok/N};
-  const solve=p=>{if(prob(0)<p)return 0;let a=0,b=q.B;if(prob(b)>=p)return b;for(let i=0;i<28;i++){const c=(a+b)/2;prob(c)>=p?a=c:b=c}return a};
-  const Wcut=solve(q.lo),Wraise=solve(q.up);
-  if(q.blank){const W=solve(q.tg);return{mode:'target',W,P1:prob(W),Wcut,Wraise,src,ssNow,ssPrev}}
-  const Tlast=q.lastW+ssPrev,W0=Math.max(0,Tlast*(1+q.inf)-ssNow),P0=prob(W0),W=Math.min(Math.max(W0,Wraise),Wcut);
-  return{mode:W0>Wcut?'cut':W0<Wraise?'raise':'hold',W,W0,P0,P1:prob(W),Wcut,Wraise,Tlast,src,ssNow,ssPrev}}
-
 /* ---------- This year's tax (tax estimator, 2026 rules) ---------- */
 const ORD=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
 const QUAL=[[0,0,49450],[.15,49450,545500],[.20,545500,Infinity]];
@@ -377,8 +363,8 @@ const irmaaFor=m=>{let i=0;IRM.forEach((b,k)=>{if(m>b[0])i=k});const b=IRM[i];re
 function split(base,amt,br){let rem=amt,cur=base;return br.map(([r,lo,hi])=>{if(rem<=0||cur>=hi)return{r,lo,hi,x:0,t:0};const x=Math.min(rem,Math.max(0,hi-Math.max(lo,cur)));cur+=x;rem-=x;return{r,lo,hi,x,t:x*r}})}
 function ssTaxable(ss,other){const c=other+.5*ss,b50=Math.max(0,Math.min(c,34000)-25000),b85=Math.max(0,c-34000),t50=Math.min(.5*b50,.5*ss),tx=ss>0?Math.min(.85*ss,t50+.85*b85):0;return{taxable:tx,combined:c,rows:[['0%',0,25000,Math.max(0,Math.min(c,25000)),0],['up to 50%',25000,34000,b50,t50],['up to 85%',34000,Infinity,b85,Math.max(0,tx-t50)]]}}
 const FILEYEAR=2026;
-const CUR={ord:ORD,qual:QUAL,std:16100,a65:2050,wb:184500};
-const NXT={ord:[[.10,0,12800],[.12,12800,52025],[.22,52025,109125],[.24,109125,208325],[.32,208325,264550],[.35,264550,661375],[.37,661375,Infinity]],qual:[[0,0,51050],[.15,51050,563200],[.20,563200,Infinity]],std:16600,a65:2100,wb:192300,src:'Rev. Proc. 2026-35'};
+const CUR={ord:ORD,qual:QUAL,std:16100,a65:2050,wb:184500,sb:FILEYEAR<=2028,d:1};
+const NXT={ord:[[.10,0,12800],[.12,12800,52025],[.22,52025,109125],[.24,109125,208325],[.32,208325,264550],[.35,264550,661375],[.37,661375,Infinity]],qual:[[0,0,51050],[.15,51050,563200],[.20,563200,Infinity]],std:16600,a65:2100,wb:192300,sb:FILEYEAR+1<=2028,d:1,src:'Rev. Proc. 2026-35'};
 const nextRules=()=>NXT&&num('yr')===FILEYEAR?NXT:null;
 function stdDed(magi,o65,r=CUR){if(!o65)return r.std;return r.std+r.a65+Math.max(0,6000-Math.max(0,(magi-75000)*.06))}
 const employerEst=(w,r=CUR)=>sumT(split(0,Math.max(0,w-r.std),r.ord));
@@ -397,93 +383,139 @@ function nowCalc(yr,w,wh,ss,rmd,brk,bp,inf){const k=yr<=num('lw')&&WK[yr]?WK[yr]
   const calc=Math.min(brk,Math.max(0,spend-thp-ss-rmd-oth)),typed=!isBlank('bwd'),bwd=typed?num('bwd'):calc;
   return{spend,thp,w,k,wh,fica,ss,rmd,oth,calc,typed,bwd,gains:bwd*(1-bp),other:Math.max(0,spend-thp-ss-rmd-oth-bwd)}}
 function taxOf(v){const RR=v.r||CUR,ORD_=RR.ord,QUAL_=RR.qual,w=Math.max(0,v.wages),i=Math.max(0,v.ira),qd=Math.max(0,v.qdiv),st=Math.max(0,v.stcg),lt=Math.max(0,v.ltcg),ss=Math.max(0,v.ss),it=Math.max(0,v.int||0);
-  const S=ssTaxable(ss,w+i+it+qd+st+lt),tss=S.taxable,ord=w+i+it+st+tss,qual=qd+lt,tot=ord+qual,ded=stdDed(tot,v.o65,RR);
-  const ordT=Math.max(0,ord-ded),left=Math.max(0,ded-ord),qualT=Math.max(0,qual-left);
-  const oRows=split(0,ordT,ORD_),qRows=split(ordT,qualT,QUAL_),oTax=sumT(oRows),qTax=qualT>0?sumT(qRows):0;
-  const nii=it+qd+st+lt,niitBase=Math.min(nii,Math.max(0,tot-200000)),niit=niitBase*.038,tax=oTax+qTax+niit;
+  const K=taxCore({wages:w,ira:i,int:it,qdiv:qd,stcg:st,ltcg:lt,ss,o65:v.o65},RR),S=ssTaxable(ss,w+i+it+qd+st+lt),tss=K.tss,ord=K.ord,qual=K.qual,tot=K.tot,ded=K.ded,ordT=K.ordT,left=K.left,qualT=K.qualT;
+  const oRows=split(0,ordT,ORD_),qRows=split(ordT,qualT,QUAL_),oTax=K.oTax,qTax=K.qTax,nii=it+qd+st+lt,niitBase=K.niitBase,niit=K.niit,tax=K.tax;
   const ordAt=c=>sumT(split(0,Math.max(0,c-ded),ORD_)),lay=[w,tss,it,st,i],lt_=[];let cum=0,prev=0;for(const L of lay){cum+=L;const t=ordAt(cum);lt_.push(t-prev);prev=t}
   const qdT=Math.max(0,qd-left),ltT=Math.max(0,lt-Math.max(0,left-qd)),qdTax=qdT>0?sumT(split(ordT,qdT,QUAL_)):0,ltTax=ltT>0?sumT(split(ordT+qdT,ltT,QUAL_)):0;
   const ni=nii>0?niit*it/nii:0,nd=nii>0?niit*qd/nii:0,ng=nii>0?niit*(st+lt)/nii:0;let mar=0;for(const [r,lo] of ORD_)if(ordT>lo)mar=r;
   return{w,i,it,qd,st,lt,ss,tss,S,ord,qual,tot,ded,ordT,qualT,oRows,qRows,oTax,qTax,niit,niitBase,tax,mar,eff:tot>0?tax/tot:0,
     src:[['Wages',w,lt_[0]],['Taxable Social Security',tss,lt_[1]],['Pre-tax withdrawals and conversion',i,lt_[4]],['Interest',it,lt_[2]+ni],['Dividends',qd,qdTax+nd],['Capital gains',st+lt,lt_[3]+ltTax+ng]]}}
 
-/* ---------- Long-range projection (Roth Conversion Planner engine) ---------- */
-const OB=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
-const QB=[[0,0,49450],[.15,49450,545500],[.2,545500,Infinity]];
-const IR=[[109000,95.7],[137000,240.4],[171000,385],[205000,529.6],[500000,578]];
+/* ---------- One engine for every year: tax core, yearly rules, year-by-year cash flow ---------- */
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
-const prog=(a,base,br,f)=>br.reduce((s,[r,lo,hi])=>s+r*Math.max(0,Math.min(base+a,hi*f)-Math.max(base,lo*f)),0);
-function ssTaxP(ss,o){if(ss<=0)return 0;const c=o+.5*ss;const b50=Math.min(.5*Math.max(0,Math.min(c,34000)-25000),.5*ss);return Math.min(.85*ss,b50+.85*Math.max(0,c-34000))}
-function taxCalc(f,age,ord,pref,ss){const st=ssTaxP(ss,ord+pref),oi=ord+st,std=(16100+(age>=65?2050:0))*f;
-  const ot=Math.max(0,oi-std),pt=Math.max(0,pref-Math.max(0,std-oi)),agi=oi+pref;
-  return{tax:prog(ot,0,OB,f)+prog(pt,ot,QB,f)+.038*Math.min(pref,Math.max(0,agi-200000)),ot,st,agi}}
-function yc(c,C){let X=0,S=0,W=0,Xc=0,sp=0,RW=0,sh=0,r;
-  for(let i=0;i<22;i++){r=taxCalc(c.f,c.age,c.w+C+c.rmd+W,c.div+S*(1-c.bf),c.ss);X=r.tax;const Xi=Math.max(0,X-taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).tax);
-    const need=c.L+c.K+c.irm+c.fica+X-c.w-c.ss-c.rmd;
-    if(need<=0){S=0;sp=-need;W=0;Xc=0;RW=0;sh=0}else{sp=0;S=Math.min(need,c.B);const R=need-S;Xc=Math.min(R,Xi,C);const wn=R-Xc;W=Math.min(wn,Math.max(0,c.T-c.rmd-C));
-      if(c.cap&&W>0&&taxCalc(c.f,c.age,c.w+c.rmd+W,c.div+S*(1-c.bf),c.ss).ot>c.cap){let lo=0,hi=W;for(let k=0;k<12;k++){const m=(lo+hi)/2;taxCalc(c.f,c.age,c.w+c.rmd+m,c.div+S*(1-c.bf),c.ss).ot<=c.cap?lo=m:hi=m}W=lo}
-      RW=Math.min(wn-W,c.Rav);sh=wn-W-RW;
-      if(c.cap&&sh>0){const e=Math.min(sh,Math.max(0,c.T-c.rmd-C-W));W+=e;sh-=e}}}
-  return{X,S,W,Xc,sp,RW,sh,ot:r.ot,st:r.st,agi:r.agi}}
-function sim(tau,p){let T=p.t403,R=p.roth,B=p.brk,bs=B*p.basis,rows=[];
-  for(let yr=p.start;yr<=p.by+100;yr++){const age=yr-p.by,f=Math.pow(1+p.infl,yr-2026),u=Math.pow(1+p.infl,yr-p.start);
-    const q=rows[rows.length-2];let irm=0;
-    if(yr>=p.by+65&&q){const t=IR.filter(([th])=>q.agi>th*f);irm=t.length?12*(yr==p.by+65?2/12:1)*t[t.length-1][1]*f:0}
-    const wk=yr<=p.lw&&p.wk[yr]?p.wk[yr]:[0,0];
-    const c={f,age,w:wk[0],K:wk[1],ss:age>=p.ssage?p.ss*12*u*(age==p.ssage?1/12:1):0,
-      fica:wk[0]*.0145+.062*Math.min(wk[0],184500*f)+.009*Math.max(0,wk[0]-2e5),rmd:age>=75?T/DIV[age]:0,div:B*p.yld,L:p.living*u,irm,T,Rav:R,B,bf:B>0?bs/B:1,cap:p.capOn?p.lim*f-.5:0};
-    let C=0;
-    if(yr>=p.firstc&&yr<=p.lastc&&age<=(p.cmaxAge||74)&&T>0&&tau>0){
-      const brk=p.ttype!='eff',lim=brk?p.lim*f:p.lim,cp=age>=63&&p.agicap?p.agicap*f:0;
-      const ok=r=>{const y=yc(c,r);return (brk?y.ot:(y.agi>0?y.X/y.agi:0))<lim&&(!cp||y.agi<cp)};
-      if(ok(0)){let lo=0,hi=Math.max(0,T-c.rmd);for(let i=0;i<24;i++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}C=Math.min(lo,(p.Lv==null?Infinity:p.Lv)*u)}}
-    const y=yc(c,C),W=y.W;
-    rows.push({yr,age,f,u,w:c.w,ss:c.ss,st:y.st,agi:y.agi,irm,S:y.S,dist:W+c.rmd,RW:y.RW,rmd:c.rmd,C,X:y.X,ot:y.ot,t0:T,r0:R,short:y.sh,B0:B});
-    bs=B-y.S<1?0:bs-y.S*c.bf+y.sp+c.div;
-    B=B-y.S+y.sp<1?0:(B-y.S+y.sp)*(1+p.gb);if(B==0)bs=0;
-    T=Math.max(0,T-c.rmd-C-W)*(1+p.g);
-    R=(R+c.K+C-y.Xc-y.RW)*(1+p.g);
-    Object.assign(rows[rows.length-1],{T,B,R})}
-  return rows}
-function projection(I){
-  const p={wk:I.WK,start:I.yr,by:I.by,lw:I.lw,firstc:I.yr,living:0,infl:I.inf,t403:I.pre,g:I.g,roth:I.roth,brk:I.brk,gb:I.g,
-    yld:I.brk>0?I.div/I.brk:0,basis:I.brk>0?I.bas/I.brk:0,ssage:I.ssA||70,ss:I.ssM,lastc:I.by+I.cmax,cushion:I.cush,agicap:0,Lv:null,cmaxAge:I.cmax,capOn:false,ttype:'eff',lim:0};
-  const susP=(t,pp,it=22)=>{let a=20000,b=200000;
-    const feasible=sp=>{const r=sim(t,{...pp,living:sp}),last=r[r.length-1],r95=r.find(x=>x.age==95)||last;return !r.some(x=>x.short>1)&&(r95.T+r95.R+r95.B)/(r95.u*(1+pp.infl))>=pp.cushion};
-    while(feasible(b)&&b<2e6)b*=1.5;for(let i=0;i<it;i++){const m=(a+b)/2;feasible(m)?a=m:b=m}return a};
-  const top=pct=>OB.find(b=>Math.round(b[0]*100)==pct)[2];
-  const lim22=x=>{const pref=Math.max(0,x.agi-(x.w+x.C+x.dist+x.st));let lo=0,hi=1e9;for(let i=0;i<45;i++){const m=(lo+hi)/2;taxCalc(x.f,x.age,m,pref,x.ss).ot<=top(22)*x.f?lo=m:hi=m}return lo};
-  const over=raw=>raw.find(x=>x.age>=75&&x.rmd>lim22(x)+1);
-  p.living=susP(0,p,14);
-  let tau=1,note='';
-  if(I.model==='none'){tau=0}
-  else if(I.model==='auto'){
-    p.ttype='eff';
-    const cost=pp=>sim(1,pp).filter(x=>x.yr>pp.lw).reduce((s,x)=>s+(x.X+x.irm)/x.u,0),cs=[];
-    const lowP=r=>({...p,ttype:'brk',lim:top(r),capOn:true,cmaxAge:100,lastc:p.by+100});
-    for(const c of [10,12,14,15,16,17,18,19,20,22,24]){const pp={...p,lim:c/100};cs.push({k:'eff',c,pp,sp:susP(1,pp,12),tx:cost(pp)})}
-    for(const r of [12,22]){const pp=lowP(r);cs.push({k:'low',c:r,pp,sp:susP(1,pp,12),tx:cost(pp)})}
-    const hi=pp=>({...pp,g:pp.g+.02,gb:pp.gb+.02});cs.forEach(x=>{x.safe=!over(sim(1,x.pp))&&!over(sim(1,hi(x.pp)))});
-    const pool=cs.some(x=>x.safe)?cs.filter(x=>x.safe):cs,best=Math.max(...pool.map(x=>x.sp)),pick=pool.filter(x=>x.sp>=best*.999).sort((a,b)=>a.tx-b.tx)[0];
-    Object.assign(p,pick.pp);
-    note=pick.k=='low'?`Auto picked the low-bracket lifetime plan at the ${pick.c}% bracket.`:`Auto picked conversions up to a ${pick.c}% effective rate each year through age ${p.cmaxAge}.`;
-    note+=pick.safe?' It keeps RMDs inside the 22% bracket even with growth 2 points higher.':' No tested plan kept RMDs inside the 22% bracket with growth 2 points higher; this one gives the best spending.';
-  }else if(I.model==='level'){
-    p.ttype='level';p.lim=top(I.tbrk);
-    const rm=L=>{const x=sim(1,{...p,Lv:L}).find(x=>x.age==75);return x?x.rmd/x.u:0};
-    if(rm(0)<=I.rtgt){p.Lv=0;note='My age-75 RMD is already under the ceiling without conversions.'}
-    else if(rm(Infinity)>I.rtgt){p.Lv=null;note=`The ceiling can't be reached while staying inside the ${I.tbrk}% bracket, so this converts the most allowed each year.`}
-    else{let lo=0,hi=2e6;for(let i=0;i<30;i++){const m=(lo+hi)/2;rm(m)>I.rtgt?lo=m:hi=m}p.Lv=Math.ceil(hi/500)*500;note=`Even conversions of about ${fmt(p.Lv)} a year (today's dollars) bring the age-75 RMD to ${fmt(I.rtgt)}.`}
-  }else{
-    if(I.ttype==='brk'&&I.model!=='fixed'){p.ttype='brk';p.lim=top(I.tbrk)}else{p.ttype='eff';p.lim=I.effPlan}
-  }
-  const zliving=susP(0,p,18);if(tau)p.living=susP(1,p,18);else p.living=zliving;
-  const raw=sim(tau,p),zraw=sim(0,{...p,living:zliving}),row=raw.find(x=>x.yr==I.yr)||raw[0];
-  const a75=raw.find(x=>x.age==75),z75=zraw.find(x=>x.age==75);
-  const st=t=>{const r=sim(t,{...p,living:t?p.living:zliving,g:p.g+.02,gb:p.gb+.02}).filter(x=>x.age>=75),x75=r.find(x=>x.age==75),ex=over(r);
-    return{r75:x75?x75.rmd/x75.u:0,lim75:x75?lim22(x75)/x75.u:0,ex:ex?ex.yr:0}};
-  const SA=st(tau),N0=over(raw),dep=raw.find(x=>x.B<1),short=raw.some(x=>x.short>1);
-  return{C:row.C,Cnext:(raw.find(x=>x.yr==I.yr+1)||{C:0}).C,note,living:p.living,zliving,a75:a75?{rmd:a75.rmd/a75.u,T:a75.t0/a75.u,R:a75.r0/a75.u}:null,z75:z75?{rmd:z75.rmd/z75.u}:null,SA,N0:N0?N0.yr:0,dep:dep?dep.yr:0,short,tau}}
+const PARTB=202.90;
+// Tax on amt dollars stacked on top of base, through brackets [[rate,lo,hi],...]
+const bt=(base,amt,br)=>{let t=0;if(amt<=0)return 0;const top=base+amt;for(let k=0;k<br.length;k++){const b=br[k],a=b[1]>base?b[1]:base,c=b[2]<top?b[2]:top;if(c>a)t+=b[0]*(c-a)}return t};
+// The single federal tax calculation used everywhere. r = rules for the year (brackets, deductions; d deflates fixed-dollar thresholds in today's-dollar projections).
+function taxCore(v,r){const d=r.d||1,w=v.wages||0,i=v.ira||0,it=v.int||0,qd=v.qdiv||0,st=v.stcg||0,lt=v.ltcg||0,ss=v.ss||0;
+  const c=w+i+it+qd+st+lt+.5*ss,t1=25000/d,t2=34000/d,b50=Math.max(0,Math.min(c,t2)-t1),b85=Math.max(0,c-t2),t50=Math.min(.5*b50,.5*ss),tss=ss>0?Math.min(.85*ss,t50+.85*b85):0;
+  const ord=w+i+it+st+tss,qual=qd+lt,tot=ord+qual;let ded=r.std;if(v.o65){ded+=r.a65;if(r.sb)ded+=Math.max(0,6000/d-Math.max(0,(tot-75000/d)*.06))}
+  const ordT=Math.max(0,ord-ded),left=Math.max(0,ded-ord),qualT=Math.max(0,qual-left),oTax=bt(0,ordT,r.ord),qTax=bt(ordT,qualT,r.qual);
+  const nii=it+qd+st+lt,niitBase=Math.min(nii,Math.max(0,tot-200000/d)),niit=.038*niitBase;
+  return{tax:oTax+qTax+niit,ord,qual,tot,ded,ordT,qualT,left,oTax,qTax,niit,niitBase,tss,combined:c,b50,b85,t50}}
+// Rules for calendar year y, expressed in year-Y0 dollars. Known years use published figures; later years are indexed with inflation.
+const _RC=new Map();
+function rulesAt(y,Y0,inf){const k=y+'|'+Y0+'|'+inf;let o=_RC.get(k);if(o)return o;
+  const useN=NXT&&y>=FILEYEAR+1,b=useN?NXT:CUR,by=useN?FILEYEAR+1:FILEYEAR,d=Math.pow(1+inf,y-Y0),s=Math.pow(1+inf,Math.max(0,y-by))/d,sI=Math.pow(1+inf,Math.max(0,y-FILEYEAR))/d;
+  const sc=br=>br.map(([r,lo,hi])=>[r,lo*s,hi*s]);
+  o={ord:sc(b.ord),qual:sc(b.qual),std:b.std*s,a65:b.a65*s,wb:b.wb*s,sb:y<=2028,d,s,sI,y};_RC.set(k,o);return o}
+const ficaR=(w,r)=>w>0?w*.0145+.062*Math.min(w,r.wb)+.009*Math.max(0,w-200000/r.d):0;
+// Annual IRMAA surcharge for a MAGI, thresholds indexed like the brackets (tiers are the latest published)
+function irmaaR(magi,r){let i=0;for(let k=0;k<IRM.length;k++)if(magi>IRM[k][0]*r.sI)i=k;const b=IRM[i];return((b[2]-PARTB)+b[3])*12}
+
+/* One year of cash flow. Solves the year's tax and the withdrawals that pay for it together.
+   Order: income (wages after FICA and Roth contributions, Social Security, RMD), cash down to my cushion,
+   emergency fund only in a down year, brokerage, pre-tax (via conversion), Roth. */
+function yearFlow(x,C){
+  const preA=Math.max(0,x.pre-x.rmd-C),bf=x.brk>0?Math.min(1,x.bas/x.brk):1,cashA=Math.max(0,x.cash-x.cashMin),efA=x.down?x.ef:0;
+  const alloc=T=>{let need=x.S+x.med+x.K+x.fi+T-(x.w+x.ss+x.rmd);const a={cashU:0,efU:0,X:0,W:0,Rw:0,sh:0,sur:0};
+    if(need<=0){a.sur=-need;return a}
+    let t=Math.min(need,cashA);a.cashU=t;need-=t;t=Math.min(need,efA);a.efU=t;need-=t;t=Math.min(need,x.brk);a.X=t;need-=t;
+    t=Math.min(need,preA);a.W=t;need-=t;t=Math.min(need,x.roth);a.Rw=t;need-=t;a.sh=need;return a};
+  const tx=a=>taxCore({wages:x.w,ira:x.rmd+C+a.W,int:x.intr,qdiv:x.div,ltcg:a.X*(1-bf),ss:x.ss,o65:x.age>=65},x.r);
+  // Fixed point T = tax(withdrawals(T)). The map rises with T but by less than T (marginal rates < 100%), so the iteration converges;
+  // bisection on the same equation is the fallback.
+  let T=tx(alloc(0)).tax,a,res,ok=false;
+  for(let n=0;n<60;n++){a=alloc(T);res=tx(a);if(Math.abs(res.tax-T)<.01){T=res.tax;ok=true;break}T=res.tax}
+  if(!ok){let lo=0,hi=Math.max(1e4,2*T);while(tx(alloc(hi)).tax>hi)hi*=2;for(let n=0;n<80;n++){const m=(lo+hi)/2;tx(alloc(m)).tax>m?lo=m:hi=m}T=hi;a=alloc(T);res=tx(a)}
+  else{a=alloc(T);res=tx(a)}
+  const src=x.w+x.ss+x.rmd+a.cashU+a.efU+a.X+a.W+a.Rw+a.sh,use=x.S+x.med+x.K+x.fi+T+a.sur;
+  return{...a,T,res,bf,imb:src-use}}
+
+/* Conversion for a year under a policy (today's dollars). Rule-based policies are solved with bisection on the full year. */
+function convFor(x,pol,k){const mx=Math.max(0,x.pre-x.rmd);if(!pol||pol.k==='none'||mx<=0||x.age>x.cmax)return 0;
+  if(pol.k==='sched')return Math.min(mx,pol.a[k]||0);
+  if(pol.k==='fixed')return Math.min(mx,k===0?pol.v0:pol.v);
+  let ok;const top=p=>x.r.ord.find(b=>Math.round(b[0]*100)==p)[2];
+  if(pol.k==='eff')ok=C=>{const f=yearFlow(x,C);return f.res.tot>0?f.T/f.res.tot<=pol.v+1e-9:true};
+  else if(pol.k==='brk'){const lim=top(pol.v);ok=C=>yearFlow(x,C).res.ordT<=lim}
+  else if(pol.k==='amt')ok=C=>yearFlow(x,C).T<=pol.v;
+  let hiC=mx;if(pol.k==='level'){const lim=top(pol.cap);hiC=Math.min(mx,pol.v);ok=C=>yearFlow(x,C).res.ordT<=lim}
+  if(hiC<=0||!ok(0))return 0;if(ok(hiC))return hiC;let lo=0,hi=hiC;for(let n=0;n<22;n++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}return lo}
+
+/* Starting point for Jan 1 of next year, after this year's conversion C0 and how its tax is paid. Today's (plan-year) dollars. */
+function prep(I,C0){const s=scenario(I,C0),Wh=I.pay==='qtr'?0:Math.min(s.owed,C0),P=s.P,refill=I.pay==='roll'?Math.min(P,Wh):0;
+  let brk=I.brk-P,bas=Math.max(0,I.bas-P*I.bp),cash=I.cash,rest=Math.max(0,s.owed-Wh-(P-refill));
+  const cu=Math.min(rest,Math.max(0,cash-I.cashMin));cash-=cu;rest-=cu;const bu=Math.min(rest,brk);brk-=bu;bas=Math.max(0,bas-bu*I.bp);
+  return{s,C0,Y0:I.yr,Y1:I.yr+1,by:I.by,inf:I.inf,lw:I.lw,WK:I.WK,ssA:I.ssA,ssY:I.ssM*12,cmax:I.cmax,cashMin:I.cashMin,
+    yld:I.brk>0?I.div/I.brk:0,efR:I.ef>0&&!I.intEst?I.int/I.ef:.03,
+    st:{pre:Math.max(0,I.pre-C0-I.rmd),roth:I.roth+C0-Wh+refill,brk,bas,cash,ef:I.ef},agiM1:I.lagi>0?I.lagi/(1+I.inf):s.t.tot,agi0:s.t.tot}}
+
+/* Run the years from next year on. opt: S (yearly after-tax spending, today's $), pol, g (real growth) or ret(k), down0, end (age), stop (stop at first shortfall), rec (keep rows) */
+function runYears(P,opt){let{pre,roth,brk,bas,cash,ef}=P.st;const agi=[P.agiM1,P.agi0],rows=[];let short=false,shortAge=0,tax=0,irm=0,imb=0,a95=null,dep=0,rmd75=null;
+  for(let k=0;;k++){const y=P.Y1+k,age=y-P.by;if(age>opt.end)break;
+    const r=rulesAt(y,P.Y0,P.inf),d=r.d,wk=y<=P.lw&&P.WK[y]?P.WK[y]:[0,0],w=wk[0]/d,K=wk[1]/d;
+    const ss=P.ssA&&age>=P.ssA?P.ssY*(age===P.ssA?1/12:1):0,rmdA=age>=75?pre/(DIV[Math.min(age,100)]):0;
+    const mo=age<65?0:age===65?2:12,irmY=mo?irmaaR(agi[k],r)*mo/12:0,med=mo?PARTB*mo+irmY:0;
+    const down=k===0?!!opt.down0:(opt.ret?opt.ret(k-1)<-.05:false);
+    const x={S:opt.S,med,K,fi:ficaR(w,r),w,ss,rmd:rmdA,pre,roth,brk,bas,cash,cashMin:P.cashMin,ef,down,div:brk*P.yld,intr:ef*P.efR,age,r,cmax:P.cmax};
+    const C=convFor(x,opt.pol,k),f=yearFlow(x,C),g=opt.ret?opt.ret(k):opt.g;
+    tax+=f.T;irm+=irmY;imb=Math.max(imb,Math.abs(f.imb));if(age===75)rmd75=rmdA;
+    if(f.sh>1&&!short){short=true;shortAge=age}
+    if(opt.rec)rows.push({y,age,w,K,ss,rmd:rmdA,C,X:f.X,W:f.W,Rw:f.Rw,cashU:f.cashU,efU:f.efU,sh:f.sh,T:f.T,med,irm:irmY,agi:f.res.tot,ordT:f.res.ordT,pre,roth,brk,cash,ef,div:x.div,intr:x.intr,ltcg:f.X*(1-f.bf),imb:f.imb});
+    if(short&&opt.stop)break;
+    bas=Math.max(0,bas-f.X*f.bf)+f.sur+x.div;
+    pre=Math.max(0,pre-rmdA-C-f.W)*(1+g);roth=Math.max(0,roth+K+C-f.Rw)*(1+g);brk=Math.max(0,brk-f.X+f.sur)*(1+g);if(brk<1){brk=0;bas=0}
+    bas=bas/(1+P.inf);cash=Math.max(0,cash-f.cashU)/(1+P.inf);ef=Math.max(0,ef-f.efU)*(1+P.efR)/(1+P.inf);
+    if(!dep&&brk<1&&P.st.brk>0)dep=y;agi.push(f.res.tot);
+    if(age===95)a95=pre+roth+brk+cash+ef}
+  return{rows,short,shortAge,tax,irm,imb,a95,dep,rmd75}}
+
+/* Highest yearly after-tax spending (today's $) that never runs short through 100 and keeps the age-95 cushion */
+function susSpend(P,pol,g,cush,down0){const feas=S=>{const o=runYears(P,{S,pol,g,end:100,stop:true,down0});return!o.short&&(o.a95==null||o.a95>=cush)};
+  if(!feas(0))return 0;let lo=0,hi=150000;while(feas(hi)&&hi<5e6){lo=hi;hi*=1.6}for(let n=0;n<18;n++){const m=(lo+hi)/2;feas(m)?lo=m:hi=m}return lo}
+
+/* Return paths (real, inflation-adjusted): historical start years or simulated */
+function paths(I,yrs){if(I.meth==='bt'){const w=I.mix/100,RET=HIST.map(r=>w*r[1]+(1-w)*r[2]),N=I.wrap?HIST.length:HIST.length-yrs+1;
+    if(N<1)return{err:'My plan runs longer than the history available. Shorten the plan-to age or use a simulated model.'};
+    return{N,get:(n,k)=>RET[(n+k)%RET.length],src:`${N} historical start years (${HIST[0][0]}–${HIST[N-1][0]}), each followed for ${yrs} years`}}
+  const m=I.M.mean/100,sd=I.M.vol/100,z=zs(yrs),N=500,xx=(1+Math.sqrt(1+4*sd*sd/((1+m)*(1+m))))/2,sg=Math.sqrt(Math.log(xx)),mu=Math.log(1+m);
+  return{N,get:(n,k)=>Math.exp(mu+sg*z[n*yrs+k])/(1+I.inf)-1,src:`${N} simulated futures (${I.M.mean}% return, ${I.M.vol}% volatility)`}}
+
+/* After-tax guardrails: for each path, the most I could spend each year (today's $) and still never run short through my plan-to age.
+   The chance of lasting at any spending level is the share of paths that support it. Taxes on income and conversions and Medicare are paid on top. */
+function guardrailAT(I,P,pol){const yrs=I.end-(I.age+1)+1;if(yrs<1)return{err:'The plan-to age must be above my age.'};
+  const pth=paths(I,yrs);if(pth.err)return pth;const caps=[];
+  for(let n=0;n<pth.N;n++){const ret=k=>pth.get(n,k),ok=S=>!runYears(P,{S,pol,ret,end:I.end,stop:true,down0:I.down}).short;
+    let lo=0,hi=200000;if(!ok(0)){caps.push(0);continue}while(ok(hi)&&hi<8e6){lo=hi;hi*=1.7}for(let q=0;q<16;q++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}caps.push(lo)}
+  caps.sort((a,b)=>b-a);const N=caps.length,prob=S=>caps.filter(c=>c>=S-.5).length/N,at=p=>caps[Math.max(0,Math.min(N-1,Math.ceil(p*N)-1))];
+  return{prob,at,src:pth.src,N}}
+
+/* Long-range plan: picks or applies the conversion strategy, projects every year with the engine, and runs the after-tax guardrails */
+function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
+  const thisC=p=>{if(!canConv||p.k==='none')return 0;if(p.k==='eff')return solveC(I,s=>s.t.eff<=p.v+1e-9);if(p.k==='brk')return solveC(I,s=>s.t.ordT<=topOf(p.v));
+    if(p.k==='amt')return solveC(I,s=>s.t.tax<=p.v);if(p.k==='fixed')return R.C||0;if(p.k==='level')return Math.min(Math.round(p.v),solveC(I,s=>s.t.ordT<=topOf(p.cap)));return 0};
+  const zP=prep(I,0),zS=susSpend(zP,{k:'none'},gR,cush,I.down);let pol,C0,note='',cands=null,living;
+  if(I.model==='auto'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
+    cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;c.S=c.k==='none'?zS:susSpend(c.P,c,gR,cush,I.down);const o=runYears(c.P,{S:c.S,pol:c,g:gR,end:100,down0:I.down});c.tax=o.tax+o.irm});
+    const best=Math.max(...cands.map(c=>c.S)),pick=cands.filter(c=>c.S>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0];pol=pick;C0=pick.C0;living=pick.S;
+    note=(pick.k==='none'?'Auto found that not converting gives the highest sustainable after-tax spending.':pick.k==='eff'?`Auto picked conversions up to a ${Math.round(pick.v*100)}% effective rate each year through age ${I.cmax}.`:`Auto picked filling the ${pick.v}% bracket each year through age ${I.cmax}.`)+
+      ` It supports ${fmt(pick.S)} a year of after-tax spending in today's dollars${pick.S>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zS)}`}. Among strategies that close, it has the lowest lifetime federal tax and IRMAA.`}
+  else if(I.model==='level'){const rm=L=>{const p={k:'level',v:L,cap:I.tbrk},c=thisC(p);return runYears(c>0?prep(I,c):zP,{S:zS,pol:p,g:gR,end:76,down0:I.down}).rmd75||0};
+    let Lv;if(rm(0)<=I.rtgt){Lv=0;note='My age-75 RMD is already under the ceiling without conversions.'}
+    else if(rm(5e6)>I.rtgt){Lv=5e6;note=`The ceiling can't be reached while staying inside the ${I.tbrk}% bracket, so this converts the most allowed each year.`}
+    else{let lo=0,hi=5e6;for(let n=0;n<26;n++){const m=(lo+hi)/2;rm(m)>I.rtgt?lo=m:hi=m}Lv=Math.ceil(hi/500)*500;note=`Even conversions of about ${fmt(Lv)} a year (today's dollars) bring the age-75 RMD to ${fmt(I.rtgt)}.`}
+    pol={k:'level',v:Lv,cap:I.tbrk};C0=thisC(pol)}
+  else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:I.camtN/(1+I.inf),v:I.camtN/(1+I.inf)}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
+  const P=C0>0?prep(I,C0):zP;if(living==null)living=pol.k==='none'?zS:susSpend(P,pol,gR,cush,I.down);
+  const main=runYears(P,{S:living,pol,g:gR,end:100,rec:true,down0:I.down}),zero=runYears(zP,{S:zS,pol:{k:'none'},g:gR,end:100,rec:true,down0:I.down}),hi2=runYears(P,{S:living,pol,g:gR+.02,end:100,rec:true,down0:I.down});
+  const lim22=x=>{const r=rulesAt(x.y,I.yr,I.inf),t22=r.ord.find(b=>Math.round(b[0]*100)==22)[2],f=ira=>taxCore({wages:x.w,ira,int:x.intr,qdiv:x.div,ltcg:x.ltcg,ss:x.ss,o65:x.age>=65},r).ordT<=t22;
+    if(!f(0))return 0;let lo=0,hi=5e6;for(let n=0;n<40;n++){const m=(lo+hi)/2;f(m)?lo=m:hi=m}return lo};
+  const over=rows=>rows.find(x=>x.age>=75&&x.rmd>lim22(x)+1),r75=rows=>rows.find(x=>x.age===75);
+  const m75=r75(main.rows),z75=r75(zero.rows),h75=r75(hi2.rows),ex=over(hi2.rows),N0=over(main.rows);
+  const G=guardrailAT(I,P,{k:'sched',a:main.rows.map(x=>x.C)});
+  return{pol,C0,note,living,zliving:zS,main,zero,Cnext:(main.rows[0]?main.rows[0].C:0)*(1+I.inf),a75:m75?{rmd:m75.rmd}:null,z75:z75?{rmd:z75.rmd}:null,
+    SA:{r75:h75?h75.rmd:0,lim75:h75?lim22(h75):0,ex:ex?ex.y:0},N0:N0?N0.y:0,dep:main.dep,short:main.short,tax:main.tax+main.irm,ztax:zero.tax+zero.irm,imb:Math.max(main.imb,zero.imb,hi2.imb),gR,G}}
 
 /* ---------- Inputs ---------- */
 function inputs(){saveWork();
@@ -514,11 +546,8 @@ const topOf=p=>ORD.find(b=>Math.round(b[0]*100)==p)[2];
 function compute(){const I=inputs();
   if(!(I.yr>=2000&&I.by>=1900&&I.age>=40&&I.age<=100))return{err:'Check the plan year and birth year on step 2.'};
   const R={I};
-  // 1. Spending
-  const ssBase=I.ssA&&I.age>=I.ssA?I.ssM*12/(1+I.inf):0;
-  const B=I.pre+I.roth+I.brk+I.ef+I.cash;
-  R.lastDraw=Math.max(0,I.lsp-ssBase);
-  R.G=guardrail({age:I.age+1,B,inf:I.inf,ss:I.ssM*12,ssA:I.ssA||999,lastW:R.lastDraw,blank:I.lspBlank,end:I.end,bt:I.meth==='bt',mix:I.mix,wrap:I.wrap,mean:I.M.mean,vol:I.M.vol,tg:I.tg,lo:I.lo,up:I.up});
+  // Spending base for the withdrawal calculator link (its own convention: pre-tax portfolio draw, excluding Social Security)
+  R.lastDraw=Math.max(0,I.lsp-(I.ssA&&I.age>=I.ssA?I.ssM*12/(1+I.inf):0));
   // 2. Conversion
   const canConv=I.age<=I.cmax&&I.pre>0;
   R.base=scenario(I,0);
@@ -535,8 +564,10 @@ function compute(){const I=inputs();
   // 3. Projection (also sizes the conversion for planner models)
   const sTmp=I.model==='target'||I.model==='fixed'?scenario(I,R.C||0):R.base;
   I.effPlan=(I.model==='target'&&I.ttype==='amt')||I.model==='fixed'?Math.max(.05,sTmp.t.eff):I.teff/100;
-  R.P=projection(I);
-  if(I.model==='auto'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C,Math.max(0,I.pre-I.rmd))/100)*100:0;
+  R.P=longRange(I,canConv,R);
+  {const G0=R.P.G,f=1+I.inf;if(G0.err)R.G={err:G0.err};else if(I.lspBlank){const S=G0.at(I.tg);R.G={mode:'target',W:S*f,P1:G0.prob(S),Wcut:G0.at(I.lo)*f,Wraise:G0.at(I.up)*f,src:G0.src}}
+    else{const S0=I.lsp,P0=G0.prob(S0),Sc=G0.at(I.lo),Sr=G0.at(I.up),S=Math.min(Math.max(S0,Sr),Sc);R.G={mode:S0>Sc?'cut':S0<Sr?'raise':'hold',W:S*f,W0:S0*f,P0,P1:G0.prob(S),Wcut:Sc*f,Wraise:Sr*f,Tlast:I.lsp,src:G0.src}}}
+  if(I.model==='auto'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C0,Math.max(0,I.pre-I.rmd))/100)*100:0;
     R.cWhy=(canConv?R.P.note:`I'm past my last conversion age (${I.cmax}).`)+(canConv&&R.C===0?` The planner has no conversion in ${I.yr}${I.wage>0?', mostly because of my wages':''}.`:'')}
   if(I.model==='none'){R.C=0;R.cWhy=`I chose not to convert this year (${I.yr}).`}
   R.S=scenario(I,R.C);
@@ -550,10 +581,14 @@ function compute(){const I=inputs();
   R.safe=R.pays>=R.req-1||S.t.tax-R.pays<1000;
   R.qEach=Math.max(0,R.req-I.wwh)/4;
   R.nextReq=(S.t.tot>150000?1.1:1)*S.t.tax;R.NR=nextRules();R.nextWH=employerEst(I.wageNext,R.NR||CUR);R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
-  // 5. Funding the next 12 months
-  const W=R.G.err?0:R.G.W;let rem=W;R.src=[];
+  // Medicare in the budget year (Jan–Dec next year): Part B from the month I turn 65; IRMAA uses AGI from two years before that year (= last year's AGI)
+  {const ageN=I.yr+1-I.by,mo=ageN<65?0:ageN==65?2:12,f=1+I.inf,ir=irmaaFor(I.lagi),ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*f*(ageN==I.ssA?1/12:1):0;
+   R.med={ageN,mo,partB:202.90*mo*f,irm:ir.annual*mo/12*f,tier:ir.tier,ssN,noAgi:!I.lagi};R.med.total=R.med.partB+R.med.irm}
+  // 5. Funding next year's after-tax budget (Medicare premiums on top)
+  const W=R.G.err?0:R.G.W;let rem=W+R.med.total;R.src=[];
   if(I.thp>0){const x=Math.min(rem,I.thp);R.src.push(['Take-home pay',x]);rem-=x}
-  R.draw=Math.max(0,W-Math.min(W,I.thp));
+  if(R.med.ssN>0&&rem>0){const x=Math.min(rem,R.med.ssN);R.src.push(['Social Security',x]);rem-=x}
+  R.draw=Math.max(0,W+R.med.total-Math.min(W+R.med.total,I.thp+R.med.ssN));
   if(I.rmd>0){const x=Math.min(rem,I.rmd);if(x>0){R.src.push(['Required minimum distribution (pre-tax)',x]);rem-=x}}
   {const avail=Math.max(0,I.cash-I.cashMin);if(avail>0&&rem>0){const x=Math.min(rem,avail);R.src.push(['Cash (checking and savings)',x]);rem-=x}}
   if(I.down&&I.ef>0&&rem>0){const x=Math.min(rem,I.ef);R.src.push(['Emergency fund (VBIL, CREF Money Market)',x]);rem-=x}
@@ -561,9 +596,6 @@ function compute(){const I=inputs();
   R.viaConv=0;if(rem>0&&I.pre>0){const x=Math.min(rem,I.pre);R.src.push(['Pre-tax, converted to Roth, then taken from the Roth',x]);R.viaConv=x;rem-=x}
   if(rem>0){const x=Math.min(rem,I.roth);if(x>0){R.src.push(['Roth',x]);rem-=x}}
   R.unfunded=rem;
-  // Medicare in the budget year (Jan–Dec next year): Part B from the month I turn 65; IRMAA uses AGI from two years before that year (= last year's AGI)
-  {const ageN=I.yr+1-I.by,mo=ageN<65?0:ageN==65?2:12,f=1+I.inf,ir=irmaaFor(I.lagi),ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*f*(ageN==I.ssA?1/12:1):0;
-   R.med={ageN,mo,partB:202.90*mo*f,irm:ir.annual*mo/12*f,tier:ir.tier,ssN,noAgi:!I.lagi};R.med.total=R.med.partB+R.med.irm}
   // 6. Next year's tax preview (2026 brackets, next year's income)
   {const brkSale=(R.src.find(x=>x[0]==='Brokerage')||[0,0])[1],efUse=(R.src.find(x=>x[0].startsWith('Emergency'))||[0,0])[1];
    const ageN=I.age+1,ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*(1+I.inf)*(ageN==I.ssA?1/12:1):0,rmdN=ageN>=75&&DIV[ageN]?I.pre/DIV[ageN]:0;
@@ -610,11 +642,11 @@ function render(R){
     let left=R.C;const SPL=[];for(const a of AC){if(left<=0)break;const x=Math.min(left,a.b);SPL.push({n:a.n,x,all:x>=a.b-1});left-=x}
     let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax to Roth${SPL.length===1?`, from the <b>${SPL[0].n}</b>${SPL[0].all?' (empties it)':''}`:''}.</div><ul>`;
     if(SPL.length>1)li+=`<li>From: ${SPL.map(p=>`${p.n} <b class="amt">${fmt(p.x)}</b>${p.all?' (empties it)':''}`).join('; ')}. Split the withholding in proportion, or take it all from the largest piece.</li>`;
-    if(I.pay==='roll'){li+=`<li>Ask the custodian of ${SPL.length>1?'each of those accounts':'the '+(SPL[0]?SPL[0].n:'pre-tax account')} for the conversion with federal tax withheld (often easiest by phone with their retirement team), and tell them I'll replace the withheld amount with a 60-day rollover.</li>
+    if(I.pay==='roll'){li+=`<li>Ask the custodian of ${SPL.length>1?'each of those accounts':'the '+(SPL[0]?SPL[0].n:'pre-tax account')} for the conversion with federal tax withheld (often easiest by phone with their retirement team)${Math.min(S.P,R.Wh)>=1?", and tell them I'll replace the withheld amount with a 60-day rollover":''}.</li>
       <li>Have them withhold <b class="amt">${fmt(R.Wh)}</b> federal tax: all of ${I.yr}'s tax still owed after paycheck withholding, including tax on capital gains.</li>
-      <li>The same day, sell about <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> from brokerage (about ${fmt(Math.min(S.P,R.Wh)*(1-I.bp))} gain at ${Math.round(I.bp*100)}% basis) and deposit <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> cash into the Roth account the conversion went to. If that's a Roth inside a 403(b) or 457(b) that won't take outside deposits, a Roth IRA works.</li>
-      <li>Have the deposit coded as a <b>60-day indirect rollover</b>, not an annual contribution.</li>`;
-      if(S.P<R.Wh-1)li+=`<li class="warn">Brokerage covers only ${fmt(S.P)} of the refill; the rest stays withheld and the Roth ends up smaller.</li>`}
+      ${Math.min(S.P,R.Wh)<1?`<li>No brokerage is left to refill the withheld tax, so it stays withheld: ${fmt(R.C-R.Wh)} of the conversion lands in the Roth. Skip the 60-day rollover.</li>`:`<li>The same day, sell about <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> from brokerage (about ${fmt(Math.min(S.P,R.Wh)*(1-I.bp))} gain at ${Math.round(I.bp*100)}% basis) and deposit <b class="amt">${fmt(Math.min(S.P,R.Wh))}</b> cash into the Roth account the conversion went to. If that's a Roth inside a 403(b) or 457(b) that won't take outside deposits, a Roth IRA works.</li>
+      <li>Have the deposit coded as a <b>60-day indirect rollover</b>, not an annual contribution.</li>`}`;
+      if(S.P>=1&&S.P<R.Wh-1)li+=`<li class="warn">Brokerage covers only ${fmt(S.P)} of the refill; the rest stays withheld and the Roth ends up smaller.</li>`}
     else if(I.pay==='wh')li+=`<li>Withhold <b class="amt">${fmt(R.Wh)}</b> federal tax from the conversion. With no refill, ${fmt(R.C-R.Wh)} lands in the Roth.</li>`;
     else li+=`<li>Convert with no withholding and pay the tax with estimated payments (below).</li>`;
     if(R.short)li+=`<li class="warn">Tax still owed (${fmt(S.owed)}) is more than the conversion, so withholding can't cover it all.${R.Cmin?` Converting at least ${fmt(R.Cmin)} would let withholding cover everything.`:''}</li>`;
@@ -633,13 +665,13 @@ function render(R){
       `<div><span class="pill warn">Underpayment risk</span> Withholding of ${fmt(R.pays)} is below the ${fmt(R.req)} safe-harbor amount. Increase the conversion withholding or make an estimated payment of ${fmt(R.req-R.pays)} by Jan 15, ${I.yr+1}.</div>`;
     todo.push(li)}
   // Spending
-  if(!G.err){const W=G.W,m=W/12;let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>Spend up to <b class="amt">${fmt(W)}</b> in ${I.yr+1}, January through December${G.ssNow?' plus Social Security':''}.${I.thp>0?` Take-home pay covers about ${fmt(Math.min(W,I.thp))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
+  if(!G.err){const W=G.W,m=W/12;let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December. Federal taxes and Medicare premiums are paid on top.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
     R.src.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
     if(R.src.some(s=>s[0]==='Brokerage'))li+=`<li>Set up the automatic monthly transfer from brokerage to checking.</li>`;
     if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting it (plus its tax, withheld) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
     {const M=R.med,Y=I.yr+1;if(M.mo>0){const parts=`${fmt(M.partB)} Part B${M.irm>0?` + ${fmt(M.irm)} IRMAA surcharge`:''}`;
-      li+=M.ssN>=M.total?`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}) is deducted from my Social Security, so deposits will be about ${fmt(M.ssN-M.total)} instead of ${fmt(M.ssN)}. It counts as part of my spending.</li>`
-        :`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}${M.mo<12?`, ${M.mo} months starting November`:''}) is paid from this budget by bill or automatic payment${M.ssN>0?' until Social Security starts':''}. My Social Security doesn't start until ${I.by+I.ssA}.</li>`;
+      li+=M.ssN>=M.total?`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}) is deducted from my Social Security, so deposits will be about ${fmt(M.ssN-M.total)} instead of ${fmt(M.ssN)}. It's paid on top of my spending budget.</li>`
+        :`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}${M.mo<12?`, ${M.mo} months starting November`:''}) is paid on top of my spending budget, by bill or automatic payment${M.ssN>0?' until Social Security starts':''}. My Social Security doesn't start until ${I.by+I.ssA}.</li>`;
       if(M.noAgi)li+=`<li class="warn">Enter last year's (${I.yr-1}) AGI on step 2 to include any IRMAA surcharge.</li>`}}
     if(I.down)li+=`<li>The market is down: a good year to convert more, since each dollar moves more shares.</li>`;
     if(R.unfunded>1)li+=`<li class="warn">${fmt(R.unfunded)} can't be funded from my accounts.</li>`;
@@ -660,7 +692,7 @@ function render(R){
     <div class="note" style="margin-top:8px"><b>How to cover it:</b></div><ul>`;
     if(conv){
       li+=`<li><b>A. All from the conversion.</b> When I convert in Oct–Dec ${Y}, withhold <b class="amt">${fmt(Math.min(tot,NC.C))}</b>${tot>NC.C?`, all of the conversion; cover the other ${fmt(tot-NC.C)} with option B or C`:''}. Withholding counts as paid evenly through the year, so no quarterly payments.${I.pay==='roll'?` Then refill the Roth with ${fmt(Math.min(tot,NC.C,NC.refill||tot))} from brokerage within 60 days, coded as a 60-day rollover.`:''}</li>`;
-      li+=`<li><b>B. Split: paychecks for the gains, conversion for its own tax.</b> add <b class="amt">${fmt(Math.ceil(hp/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c), ${fmt(hp)} total), then withhold <b class="amt">${fmt(NC.convTax)}</b> from the conversion${I.pay==='roll'?' and refill that amount from brokerage within 60 days':''}. Starting the paycheck part later works too: divide ${fmt(hp)} by the paychecks left (${fmt(Math.ceil(hp/13))} each with 13 left).</li>`;
+      li+=`<li><b>B. Split: paychecks for the gains, conversion for its own tax.</b> add <b class="amt">${fmt(Math.ceil(hp/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c), ${fmt(hp)} total), then withhold <b class="amt">${fmt(NC.convTax)}</b> from the conversion${I.pay==='roll'&&NC.refill>0?' and refill that amount from brokerage within 60 days':''}. Starting the paycheck part later works too: divide ${fmt(hp)} by the paychecks left (${fmt(Math.ceil(hp/13))} each with 13 left).</li>`;
       li+=`<li><b>C. All from paychecks.</b> add <b class="amt">${fmt(Math.ceil(tot/26))}</b> extra per biweekly paycheck all year (W-4 Step 4(c)) and convert with no withholding. The whole conversion stays in the Roth with no refill needed, but I'm paying the conversion's tax before I know the final amount.</li>`;
     }else{
       li+=`<li><b>A. Extra paycheck withholding.</b> add <b class="amt">${fmt(Math.ceil(tot/26))}</b> per biweekly paycheck all year (W-4 Step 4(c)), or divide ${fmt(tot)} by the paychecks left if I start later.</li>`;
@@ -690,15 +722,15 @@ function render(R){
   // Spending card
   let spend='';
   if(G.err)spend=`<p class="warn">${G.err}</p>`;else{
-    const mode={target:`No spending entered for this year (${I.yr}), so this is the amount that gives my ${Math.round(I.tg*100)}% target chance.`,hold:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives a ${Math.round(G.P0*100)}% chance, inside my ${Math.round(I.lo*100)}–${Math.round(I.up*100)}% band, so no change.`,
-      cut:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives only a ${Math.round(G.P0*100)}% chance, below my ${Math.round(I.lo*100)}% guardrail, so spending is held at the guardrail.`,raise:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives a ${Math.round(G.P0*100)}% chance, above my ${Math.round(I.up*100)}% guardrail, so spending is raised to it.`}[G.mode];
-    spend=`<div class="note" style="margin:0">Spending budget for ${I.yr+1} (Jan–Dec)${G.ssNow?', on top of Social Security':''}</div><div class="big">${fmt(G.W)}</div><div>${I.thp>0?`From my accounts: <b>${fmt(R.draw)}</b> (${fmt(R.draw/12)} a month) after about ${fmt(Math.min(G.W,I.thp))} take-home pay${I.thpEst?' (estimated)':''}`:`about <b>${fmt(G.W/12)}</b> a month before tax`}</div>
-    ${I.thp>0?`<p class="note">The guardrail sizes my budget as if my accounts and Social Security paid all of it, like the withdrawal calculator. Paychecks cover part of it while I work, which leaves extra margin.</p>`:''}
-    <p class="note">${mode} Chance of lasting to ${I.end} at this amount: <b>${Math.round(G.P1*100)}%</b>, across ${G.src}.</p>
-    <p class="note">Stays between ${fmt(G.Wraise)} (${Math.round(I.up*100)}% chance) and ${fmt(G.Wcut)} (${Math.round(I.lo*100)}% chance) at today's balance.${!I.lspBlank&&G.ssPrev?` This year (${I.yr}) counted as ${fmt(R.lastDraw)}: ${fmt(I.lsp)} spent − ${fmt(G.ssPrev)} Social Security.`:''}</p>
+    const pf=x=>{const r=Math.round(x*100);return r===Math.round(I.up*100)||r===Math.round(I.lo*100)?(x*100).toFixed(1):r};
+    const mode={target:`No spending entered for this year (${I.yr}), so this is the amount that gives my ${Math.round(I.tg*100)}% target chance.`,hold:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives a ${pf(G.P0)}% chance, inside my ${Math.round(I.lo*100)}–${Math.round(I.up*100)}% band, so no change.`,
+      cut:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives only a ${pf(G.P0)}% chance, below my ${Math.round(I.lo*100)}% guardrail, so spending is held at the guardrail.`,raise:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives a ${pf(G.P0)}% chance, above my ${Math.round(I.up*100)}% guardrail, so spending is raised to it.`}[G.mode];
+    spend=`<div class="note" style="margin:0">After-tax spending budget for ${I.yr+1} (Jan–Dec)</div><div class="big">${fmt(G.W)}</div><div>about <b>${fmt(G.W/12)}</b> a month. Federal taxes, including tax on Roth conversions, and Medicare premiums come on top.</div>
+    <p class="note">${mode} Chance my money lasts to ${I.end} at this amount: <b>${Math.round(G.P1*100)}%</b>, across ${G.src}. Each future is run year by year with my accounts, income, taxes, Roth conversions and Medicare.</p>
+    <p class="note">Stays between ${fmt(G.Wraise)} (${Math.round(I.up*100)}% chance) and ${fmt(G.Wcut)} (${Math.round(I.lo*100)}% chance) at today's balances.</p>
     <div class="scroll"><table><tr><th>Source</th><th>Year</th><th>Month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
-    ${R.med.mo>0?`<p class="note">Medicare for ${I.yr+1}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), part of this budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
-    <p class="note">Portfolio counted: ${fmt(I.pre+I.roth+I.brk+I.ef+I.cash)} (pre-tax, Roth, brokerage, cash and emergency fund). Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`}
+    ${R.med.mo>0?`<p class="note">Medicare for ${I.yr+1}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
+    <p class="note">Counted: pre-tax, Roth and brokerage accounts, cash above my ${fmt(I.cashMin)} cushion, and the emergency fund only in years after the market drops more than 5%. Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`}
 
   // Conversion card
   const P=R.P,trig=[],safeLine=I.age>=40&&I.age<=74?1.9e6/Math.pow(1.07,75-I.age):0;
@@ -711,11 +743,12 @@ function render(R){
     `<p class="note"><span class="pill ok">No triggers</span> Balance is under the safe line${safeLine?` (${fk(safeLine)} at ${I.age})`:''} and RMDs stay inside the 22% bracket even with growth 2 points higher. Stay with the baseline.</p>`;
   conv+=`<h3>Long-range check</h3><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
-    <tr><td>Sustainable spending (keeps the age-95 cushion)</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
+    <tr><td>Sustainable after-tax spending, today's $ (keeps the age-95 cushion)</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
+    <tr><td>Lifetime federal tax and IRMAA, today's $</td><td>${fmt(P.tax)}</td><td>${fmt(P.ztax)}</td></tr>
     <tr><td>Age-75 RMD (today's $)</td><td>${P.a75?fmt(P.a75.rmd):'—'}</td><td>${P.z75?fmt(P.z75.rmd):'—'}</td></tr>
     <tr><td>Age-75 RMD, growth +2 pts</td><td>${fmt(P.SA.r75)}</td><td></td></tr>
     <tr><td>Brokerage runs out</td><td>${P.dep||'after '+(I.by+100)}</td><td></td></tr></table></div>
-    <p class="note">Projection uses ${(I.g*100).toFixed(1)}% growth and the Roth planner's yearly-tax model. Planned at maximum sustainable spending.${P.short?' <span class="warn">Assets run short in this projection.</span>':''}</p>`;
+    <p class="note">Projection: ${(I.g*100).toFixed(1)}% growth (${(P.gR*100).toFixed(1)}% after inflation), my conversion strategy, and the same tax calculation as this year's figures, with brackets indexed to inflation. Each year is solved for its taxes and withdrawals together, at the most I could spend after tax. Cash-flow check: every projected year balances${P.imb<1?' to the dollar':` within ${fmt(P.imb)}`}.${P.short?' <span class="warn">Assets run short in this projection.</span>':''}</p>`;
 
   // Tax card
   const row=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
@@ -800,7 +833,7 @@ const OPT={
    yes:'Spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
  corder:{small:'Takes the conversion from the account with the smallest pre-tax balance first, so accounts empty out and close sooner on the way to one Roth account.',ira:'Takes the conversion from the traditional IRA first, then the smallest of the rest.','457':'Takes the conversion from the 457(b) first, then the smallest of the rest.','403':'Takes the conversion from the 403(b) first, then the smallest of the rest.'},
  model:{fixed:'Converts exactly the amount I enter. The plan shows the tax it adds, how much to withhold, the refill and the safe-harbor check. The convert-more check still runs.',target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
-   auto:'Runs the Roth planner\'s lifetime search: tries effective-rate caps from 10% to 24% plus low-bracket plans, keeps the ones with the best sustainable spending, and picks the lowest lifetime tax among them. It often shows no conversion while I still have wages. Takes several seconds.',
+   auto:'Tries 15 strategies (no conversions, effective-rate caps from 10% to 24%, and filling the 12%, 22% or 24% bracket each year), runs each one year by year to age 100 with taxes, Medicare and my withdrawals, and picks the one that supports the most after-tax spending. When strategies are within 0.2% of each other, it picks the one with the lowest lifetime tax.',
    level:'Spreads conversions evenly over the years left until 74, sized so my first required distribution at 75 stays under a ceiling I set, without going above a bracket I choose.',
    none:'Skips the conversion. Use it in a year with unusually high income.'},
  ttype:{eff:'Effective rate = total federal income tax ÷ AGI, counting all income including wages, dividends and gains.',
