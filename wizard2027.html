@@ -527,14 +527,14 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
     pol={k:'level',v:Lv,cap:I.tbrk};C0=thisC(pol)}
   else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:I.camtN/(1+I.inf),v:I.camtN/(1+I.inf)}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
   const P=C0>0?prep(I,C0):zP;if(living==null)living=pol.k==='none'?zS:susSpend(P,pol,gR,cush,I.down);
-  const main=runYears(P,{S:living,pol,g:gR,end:100,rec:true,down0:I.down}),zero=runYears(zP,{S:zS,pol:{k:'none'},g:gR,end:100,rec:true,down0:I.down}),hi2=runYears(P,{S:living,pol,g:gR+.02,end:100,rec:true,down0:I.down});
+  const main=runYears(P,{S:living,pol,g:gR,end:100,rec:true,down0:I.down}),zero=runYears(zP,{S:zS,pol:{k:'none'},g:gR,end:100,rec:true,down0:I.down}),hi2=runYears(P,{S:living,pol,g:gR+.02,end:100,rec:true,down0:I.down}),zhi2=runYears(zP,{S:zS,pol:{k:'none'},g:gR+.02,end:100,rec:true,down0:I.down});
   const lim22=x=>{const r=rulesAt(x.y,I.yr,I.inf),t22=r.ord.find(b=>Math.round(b[0]*100)==22)[2],f=ira=>taxCore({wages:x.w,ira,int:x.intr,qdiv:x.div,ltcg:x.ltcg,ss:x.ss,o65:x.age>=65},r).ordT<=t22;
     if(!f(0))return 0;let lo=0,hi=5e6;for(let n=0;n<40;n++){const m=(lo+hi)/2;f(m)?lo=m:hi=m}return lo};
   const over=rows=>rows.find(x=>x.age>=75&&x.rmd>lim22(x)+1),r75=rows=>rows.find(x=>x.age===75);
   const m75=r75(main.rows),z75=r75(zero.rows),h75=r75(hi2.rows),ex=over(hi2.rows),N0=over(main.rows);
   const G=pickG||guardrailAT(I,P,{k:'sched',a:main.rows.map(x=>x.C)});
   return{pol,C0,note,living,zliving:zS,main,zero,Cnext:(main.rows[0]?main.rows[0].C:0)*(1+I.inf),a75:m75?{rmd:m75.rmd}:null,z75:z75?{rmd:z75.rmd}:null,
-    SA:{r75:h75?h75.rmd:0,lim75:h75?lim22(h75):0,ex:ex?ex.y:0},N0:N0?N0.y:0,dep:main.dep,short:main.short,tax:main.tax+main.irm,ztax:zero.tax+zero.irm,imb:Math.max(main.imb,zero.imb,hi2.imb),gR,G}}
+    SA:{r75:h75?h75.rmd:0,lim75:h75?lim22(h75):0,ex:ex?ex.y:0},N0:N0?N0.y:0,dep:main.dep,zdep:zero.dep,zr75h:(r75(zhi2.rows)||{rmd:0}).rmd,short:main.short,tax:main.tax+main.irm,ztax:zero.tax+zero.irm,ft:main.tax,zft:zero.tax,irm:main.irm,zirm:zero.irm,imb:Math.max(main.imb,zero.imb,hi2.imb,zhi2.imb),gR,G}}
 
 /* ---------- Inputs ---------- */
 function inputs(){saveWork();
@@ -766,10 +766,12 @@ function render(R){
   conv+=`<h3>Long-range check</h3><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
     <tr><td>Sustainable after-tax spending, today's $ (keeps the age-95 cushion)</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
-    <tr><td>Lifetime federal tax and IRMAA, today's $</td><td>${fmt(P.tax)}</td><td>${fmt(P.ztax)}</td></tr>
+    <tr><td>Lifetime federal income tax, today's $</td><td>${fmt(P.ft)}</td><td>${fmt(P.zft)}</td></tr>
+    <tr><td>Lifetime IRMAA surcharges, today's $</td><td>${fmt(P.irm)}</td><td>${fmt(P.zirm)}</td></tr>
+    <tr><td>Tax plus IRMAA</td><td>${fmt(P.tax)}</td><td>${fmt(P.ztax)}</td></tr>
     <tr><td>Age-75 RMD (today's $)</td><td>${P.a75?fmt(P.a75.rmd):'—'}</td><td>${P.z75?fmt(P.z75.rmd):'—'}</td></tr>
-    <tr><td>Age-75 RMD, growth +2 pts</td><td>${fmt(P.SA.r75)}</td><td></td></tr>
-    <tr><td>Brokerage runs out</td><td>${P.dep||'after '+(I.by+100)}</td><td></td></tr></table></div>
+    <tr><td>Age-75 RMD, growth +2 pts</td><td>${fmt(P.SA.r75)}</td><td>${fmt(P.zr75h)}</td></tr>
+    <tr><td>Brokerage runs out</td><td>${P.dep||'after '+(I.by+100)}</td><td>${P.zdep||'after '+(I.by+100)}</td></tr></table></div>
     <p class="note">Projection: ${(I.g*100).toFixed(1)}% growth (${(P.gR*100).toFixed(1)}% after inflation), my conversion strategy, and the same tax calculation as this year's figures, with brackets indexed to inflation. Each year is solved for its taxes and withdrawals together, at the most I could spend after tax. Cash-flow check: every projected year balances${P.imb<1?' to the dollar':` within ${fmt(P.imb)}`}.${P.short?' <span class="warn">Assets run short in this projection.</span>':''}</p>`;
 
   // Tax card
