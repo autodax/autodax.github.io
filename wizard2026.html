@@ -800,7 +800,7 @@ function render(R){
   if(I.meth==='bt')Object.assign(sp,{method:'bt',mix:mx,wrap:I.wrap?1:0});else if(I.meth==='cus'||I.mix%10)Object.assign(sp,{method:'mc',mix:'custom',src:'van',mean:I.M.mean,vol:I.M.vol});else Object.assign(sp,{method:'mc',mix:I.mix,src:I.meth});
   if(ssAmts!==DEFAMT.join(','))sp.ssAmts=ssAmts;
   const spendL='https://autodax.github.io/spend2026.html#'+q(sp);
-  const rp={living:Math.round(P.living),infl:I.inf*100,t403:Math.round(I.pre),g:I.g*100,roth:Math.round(I.roth),brk:Math.round(I.brk),gb:I.g*100,div:Math.round(I.div),basis:I.bp*100,start:I.yr,by:I.by,lw:I.lw,firstc:I.yr,lastc:I.by+I.cmax};
+  const rp={living:Math.round(P.living),infl:I.inf*100,g:I.g*100,p403:Math.round(num('p403'))||'',p457:Math.round(num('p457'))||'',pira:Math.round(num('pira'))||'',r403:Math.round(num('r403'))||'',r457:Math.round(num('r457'))||'',rira:Math.round(num('rira'))||'',brk:Math.round(I.brk),bas:Math.round(I.bas),div:Math.round(I.div),gb:I.g*100,cash:Math.round(I.cash)||'',cashmin:Math.round(I.cashMin)||'',ef:Math.round(I.ef)||'',efr:I.ef>0?+(I.int/I.ef*100).toFixed(2):'',corder:I.corder,start:I.yr,by:I.by,lw:I.lw,firstc:I.yr,lastc:I.by+I.cmax};
   for(let y=I.yr;y<=I.lw;y++)if(I.WK[y]){rp['w'+y+'a']=I.WK[y][0]||'';rp['w'+y+'b']=I.WK[y][1]||''}
   Object.assign(rp,{ssclaim:I.ssA||70,ttype:I.model==='auto'||I.model==='autog'?'auto':I.model==='level'?'level':I.ttype==='brk'?'brk':'eff',cmax:I.cmax,autosafe:'yes',tval:I.model==='level'||I.ttype==='brk'?I.tbrk:I.effPlan*100,rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush});
   const rothL='https://autodax.github.io/roth2026.html#'+q(rp);
