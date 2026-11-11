@@ -474,7 +474,7 @@ function prep(I,C0){const s=scenario(I,C0),Wh=I.pay==='qtr'?0:Math.min(s.owed,C0
   let brk=I.brk-P,bas=Math.max(0,I.bas-P*I.bp),cash=I.cash,rest=Math.max(0,s.owed-Wh-(P-refill));
   const cu=Math.min(rest,Math.max(0,cash-I.cashMin));cash-=cu;rest-=cu;const bu=Math.min(rest,brk);brk-=bu;bas=Math.max(0,bas-bu*I.bp);
   return{s,C0,Y0:I.yr,Y1:I.yr+1,by:I.by,inf:I.inf,lw:I.lw,WK:I.WK,ssA:I.ssA,ssY:I.ssM*12,cmax:I.cmax,cashMin:I.cashMin,
-    yld:I.brk>0?I.div/I.brk:0,efR:I.ef>0&&!I.intEst?I.int/I.ef:.03,
+    yld:I.brk>0?I.div/I.brk:0,efR:I.ef>0&&!I.intEst?Math.min(.06,I.int/I.ef):.03,
     st:{pre:Math.max(0,I.pre-C0-I.rmdP),roth:I.roth+C0-Wh+refill,brk,bas,cash,ef:I.ef,efp:Math.max(0,I.efp-(I.rmd-I.rmdP))},agiM1:I.lagi>0?I.lagi/(1+I.inf):s.t.tot,agi0:s.t.tot}}
 
 /* Run the years from next year on. opt: S (yearly after-tax spending, today's $), pol, g (real growth) or ret(k), down0, end (age), stop (stop at first shortfall), rec (keep rows) */
@@ -991,7 +991,7 @@ const ACCT_T={pre:[['403','403(b)'],['457','457(b)'],['ira','IRA']],roth:[['403'
 let ACC=[];
 const escA=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function accRender(){document.querySelectorAll('.acclist').forEach(box=>{const g=box.dataset.g,T=ACCT_T[g],E=g==='pre'||g==='brk';
-  box.innerHTML=ACC.map((a,i)=>[a,i]).filter(([a])=>a.g===g).map(([a,i])=>`<div class="accrow${T?'':' nt'}${E?'':' ne'}" data-i="${i}"><input class="an" type="text" value="${escA(a.n)}" placeholder="Account name" aria-label="Account name">${T?`<select class="at" aria-label="Account type">${T.map(([v,l])=>`<option value="${v}"${a.t===v?' selected':''}>${l}</option>`).join('')}</select>`:''}<input class="ab" type="number" inputmode="decimal" step="1000" value="${a.b?a.b:''}" placeholder="0" aria-label="Balance">${E?`<label class="ae"><input type="checkbox" class="aec"${a.e?' checked':''}><span class="aet-l">Emergency fund</span><span class="aet-s">Emergency</span></label>`:''}<button type="button" class="ax" aria-label="Remove this account">×</button></div>`).join('')+
+  box.innerHTML=ACC.map((a,i)=>[a,i]).filter(([a])=>a.g===g).map(([a,i])=>`<div class="accrow${T?'':' nt'}${E?'':' ne'}" data-i="${i}"><input class="an" type="text" value="${escA(a.n)}" placeholder="Account name" aria-label="Account name">${T?`<select class="at" aria-label="Account type">${T.map(([v,l])=>`<option value="${v}"${a.t===v?' selected':''}>${l}</option>`).join('')}</select>`:''}<input class="ab" type="text" inputmode="decimal" value="${a.b?(+a.b).toLocaleString('en-US'):''}" placeholder="0" aria-label="Balance">${E?`<label class="ae"><input type="checkbox" class="aec"${a.e?' checked':''}><span class="aet-l">Emergency fund</span><span class="aet-s">Emergency</span></label>`:''}<button type="button" class="ax" aria-label="Remove this account">×</button></div>`).join('')+
     `<div class="accfoot"><button type="button" class="btn ghost accadd">+ Add account</button><span class="accsum"></span></div>`});accSync(false)}
 function accSync(fire){const S=f=>ACC.filter(f).reduce((t,a)=>t+(+a.b||0),0),put=(id,v)=>{$(id).value=v?Math.round(v*100)/100:''};
   for(const[t,id]of[['403','p403'],['457','p457'],['ira','pira']])put(id,S(a=>a.g==='pre'&&!a.e&&a.t===t));
@@ -1009,7 +1009,7 @@ function accInit(){let a=null;try{a=JSON.parse($('acct').value||'null')}catch(e)
   for(const g of['pre','roth','brk','cash'])if(!ACC.some(a=>a.g===g))ACC.push({g,n:'',t:ACCT_T[g]?ACCT_T[g][0][0]:'',b:0,e:false});
   accRender()}
 document.addEventListener('input',e=>{const r=e.target.closest&&e.target.closest('.accrow');if(!r)return;e.stopImmediatePropagation();const a=ACC[+r.dataset.i];if(!a)return;
-  if(e.target.classList.contains('an'))a.n=e.target.value;else if(e.target.classList.contains('ab'))a.b=+e.target.value||0;accSync(true)},true);
+  if(e.target.classList.contains('an'))a.n=e.target.value;else if(e.target.classList.contains('ab'))a.b=+String(e.target.value).replace(/[^0-9.]/g,'')||0;accSync(true)},true);
 document.addEventListener('change',e=>{const r=e.target.closest&&e.target.closest('.accrow');if(!r)return;const a=ACC[+r.dataset.i];if(!a)return;
   if(e.target.classList.contains('at'))a.t=e.target.value;else if(e.target.classList.contains('aec'))a.e=e.target.checked;else return;accSync(true)});
 document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('.ax,.accadd');if(!x)return;
