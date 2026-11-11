@@ -1010,7 +1010,7 @@ async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchP
     if(rows)ins+=`<h3>${esc(t)}</h3><div class="scroll"><table class="inp">${rows}</table></div>`});
   const out=$('out').cloneNode(true);out.querySelectorAll('.no-save').forEach(e=>e.remove());
   const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');const d=new Date(),ds=d.toISOString().slice(0,10),dl=d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retirement plan ${esc(yr)} (saved ${ds})</title><style>${css}\n.inp td{text-align:left;white-space:normal}.inp td:first-child{font-family:var(--serif);width:60%}.inp td:last-child{font-family:var(--mono)}</style></head><body><div class="wrap">
+  const html=`<!DOCTYPE html><html lang="en" data-theme="light"><head><meta name="color-scheme" content="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retirement plan ${esc(yr)} (saved ${ds})</title><style>${css}\n.inp td{text-align:left;white-space:normal}.inp td:first-child{font-family:var(--serif);width:60%}.inp td:last-child{font-family:var(--mono)}</style></head><body><div class="wrap">
     <header class="top"><h1>Retirement plan for ${esc(yr)}</h1></header><p class="sub">Saved ${dl} from the Retirement Planning Wizard. <a href="${esc(base+'#'+qs)}">Reopen this plan in the wizard</a>.</p>
     ${out.innerHTML}<div class="card"><h2>What I entered</h2>${ins}</div></div></body></html>`;
   const fn=`plan${yr}-saved-${ds}.html`,msg=t=>{const m=$('saveplanmsg');if(m)m.textContent=t};
