@@ -796,7 +796,7 @@ function render(R){
     spend=`<div class="note" style="margin:0">After-tax spending budget for ${N} (Jan–Dec)</div><div class="big">${fmt(G.W)}</div><div>about <b>${fmt(G.W/12)}</b> a month. Federal taxes, including tax on Roth conversions, and Medicare premiums come on top.</div>
     <p class="note">${why}</p>
     <h3>Where it comes from in ${N}</h3>
-    <div class="scroll"><table><tr><th>Source</th><th>${N}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
+    <div class="scroll"><table><tr><th>Source</th><th>${N}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}${(()=>{const T=R.src.reduce((a,[k,x])=>a+x,0);return `<tr class="tot"><td>Total${R.med.mo>0?' (budget plus Medicare)':''}</td><td>${fmt(T)}</td><td>${fmt(T/12)}</td></tr>`})()}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${N}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
     <p class="note">Until January, keep my current pace. Next fall (${N}), enter my ${N} spending as that year's and the guardrails check it again.</p>`;
     const lad=[{W:G.Wraise,p:I.up,l:`Guardrail that triggers a raise (if the chance is above it)`},{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:`Guardrail that triggers a cut (if the chance is below it)`}];
