@@ -144,6 +144,7 @@ p{max-width:72ch}
  .wyear{padding:10px 0}
  .plan{gap:14px}
 }
+.fold{margin:8px 0}.fold>summary{cursor:pointer;color:var(--soft);font-size:.95em}.fold>summary:hover{color:var(--ink)}.foldin{margin:6px 0 4px;padding:8px 12px;border-left:3px solid var(--line);font-size:.95em}.foldin p{margin:.4em 0}.foldin ul,.foldin ol{margin:.3em 0;padding-left:1.3em}.foldin li{margin:.25em 0}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}@media (max-width:600px){body{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}}</style>
 </head>
@@ -268,7 +269,14 @@ p{max-width:72ch}
       <option value="auto">Auto: the most sustainable after-tax spending</option>
       <option value="autog">Auto with guardrails: the most after-tax spending at my target chance</option>
       <option value="level">Even out: keep the age-75 RMD under a ceiling</option>
-      <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div></div>
+      <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div>
+      <details class="fold"><summary>Which model should I use?</summary><div class="foldin"><ul>
+        <li><b><i>Auto with guardrails</i> (my default).</b> Tests 15 strategies against market history (or the simulated futures) and keeps the one that supports the most spending at my target chance; near-ties go to the lowest typical lifetime tax and IRMAA. The most realistic choice.</li>
+        <li><b><i>Auto</i>.</b> The same 15 strategies, judged with one steady growth rate. Faster and easier to follow year by year, but it ignores bad market stretches.</li>
+        <li><b>My tax target.</b> Converts up to an effective rate, the top of a bracket, or a total tax amount that I choose. Good when I already know the rate I'm willing to pay.</li>
+        <li><b>A set amount.</b> Converts exactly what I enter. Useful for trying "what if" amounts or matching a conversion already done.</li>
+        <li><b><i>Even out</i>.</b> Spreads conversions evenly so my first RMD at 75 stays under a ceiling I choose, without going past a bracket.</li>
+        <li><b>No conversion.</b> Skips this year. The plan still shows what converting would do.</li></ul></div></details></div>
     <div data-show="target" class="full"><label for="ttype">Tax target</label><select id="ttype">
       <option value="eff">Effective tax rate</option><option value="brk">Top of a bracket</option><option value="amt">Total tax amount</option></select><div class="explain" id="x-ttype"></div></div>
     <div data-show="target eff"><label for="teff">Effective rate (federal tax ÷ AGI), %</label><input id="teff" type="number" inputmode="decimal" step="0.5" value="17"><div class="help">If my wages alone already put me above it, no conversion fits.</div></div>
@@ -370,6 +378,7 @@ function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B7
 const ORD=[[.10,0,12800],[.12,12800,52025],[.22,52025,109125],[.24,109125,208325],[.32,208325,264550],[.35,264550,661375],[.37,661375,Infinity]];
 const QUAL=[[0,0,51050],[.15,51050,563200],[.20,563200,Infinity]];
 // IRMAA: 2026 tiers and premiums, carried over until Medicare publishes 2027 figures
+const fold=(t,h)=>`<details class="fold"><summary>${t}</summary><div class="foldin">${h}</div></details>`;
 const IRM=[[0,109000,202.90,0],[109000,137000,284.10,14.50],[137000,171000,405.80,37.50],[171000,205000,527.50,60.40],[205000,500000,649.20,83.30],[500000,Infinity,689.90,91.00]];
 const irmaaFor=m=>{let i=0;IRM.forEach((b,k)=>{if(m>b[0])i=k});const b=IRM[i];return{tier:i,annual:((b[2]-202.90)+b[3])*12}};
 function split(base,amt,br){let rem=amt,cur=base;return br.map(([r,lo,hi])=>{if(rem<=0||cur>=hi)return{r,lo,hi,x:0,t:0};const x=Math.min(rem,Math.max(0,hi-Math.max(lo,cur)));cur+=x;rem-=x;return{r,lo,hi,x,t:x*r}})}
@@ -504,6 +513,9 @@ function guardrailAT(I,P,pol){const yrs=I.end-(I.age+1)+1;if(yrs<1)return{err:'T
   return{prob,at,src:pth.src,N}}
 
 /* Long-range check across the same market futures as the guardrails: each strategy is run on every path at the spending its guardrails allow at my target chance */
+/* Typical (median) lifetime federal tax plus IRMAA across the market futures, at spending S */
+function histTax(I,P,pol,S){const yrs=I.end-(I.age+1)+1,pth=paths(I,yrs);if(pth.err)return null;const v=[];
+  for(let n=0;n<pth.N;n++){const r=runYears(P,{S,pol,ret:k=>pth.get(n,k),end:I.end,down0:I.down});v.push(r.tax+r.irm)}v.sort((a,b)=>a-b);return v[Math.floor((v.length-1)/2)]}
 function histCheck(I,P,pol,G,zP,GZ){const yrs=I.end-(I.age+1)+1,pth=paths(I,yrs);if(pth.err||G.err||GZ.err)return null;
   const one=(PP,pp,S)=>{const o=[];for(let n=0;n<pth.N;n++){const ret=k=>pth.get(n,k),r=runYears(PP,{S,pol:pp,ret,end:I.end,down0:I.down});o.push({ft:r.tax,irm:r.irm,r75:r.rmd75||0,dep:r.dep||Infinity})}return o};
   const S=G.at(I.tg),Sz=GZ.at(I.tg),a=one(P,pol,S),z=one(zP,{k:'none'},Sz);
@@ -519,10 +531,12 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
   let pickG=null;
   if(I.model==='autog'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
     cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;c.S=c.k==='none'?zS:susSpend(c.P,c,gR,cush,I.down);const o=runYears(c.P,{S:c.S,pol:c,g:gR,end:100,rec:true,down0:I.down});c.tax=o.tax+o.irm;
-      c.G=guardrailAT(I,c.P,{k:'sched',a:o.rows.map(x=>x.C)});c.score=c.G.err?0:c.G.at(I.tg)});
-    const best=Math.max(...cands.map(c=>c.score)),pick=cands.filter(c=>c.score>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0],zc=cands[0];pol=pick;C0=pick.C0;living=pick.S;pickG=pick.G;
+      c.sp={k:'sched',a:o.rows.map(x=>x.C)};c.G=guardrailAT(I,c.P,c.sp);c.score=c.G.err?0:c.G.at(I.tg)});
+    const best=Math.max(...cands.map(c=>c.score)),ties=cands.filter(c=>c.score>=best-Math.max(50,best*.002));
+    // Near-ties are settled by typical lifetime tax plus IRMAA across the same market futures (steady growth only if history is unavailable)
+    ties.forEach(c=>{const h=c.G.err?null:histTax(I,c.P,c.sp,c.score);c.htax=h==null?c.tax:h});const pick=ties.sort((a,b)=>a.htax-b.htax)[0],zc=cands[0];pol=pick;C0=pick.C0;living=pick.S;pickG=pick.G;
     note=(pick.k==='none'?'The <i>Auto with guardrails</i> model found that not converting supports the most after-tax spending.':pick.k==='eff'?`The <i>Auto with guardrails</i> model picked conversions up to ${/^(8|11|18)\d?$/.test(String(Math.round(pick.v*100)))?'an':'a'} ${Math.round(pick.v*100)}% effective rate each year through age ${I.cmax}.`:`The <i>Auto with guardrails</i> model picked filling the ${pick.v}% bracket each year through age ${I.cmax}.`)+
-      ` At my ${Math.round(I.tg*100)}% target chance, it supports ${fmt(pick.score)} a year of after-tax spending in today's dollars across ${pick.G.src||'the market futures'}${pick.score>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zc.score)}`}. Among strategies that close, it has the lowest lifetime federal tax and IRMAA.`}
+      ` At my ${Math.round(I.tg*100)}% target chance, it supports ${fmt(pick.score)} a year of after-tax spending in today's dollars across ${pick.G.src||'the market futures'}${pick.score>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zc.score)}`}.${ties.length>1?` Among the ${ties.length} strategies that close, it has the lowest typical lifetime federal tax and IRMAA across those futures (${fmt(pick.htax)}).`:''}`}
   else if(I.model==='auto'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
     cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;c.S=c.k==='none'?zS:susSpend(c.P,c,gR,cush,I.down);const o=runYears(c.P,{S:c.S,pol:c,g:gR,end:100,down0:I.down});c.tax=o.tax+o.irm});
     const best=Math.max(...cands.map(c=>c.S)),pick=cands.filter(c=>c.S>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0];pol=pick;C0=pick.C0;living=pick.S;
@@ -777,11 +791,26 @@ function render(R){
     <p class="note">Stays between ${fmt(G.Wraise)} (${Math.round(I.up*100)}% chance) and ${fmt(G.Wcut)} (${Math.round(I.lo*100)}% chance) at today's balances.</p>
     <div class="scroll"><table><tr><th>Source</th><th>${I.yr+1}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${I.yr+1}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
-    <p class="note">Counted: pre-tax, Roth and brokerage accounts, cash above my ${fmt(I.cashMin)} cushion, and the emergency fund only in years after the market drops more than 5%. Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`}
+    <p class="note">Counted: pre-tax, Roth and brokerage accounts, cash above my ${fmt(I.cashMin)} cushion, and the emergency fund only in years after the market drops more than 5%. Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`;
+    const HH=R.P&&R.P.H,inf1=1+I.inf;
+    spend+=fold('Why are there three spending numbers?',`<ul>
+      <li><b>${fmt(G.W)}: my budget for ${I.yr+1}</b> (in ${I.yr+1} dollars, ${fmt(G.W/inf1)} in today's). It comes from the guardrails: it starts from what I spent this year plus inflation and changes only if my chance of lasting drops below ${Math.round(I.lo*100)}% or rises above ${Math.round(I.up*100)}%. <b>This is the number to spend.</b></li>
+      ${HH?`<li><b>${fmt(HH.S)}: spending with ${/^(8|11|18)\d?$/.test(String(Math.round(I.tg*100)))?'an':'a'} ${Math.round(I.tg*100)}% chance of lasting</b> (today's dollars, in the long-range check). The most I could spend at my target chance across the market futures. If my budget is well below it, the guardrails will raise it once the chance passes ${Math.round(I.up*100)}%.</li>`:''}
+      ${R.P?`<li><b>${fmt(R.P.living)}: steady-growth spending</b> (today's dollars, in the reference table). The most I could spend if every year earned exactly ${(I.g*100).toFixed(1)}%. Real markets have bad stretches, so this overstates what is safe; it is there only to compare conversion strategies simply.</li>`:''}</ul>`);
+    spend+=fold('Where each year\'s money comes from',`<p>Every projected year pays for spending, Medicare premiums, Roth contributions from pay, FICA and federal tax in this order:</p><ol>
+      <li>Income: take-home wages, Social Security and any required distribution (RMD).</li>
+      <li>${I.cashMin>0?`Cash above my ${fmt(I.cashMin)} cushion.`:'Cash.'}</li>
+      <li>The emergency fund, but only in a year after the market dropped more than 5%.</li>
+      <li>Brokerage: only the gain on shares sold is taxed, at capital-gain rates.</li>
+      <li>Pre-tax accounts (taxed as ordinary income).</li>
+      <li>Roth last, since it never adds tax.</li></ol>
+      <p>Withdrawals raise the tax, and the tax needs more withdrawals, so each year's tax and withdrawals are solved together until they agree to the dollar.</p>`)}
 
   // Conversion card
   let conv=`<div class="tiles"><div class="tile"><div class="k">Conversion in ${I.yr}</div><div class="v">${fmt(R.C)}</div></div><div class="tile"><div class="k">Tax withheld (${I.yr})</div><div class="v">${fmt(R.Wh)}</div></div><div class="tile"><div class="k">Effective rate (${I.yr})</div><div class="v">${pc(t.eff)}</div></div><div class="tile"><div class="k">Top bracket (${I.yr})</div><div class="v">${Math.round(t.mar*100)}%</div></div></div>
     <p class="note" style="margin-top:0">${R.cWhy}</p>`;
+  if(I.age>=63&&R.C>0){const agi=t.tot;let k=0;for(let i=0;i<IRM.length;i++)if(agi>IRM[i][0])k=i;const sur=b=>((b[2]-PARTB)+b[3])*12,nx=IRM[k+1];
+    conv+=`<p class="note"><span class="pill">IRMAA</span> This conversion raises my ${I.yr} AGI to ${fmt(agi)}, and Medicare uses it to set my premiums in ${I.yr+2}, two years later. ${k===0?`That's under the first IRMAA threshold (${fmt(IRM[1][0])} in today's tiers), so no surcharge.`:`That's in IRMAA tier ${k} (above ${fmt(IRM[k][0])} in today's tiers), adding about ${fmt(sur(IRM[k]))} a year to Medicare.`}${nx?` Another ${fmt(nx[0]-agi)} of income would cross into the next tier (+${fmt(sur(nx)-sur(IRM[k]))} a year).`:''} Tiers rise with inflation, so check the ${I.yr+2} figures when they're published.</p>`}
   if(R.more)conv+=`<h3>Should I convert more?</h3><p class="note"><span class="pill ${R.more.yes?'warn':'ok'}">${R.more.yes?'Consider it':'Not needed'}</span> ${R.more.txt}</p>${R.more.down?`<p class="note"><span class="pill warn">Market down</span> ${R.more.down}</p>`:''}`;
   const cell=(m,lo,hi)=>`${fmt(m)}<div class="note" style="margin:0;font-size:.85em">${fk(lo)}–${fk(hi)}</div>`,yr=d=>d===Infinity||!d?`after ${I.by+I.end}`:d;
   const AH=P.alt?P.alt.H:null,c3=f=>AH?`<td>${f(AH)}</td>`:'';
@@ -793,7 +822,14 @@ function render(R){
     ${I.end>=75?`<tr><td>Age-75 RMD (${y75}), today's $: typical</td><td>${rk(H.A.r75[0])}</td>${c3(h=>rk(h.A.r75[0]))}<td>${rk(H.Z.r75[0])}</td></tr>
     <tr><td>Age-75 RMD in strong markets (best 1 in 10)</td><td>${rk(H.A.r75[1])}</td>${c3(h=>rk(h.A.r75[1]))}<td>${rk(H.Z.r75[1])}</td></tr>`:''}
     <tr><td>Brokerage runs out (typical)</td><td>${yr(H.A.dep)}</td>${c3(h=>yr(h.A.dep))}<td>${yr(H.Z.dep)}</td></tr></table></div>
-    <p class="note">Across ${H.src}. Each strategy is run on every path at the spending its guardrails allow at my ${Math.round(I.tg*100)}% target, with this plan's conversion schedule, my accounts, income, taxes and Medicare. "Typical" is the middle path; the small figures show the range of the middle 80%. Strong markets mean larger pre-tax balances, so bigger RMDs and more tax later.</p>`:'';
+    <p class="note">Across ${H.src}. Each strategy is run on every path at the spending its guardrails allow at my ${Math.round(I.tg*100)}% target, with this plan's conversion schedule, my accounts, income, taxes and Medicare. "Typical" is the middle path; the small figures show the range of the middle 80%. Strong markets mean larger pre-tax balances, so bigger RMDs and more tax later.</p>`+
+    fold('How to read this table',`<ul><li><b>Typical</b> is the middle future: half did better, half worse. The small range under it covers the middle 80%, leaving out the best and worst 1 in 10.</li>
+      <li>All amounts are in today's dollars and run to my plan-to age (${I.end}).</li>
+      <li><b>Strong markets</b> grow my pre-tax accounts the most, so they bring the biggest RMDs, the most tax and the most IRMAA later. That's the risk converting protects against.</li>
+      <li>"Fits in the 22% bracket alongside my Social Security" (${fmt(lim)}): the largest RMD that keeps my taxable income inside the 22% bracket at 75, after about 85% of my Social Security is taxed.</li></ul>`)+
+    fold('Why do the strategies end up so close?',`<p>Converting only helps when my tax rate later would be higher than the rate I pay now. Paying tax now and letting the Roth grow gives the same result as letting the pre-tax account grow and paying tax later at the same rate.</p>
+      <p>At my spending, the pre-tax withdrawals I need after my wages stop already fill the 22–24% brackets, conversion or not. So converting mostly changes <i>when</i> I pay the tax, not the rate. Tax paid early also gives up the growth that money would have earned, which offsets much of the lifetime tax saved. That's why spending barely changes between strategies, while lifetime tax and RMDs differ a lot.</p>
+      <p>Converting matters more if I spend less (pre-tax balances grow into large RMDs), if tax rates rise (not assumed here), or for my heirs, who must empty inherited pre-tax accounts within 10 years at their own tax rates. None of that shows up in my spending.</p>`):'';
   conv+=`<details style="margin-top:8px"><summary class="note" style="cursor:pointer">Steady-growth projection (${(I.g*100).toFixed(1)}% every year), for reference</summary><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
     <tr><td>Sustainable after-tax spending to 100 (keeps the age-95 cushion), today's $</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
@@ -808,6 +844,8 @@ function render(R){
   const brT=(rows,f)=>rows.map(r=>`<tr class="${r.x>0?'':'zero'}"><td>${Math.round(r.r*100)}%</td><td>${fmt(r.lo)}${r.hi===Infinity?'+':' – '+fmt(r.hi)}</td><td>${fmt(r.x)}</td><td>${fmt(r.t)}</td></tr>`).join('');
   const irThis=I.o65?irmaaFor(I.agi2).annual:0;
   let tax=`<div class="tiles"><div class="tile"><div class="k">Federal tax</div><div class="v">${fmt(t.tax)}</div></div><div class="tile"><div class="k">AGI</div><div class="v">${fmt(t.tot)}</div></div><div class="tile"><div class="k">Taxable income</div><div class="v">${fmt(Math.max(0,t.tot-t.ded))}</div></div><div class="tile"><div class="k">Still owed after paychecks</div><div class="v">${fmt(S.owed)}</div></div></div>
+  ${fold(`Effective rate (${pc(t.eff)}) vs. top bracket (${Math.round(t.mar*100)}%)`,`<p><b>Effective rate</b> is my total federal tax divided by my AGI: the average rate on everything. It's lower than my bracket because the first dollars are taxed at 0%, 10% and 12%.</p>
+    <p><b>Top bracket</b> is the rate on my last dollar of ordinary income, so it's what each <i>extra</i> dollar of conversion costs. Once Social Security has started, an extra converted dollar can also make more of my benefit taxable, and it can push capital gains from 0% to 15%, so the real cost of a dollar can be higher than the bracket. Conversion targets based on effective rate set an average; the bracket is the price of going further.</p>`)}
   <div class="scroll"><table><tr><th>Income</th><th>${I.yr}</th></tr>
     ${row('Wages',fmt(t.w))}${row('Pre-tax withdrawals and conversion',fmt(t.i))}${t.ss?row(`Social Security (${fmt(t.tss)} taxable)`,fmt(t.ss)):''}${(t.it?row('Interest',fmt(t.it)):'')+row('Dividends (qualified)',fmt(t.qd))}${row(S.g>0?`Long-term gains (incl. ${fmt(S.g)} on the sale that pays the tax)`:'Long-term gains',fmt(t.lt))}${t.st?row('Short-term gains',fmt(t.st)):''}
     ${row('Standard deduction','−'+fmt(t.ded))}${row('Taxable income',fmt(Math.max(0,t.tot-t.ded)),'tot')}</table></div>
