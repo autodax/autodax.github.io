@@ -726,7 +726,7 @@ function render(R){
     if(R.more&&(R.more.yes||R.more.down))li+=`<li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li>`;
     todo.push(li+'</ul>');
   }else{
-    let li=`<span class="when">This year (${I.yr})</span><div>No Roth conversion in ${I.yr}. ${R.cWhy}</div>`;
+    let li=`<span class="when">This year (${I.yr})</span><div><span class="pill info">No Roth conversion in ${I.yr}</span> ${R.cWhy}</div>`;
     if(I.pay!=='qtr'&&S.owed>0&&R.Cmin)li+=R.safe?`<ul><li>I'll still owe about ${fmt(S.owed)} when I file in April ${I.yr+1}, with no penalty, since my withholding already covers the safe harbor (see the next item). If I'd rather not owe anything, a conversion of ${fmt(R.Cmin)} with 100% withheld (refilled from brokerage) would cover it.</li></ul>`:`<ul><li>I still owe about ${fmt(S.owed)} after paycheck withholding, and that's short of the safe harbor (see the next item). A conversion of ${fmt(R.Cmin)} with 100% withheld (refilled from brokerage) would pay it without estimated payments.</li></ul>`;
     if(R.more&&(R.more.yes||R.more.down))li+=`<ul><li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li></ul>`;
     todo.push(li);
@@ -784,14 +784,14 @@ function render(R){
       <li>Sign up through Social Security (ssa.gov/medicare). Claiming Social Security benefits isn't required.</li></ul>`;
     todo.push(li)}
   if(I.ssA&&I.age===I.ssA-1)todo.push(`<span class="when">Aug ${I.yr+1}</span><div>Apply for Social Security about three months before I turn ${I.ssA} in November ${I.yr+1}.</div>`);
-  if(I.ssA&&I.age===I.ssA)todo.push(`<span class="when">Now (${I.yr})</span><div>Social Security starts this year (${I.yr}) if I haven't applied yet. Apply about three months before my November birthday.</div>`);
+  if(I.ssA&&I.age===I.ssA)todo.push(`<span class="when">Now (${I.yr})</span><div><span class="pill info">Social Security starts this year (${I.yr})</span> If I haven't applied yet, apply about three months before my November birthday.</div>`);
   if(I.age+2>=65){const A=t.tot,ir=irmaaFor(A),i=ir.tier,Y2=I.yr+2;let li=`<span class="when">Medicare ${Y2}</span><div>${I.yr}'s AGI of <b class="amt">${fmt(A)}</b> sets my ${Y2} Medicare surcharge (IRMAA): `;
     if(i===0)li+=`<span class="pill ok">No surcharge</span> I could add up to ${fmt(IRM[1][0]-A)} more income this year (${I.yr}), from a bigger conversion, say, before the first tier.</div>`;
     else{const down=A-IRM[i][0],save=ir.annual-irmaaFor(IRM[i][0]-1).annual,up=IRM[i][1]===Infinity?0:IRM[i][1]-A,cost=up?irmaaFor(IRM[i][1]+1).annual-ir.annual:0;
       li+=`<span class="pill warn">Tier ${i}</span> about <b class="amt">${fmt(ir.annual)}</b> a year in surcharges.</div><ul><li>${fmt(down)} less income would drop a tier and save ${fmt(save)} a year.</li>${up?`<li>${fmt(up)} more would reach the next tier, adding ${fmt(cost)} a year.</li>`:''}</ul>`}
     li+=`<p class="note">2026 tiers for a single filer (Medicare hasn't published 2027's yet); they rise with inflation, and one dollar over a line triggers the whole tier.</p>`;
     todo.push(li)}
-  if(I.age>=74&&I.age<75)todo.push(`<span class="when">Next year (${I.yr+1})</span><div>RMDs start next year (${I.yr+1}) at 75. Conversions should stop after this year (${I.yr}).</div>`);
+  if(I.age>=74&&I.age<75)todo.push(`<span class="when">Next year (${I.yr+1})</span><div><span class="pill info">RMDs start next year (${I.yr+1})</span> I turn 75, so conversions should stop after this year (${I.yr}).</div>`);
   if(I.rmd>0)todo.push(`<span class="when">By Dec 31, ${I.yr}</span><div>Take my RMD of <b class="amt">${fmt(I.rmd)}</b> from pre-tax accounts. It can't be converted.</div>`);
 
   // Spending card
