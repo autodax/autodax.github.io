@@ -610,8 +610,8 @@ function compute(){const I=inputs();
   const sTmp=I.model==='target'||I.model==='fixed'?scenario(I,R.C||0):R.base;
   I.effPlan=(I.model==='target'&&I.ttype==='amt')||I.model==='fixed'?Math.max(.05,sTmp.t.eff):I.teff/100;
   R.P=longRange(I,canConv,R);
-  {const G0=R.P.G,f=1+I.inf;if(G0.err)R.G={err:G0.err};else if(I.lspBlank){const S=G0.at(I.tg);R.G={mode:'target',W:S*f,P1:G0.prob(S),Wcut:G0.at(I.lo)*f,Wraise:G0.at(I.up)*f,src:G0.src}}
-    else{const S0=I.lsp,P0=G0.prob(S0),Sc=G0.at(I.lo),Sr=G0.at(I.up),S=Math.min(Math.max(S0,Sr),Sc);R.G={mode:S0>Sc?'cut':S0<Sr?'raise':'hold',W:S*f,W0:S0*f,P0,P1:G0.prob(S),Wcut:Sc*f,Wraise:Sr*f,Tlast:I.lsp,src:G0.src}}}
+  {const G0=R.P.G,f=1+I.inf;if(G0.err)R.G={err:G0.err};else if(I.lspBlank){const S=G0.at(I.tg);R.G={mode:'target',W:S*f,P1:G0.prob(S),Wtg:S*f,Wcut:G0.at(I.lo)*f,Wraise:G0.at(I.up)*f,src:G0.src}}
+    else{const S0=I.lsp,P0=G0.prob(S0),Sc=G0.at(I.lo),Sr=G0.at(I.up),S=Math.min(Math.max(S0,Sr),Sc);R.G={mode:S0>Sc?'cut':S0<Sr?'raise':'hold',W:S*f,Wtg:G0.at(I.tg)*f,W0:S0*f,P0,P1:G0.prob(S),Wcut:Sc*f,Wraise:Sr*f,Tlast:I.lsp,src:G0.src}}}
   if(I.model==='auto'||I.model==='autog'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C0,Math.max(0,I.pre-I.rmd))/100)*100:0;
     R.cWhy=(canConv?R.P.note:`I'm past my last conversion age (${I.cmax}).`)+(canConv&&R.C===0?` The planner has no conversion in ${I.yr}${I.wage>0?', mostly because of my wages':''}.`:'')}
   if(I.model==='none'){R.C=0;R.cWhy=`I chose not to convert this year (${I.yr}).`}
@@ -787,15 +787,17 @@ function render(R){
       cut:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives only a ${pf(G.P0)}% chance, below my ${Math.round(I.lo*100)}% guardrail, so spending is held at the guardrail.`,raise:`This year's (${I.yr}) ${fmt(G.Tlast)} plus inflation gives a ${pf(G.P0)}% chance, above my ${Math.round(I.up*100)}% guardrail, so spending is raised to it.`}[G.mode];
     spend=`<div class="note" style="margin:0">After-tax spending budget for ${I.yr+1} (Jan–Dec)</div><div class="big">${fmt(G.W)}</div><div>about <b>${fmt(G.W/12)}</b> a month. Federal taxes, including tax on Roth conversions, and Medicare premiums come on top.</div>
     <p class="note">${mode} Chance my money lasts to ${I.end} at this amount: <b>${Math.round(G.P1*100)}%</b>, across ${G.src}. Each future is run year by year with my accounts, income, taxes, Roth conversions and Medicare.</p>
-    <p class="note">Stays between ${fmt(G.Wraise)} (${Math.round(I.up*100)}% chance) and ${fmt(G.Wcut)} (${Math.round(I.lo*100)}% chance) at today's balances.</p>
+    ${(()=>{const lad=[{W:G.Wraise,p:I.up,l:'Raise guardrail: a higher chance raises the budget'},{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:'Cut guardrail: a lower chance cuts the budget'}];
+      const hit=lad.find(r=>Math.abs(r.W-G.W)<1);if(hit)hit.me=1;else lad.push({W:G.W,p:G.P1,l:'',me:1});lad.sort((a,b)=>a.W-b.W);
+      return `<div class="scroll"><table><tr><th>Spending in ${I.yr+1}</th><th>Chance it lasts to ${I.end}</th><th></th></tr>${lad.map(r=>`<tr${r.me?' class="tot"':''}><td>${fmt(r.W)}</td><td>${Math.round(r.p*100)}%</td><td style="text-align:left">${r.me?'<b>My budget</b>'+(r.l?' · ':''):''}${r.l}</td></tr>`).join('')}</table></div><p class="note" style="margin-top:4px">In ${I.yr+1} dollars, at today's balances. Spending more lowers the chance.</p>`})()}
     <div class="scroll"><table><tr><th>Source</th><th>${I.yr+1}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${I.yr+1}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
     <p class="note">Counted: pre-tax, Roth and brokerage accounts, cash above my ${fmt(I.cashMin)} cushion, and the emergency fund only in years after the market drops more than 5%. Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`;
     const HH=R.P&&R.P.H,inf1=1+I.inf;
-    spend+=fold('Why are there three spending numbers?',`<ul>
-      <li><b>${fmt(G.W)}: my budget for ${I.yr+1}</b> (in ${I.yr+1} dollars, ${fmt(G.W/inf1)} in today's). It comes from the guardrails: it starts from what I spent this year plus inflation and changes only if my chance of lasting drops below ${Math.round(I.lo*100)}% or rises above ${Math.round(I.up*100)}%. <b>This is the number to spend.</b></li>
-      ${HH?`<li><b>${fmt(HH.S)}: spending with ${/^(8|11|18)\d?$/.test(String(Math.round(I.tg*100)))?'an':'a'} ${Math.round(I.tg*100)}% chance of lasting</b> (today's dollars, in the long-range check). The most I could spend at my target chance across the market futures. If my budget is well below it, the guardrails will raise it once the chance passes ${Math.round(I.up*100)}%.</li>`:''}
-      ${R.P?`<li><b>${fmt(R.P.living)}: steady-growth spending</b> (today's dollars, in the reference table). The most I could spend if every year earned exactly ${(I.g*100).toFixed(1)}%. Real markets have bad stretches, so this overstates what is safe; it is there only to compare conversion strategies simply.</li>`:''}</ul>`);
+    spend+=fold('How do these spending numbers fit together?',`<ul>
+      <li><b>${fmt(G.W)}, my budget for ${I.yr+1}.</b> <b>This is the number to spend.</b> The guardrails start from what I spent this year plus inflation and change it only if the chance of lasting drops below ${Math.round(I.lo*100)}% or rises above ${Math.round(I.up*100)}%.</li>
+      <li><b>The table above</b> shows how the chance changes with spending, all in ${I.yr+1} dollars. My ${Math.round(I.tg*100)}% target amount, ${fmt(G.Wtg)}, is the same figure the long-range check shows for "This plan" as ${HH?fmt(HH.S):fmt(G.Wtg/inf1)}, because that table is in today's dollars.</li>
+      ${R.P?`<li><b>Steady-growth spending, ${fmt(R.P.living)}</b> (today's dollars, about ${fmt(R.P.living*inf1)} in ${I.yr+1}), is in the "Steady-growth projection" table under the long-range check. It assumes every year earns exactly ${(I.g*100).toFixed(1)}%, so it overstates what is safe; it's there only to compare conversion strategies simply.</li>`:''}</ul>`);
     spend+=fold('Where each year\'s money comes from',`<p>Every projected year pays for spending, Medicare premiums, Roth contributions from pay, FICA and federal tax in this order:</p><ol>
       <li>Income: take-home wages, Social Security and any required distribution (RMD).</li>
       <li>${I.cashMin>0?`Cash above my ${fmt(I.cashMin)} cushion.`:'Cash.'}</li>
