@@ -714,7 +714,7 @@ function render(R){
     todo.push(li+'</ul>');
   }else{
     let li=`<span class="when">This year (${I.yr})</span><div>No Roth conversion in ${I.yr}. ${R.cWhy}</div>`;
-    if(I.pay!=='qtr'&&S.owed>0&&R.Cmin)li+=`<ul><li>I still owe about ${fmt(S.owed)} after paycheck withholding. A conversion of ${fmt(R.Cmin)} with 100% withheld (refilled from brokerage) would pay it without estimated payments.</li></ul>`;
+    if(I.pay!=='qtr'&&S.owed>0&&R.Cmin)li+=R.safe?`<ul><li>I'll still owe about ${fmt(S.owed)} when I file in April ${I.yr+1}, with no penalty, since my withholding already covers the safe harbor (see the next item). If I'd rather not owe anything, a conversion of ${fmt(R.Cmin)} with 100% withheld (refilled from brokerage) would cover it.</li></ul>`:`<ul><li>I still owe about ${fmt(S.owed)} after paycheck withholding, and that's short of the safe harbor (see the next item). A conversion of ${fmt(R.Cmin)} with 100% withheld (refilled from brokerage) would pay it without estimated payments.</li></ul>`;
     if(R.more&&(R.more.yes||R.more.down))li+=`<ul><li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li></ul>`;
     todo.push(li);
   }
@@ -740,7 +740,7 @@ function render(R){
   // Next year estimate reminder
   {const N=R.N,NC=R.NC,Y=I.yr+1,conv=NC.C>0,rw=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
     const req=Math.min(.9*NC.tax,N.prior),minX=Math.max(0,req-N.wh),tot=NC.total,hp=Math.max(0,NC.gainTax+NC.other);
-    let li=`<span class="when">Planning ${Y}'s tax now</span> <span class="pill info">Estimate for now</span>`;
+    let li=`<span class="when">Planning ${Y}'s tax now</span> <span class="pill info">Estimated for now</span>`;
     li+=`<div>${conv?`With a ${Y} Roth conversion of about <b class="amt">${fmt(NC.C)}</b> (${NC.why}), `:`With no ${Y} conversion (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}), `}${Y}'s federal tax comes to about <b class="amt">${fmt(NC.tax)}</b> (${pc(NC.eff)} effective). Paychecks will withhold about ${fmt(N.wh)}, leaving <b class="amt">${fmt(tot)}</b> to cover:</div>
     <div class="scroll" style="margin:6px 0"><table>
       ${Math.abs(NC.other)>=1?rw(NC.other>0?'Wages and dividends, beyond paycheck withholding':'Paychecks over-withhold on wages and dividends',(NC.other>0?'':'− ')+fmt(Math.abs(NC.other))):''}
