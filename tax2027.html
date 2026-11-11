@@ -685,7 +685,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
       </div>
 
       <div class="field">
-        <label>Dividends</label>
+        <label>Dividends and interest</label>
         <div class="divgroup">
           <div class="field">
             <label for="qdiv">Qualified dividends</label>
@@ -696,12 +696,12 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
             <span class="hint">Taxed at long-term capital gains rates (0/15/20%)</span>
           </div>
           <div class="field">
-            <label for="ndiv">Ordinary (non-qualified) dividends</label>
+            <label for="ndiv">Interest and ordinary (non-qualified) dividends</label>
             <div class="amount-wrap">
               <span class="dollar">$</span>
               <input type="number" id="ndiv" min="0" step="500" placeholder="0" inputmode="decimal">
             </div>
-            <span class="hint">Taxed as ordinary income, same as wages</span>
+            <span class="hint">Bank, money-market and T-bill interest, plus non-qualified dividends. Taxed as ordinary income, same as wages</span>
           </div>
         </div>
       </div>
@@ -752,7 +752,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
         </thead>
         <tbody></tbody>
         <tfoot>
-          <tr><td colspan="3" class="tfoot-label">Ordinary income tax<small>Wages + IRA + ordinary dividends + short-term gains + taxable SS</small></td><td class="total-amount" style="text-align:right;vertical-align:top" id="ordinaryTotal">$0</td></tr>
+          <tr><td colspan="3" class="tfoot-label">Ordinary income tax<small>Wages + IRA + interest and ordinary dividends + short-term gains + taxable SS</small></td><td class="total-amount" style="text-align:right;vertical-align:top" id="ordinaryTotal">$0</td></tr>
         </tfoot>
       </table>
 
@@ -805,7 +805,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
             <tr id="srcWagesRow"><td class="rate tfoot-label">Wages<small>Taxed first</small></td><td style="text-align:right" id="srcWagesInc">$0</td><td style="text-align:right" id="srcWagesTax">$0</td><td style="text-align:right" id="srcWagesRate">—</td></tr>
             <tr id="srcSsRow"><td class="rate">Taxable Social Security</td><td style="text-align:right" id="srcSsInc">$0</td><td style="text-align:right" id="srcSsTax">$0</td><td style="text-align:right" id="srcSsRate">—</td></tr>
             <tr id="srcIraRow"><td class="rate tfoot-label">IRA / Roth conv.<small>Stacked on top of other ordinary income</small></td><td style="text-align:right" id="srcIraInc">$0</td><td style="text-align:right" id="srcIraTax">$0</td><td style="text-align:right" id="srcIraRate">—</td></tr>
-            <tr id="srcDivRow"><td class="rate tfoot-label">Dividends<small>Ordinary + qualified, incl. NIIT</small></td><td style="text-align:right" id="srcDivInc">$0</td><td style="text-align:right" id="srcDivTax">$0</td><td style="text-align:right" id="srcDivRate">—</td></tr>
+            <tr id="srcDivRow"><td class="rate tfoot-label">Dividends and interest<small>Interest, ordinary + qualified dividends, incl. NIIT</small></td><td style="text-align:right" id="srcDivInc">$0</td><td style="text-align:right" id="srcDivTax">$0</td><td style="text-align:right" id="srcDivRate">—</td></tr>
             <tr id="srcGainRow"><td class="rate tfoot-label">Capital gains<small>Short + long term, incl. NIIT</small></td><td style="text-align:right" id="srcGainInc">$0</td><td style="text-align:right" id="srcGainTax">$0</td><td style="text-align:right" id="srcGainRate">—</td></tr>
             <tr id="srcIrmaaRow"><td class="rate tfoot-label">Medicare IRMAA (est.)<small>From your 2-years-prior MAGI</small></td><td style="text-align:right" id="srcIrmaaInc">$0</td><td style="text-align:right" id="srcIrmaaTax">$0</td><td style="text-align:right" id="srcIrmaaRate">—</td></tr>
           </tbody>
@@ -817,7 +817,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
         <div class="summary-line"><span>Still owed after wage withholding<br><small style="font-size:0.66rem;">Negative = over-withheld</small></span><span class="v" id="srcStillOwed">$0</span></div>
         <details class="foot-note" style="margin-top:6px;">
           <summary>How this is calculated</summary>
-          <p>This splits the same taxes shown elsewhere on the page, so the rows add up to the total. Ordinary tax is layered through the brackets from the bottom: wages first, then taxable Social Security, ordinary dividends, short-term gains, and the IRA withdrawal / Roth conversion last, so it carries the highest ordinary bracket rate. The standard deduction is applied to the lowest layers first. Qualified dividends and long-term gains are taxed at 0/15/20% on top of ordinary taxable income, and the 3.8% NIIT is shared across dividends and gains in proportion to each. The employer estimate is tax on wages alone with the standard deduction; your actual withholding depends on your W-4, pay frequency, and bonuses.</p>
+          <p>This splits the same taxes shown elsewhere on the page, so the rows add up to the total. Ordinary tax is layered through the brackets from the bottom: wages first, then taxable Social Security, interest and ordinary dividends, short-term gains, and the IRA withdrawal / Roth conversion last, so it carries the highest ordinary bracket rate. The standard deduction is applied to the lowest layers first. Qualified dividends and long-term gains are taxed at 0/15/20% on top of ordinary taxable income, and the 3.8% NIIT is shared across dividends and gains in proportion to each. The employer estimate is tax on wages alone with the standard deduction; your actual withholding depends on your W-4, pay frequency, and bonuses.</p>
         </details>
       </div>
 
