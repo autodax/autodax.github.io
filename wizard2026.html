@@ -705,7 +705,7 @@ function render(R){
   }
   // Estimated tax
   {const yrs=[[I.yr,3,15],[I.yr,5,15],[I.yr,8,15],[I.yr+1,0,15]];
-    let li=`<span class="when">${I.pay==='qtr'?'Quarterly':'Before April 15, '+(I.yr+1)}</span>`;
+    let li=`<span class="when">${I.pay==='qtr'?`Quarterly, for ${I.yr}'s tax`:'Before April 15, '+(I.yr+1)}</span>`;
     if(I.pay==='qtr'){li+=`<div>Pay estimated tax of <b class="amt">${fmt(R.qEach)}</b> each quarter (${R.prior==null?'90% of this year\'s ('+I.yr+') tax':'safe harbor'} minus paycheck withholding).</div><ul>`+yrs.map(([y,m,d])=>`<li>${MONTHS[m]} ${d}, ${y}${dt(y,m,d)?' <span class="pill warn">past</span>':''}</li>`).join('')+'</ul>';
       if(yrs.some(([y,m,d])=>dt(y,m,d)))li+=`<p class="note">Missed quarters can be made up: tax withheld from a conversion before Dec 31 counts as paid evenly through the year.</p>`}
     else li+=R.safe?`<div><span class="pill ok">No estimated payments needed</span> Withholding of ${fmt(R.pays)} covers the ${fmt(R.req)} safe-harbor amount${R.prior==null?' (90% of this year\'s ('+I.yr+') tax; enter last year\'s ('+(I.yr-1)+') tax on step 2 to check 110% of it)':''}. Withholding counts as paid evenly through the year.</div>`:
@@ -755,7 +755,7 @@ function render(R){
       <li>Sign up through Social Security (ssa.gov/medicare). Claiming Social Security benefits isn't required.</li></ul>`;
     todo.push(li)}
   if(I.ssA&&I.age===I.ssA-1)todo.push(`<span class="when">Aug ${I.yr+1}</span><div>Apply for Social Security about three months before I turn ${I.ssA} in November ${I.yr+1}.</div>`);
-  if(I.ssA&&I.age===I.ssA)todo.push(`<span class="when">Now</span><div>Social Security starts this year (${I.yr}) if I haven't applied yet. Apply about three months before my November birthday.</div>`);
+  if(I.ssA&&I.age===I.ssA)todo.push(`<span class="when">Now (${I.yr})</span><div>Social Security starts this year (${I.yr}) if I haven't applied yet. Apply about three months before my November birthday.</div>`);
   if(I.age+2>=65){const A=t.tot,ir=irmaaFor(A),i=ir.tier,Y2=I.yr+2;let li=`<span class="when">Medicare ${Y2}</span><div>${I.yr}'s AGI of <b class="amt">${fmt(A)}</b> sets my ${Y2} Medicare surcharge (IRMAA): `;
     if(i===0)li+=`<span class="pill ok">No surcharge</span> I could add up to ${fmt(IRM[1][0]-A)} more income this year (${I.yr}), from a bigger conversion, say, before the first tier.</div>`;
     else{const down=A-IRM[i][0],save=ir.annual-irmaaFor(IRM[i][0]-1).annual,up=IRM[i][1]===Infinity?0:IRM[i][1]-A,cost=up?irmaaFor(IRM[i][1]+1).annual-ir.annual:0;
@@ -774,12 +774,12 @@ function render(R){
     spend=`<div class="note" style="margin:0">After-tax spending budget for ${I.yr+1} (Jan–Dec)</div><div class="big">${fmt(G.W)}</div><div>about <b>${fmt(G.W/12)}</b> a month. Federal taxes, including tax on Roth conversions, and Medicare premiums come on top.</div>
     <p class="note">${mode} Chance my money lasts to ${I.end} at this amount: <b>${Math.round(G.P1*100)}%</b>, across ${G.src}. Each future is run year by year with my accounts, income, taxes, Roth conversions and Medicare.</p>
     <p class="note">Stays between ${fmt(G.Wraise)} (${Math.round(I.up*100)}% chance) and ${fmt(G.Wcut)} (${Math.round(I.lo*100)}% chance) at today's balances.</p>
-    <div class="scroll"><table><tr><th>Source</th><th>Year</th><th>Month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
+    <div class="scroll"><table><tr><th>Source</th><th>${I.yr+1}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${I.yr+1}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
     <p class="note">Counted: pre-tax, Roth and brokerage accounts, cash above my ${fmt(I.cashMin)} cushion, and the emergency fund only in years after the market drops more than 5%. Until January, keep my current pace. Next fall (${I.yr+1}), enter my ${I.yr+1} spending as that year's.</p>`}
 
   // Conversion card
-  let conv=`<div class="tiles"><div class="tile"><div class="k">Conversion in ${I.yr}</div><div class="v">${fmt(R.C)}</div></div><div class="tile"><div class="k">Tax withheld</div><div class="v">${fmt(R.Wh)}</div></div><div class="tile"><div class="k">Effective rate</div><div class="v">${pc(t.eff)}</div></div><div class="tile"><div class="k">Top bracket</div><div class="v">${Math.round(t.mar*100)}%</div></div></div>
+  let conv=`<div class="tiles"><div class="tile"><div class="k">Conversion in ${I.yr}</div><div class="v">${fmt(R.C)}</div></div><div class="tile"><div class="k">Tax withheld (${I.yr})</div><div class="v">${fmt(R.Wh)}</div></div><div class="tile"><div class="k">Effective rate (${I.yr})</div><div class="v">${pc(t.eff)}</div></div><div class="tile"><div class="k">Top bracket (${I.yr})</div><div class="v">${Math.round(t.mar*100)}%</div></div></div>
     <p class="note" style="margin-top:0">${R.cWhy}</p>`;
   if(R.more)conv+=`<h3>Should I convert more?</h3><p class="note"><span class="pill ${R.more.yes?'warn':'ok'}">${R.more.yes?'Consider it':'Not needed'}</span> ${R.more.txt}</p>${R.more.down?`<p class="note"><span class="pill warn">Market down</span> ${R.more.down}</p>`:''}`;
   const cell=(m,lo,hi)=>`${fmt(m)}<div class="note" style="margin:0;font-size:.85em">${fk(lo)}–${fk(hi)}</div>`,yr=d=>d===Infinity||!d?`after ${I.by+I.end}`:d;
@@ -839,9 +839,9 @@ function render(R){
   <p class="note">The planner uses its own built-in Social Security amounts. ${R.mixNote||''}</p>`;
 
   return`<div class="plan">
-  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My ${I.yr} to-do list</h2><ol class="todo">${todo.map(x=>`<li><div>${x}</div></li>`).join('')}</ol></div>
-  <div class="card"><h2>How much to pay myself</h2>${spend}</div>
-  <div class="card"><h2>Roth conversion</h2>${conv}</div>
+  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My to-do list for the rest of ${I.yr} and ${I.yr+1}</h2><ol class="todo">${todo.map(x=>`<li><div>${x}</div></li>`).join('')}</ol></div>
+  <div class="card"><h2>How much to pay myself in ${I.yr+1}</h2>${spend}</div>
+  <div class="card"><h2>Roth conversion in ${I.yr}</h2>${conv}</div>
   <div class="card span"><h2>${I.yr} tax scenario</h2>${tax}</div>
   <div class="card span"><h2>Cross-checking in my apps</h2>${links}</div>
   <div class="card span no-save"><h2>Keep a record</h2><p class="note" style="margin-top:0">Saves a dated copy of this plan, with everything I entered and a link to reopen it, as one HTML file to keep with this year's tools.</p><div class="btns" style="justify-content:flex-start"><button class="btn" type="button" id="saveplan">Save this year's plan</button></div><p class="note" id="saveplanmsg"></p></div>
