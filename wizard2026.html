@@ -164,6 +164,7 @@ p{max-width:72ch}
 .accfoot .btn{white-space:nowrap}
 @media (max-width:640px){.accrow{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) auto auto;column-gap:6px;row-gap:6px}.accrow.nt{grid-template-columns:minmax(0,1fr) auto auto}.accrow.nt.ne{grid-template-columns:minmax(0,1fr) auto}.accrow .an{grid-column:1/-1}.accrow .aet-l{display:none}.accrow .aet-s{display:inline}.accrow + .accrow{border-top:1px solid var(--line);padding-top:8px}}
 .todo details.deep{margin:10px 0 2px}
+.sub{margin:14px 0 4px}.sub>h4{margin:0 0 4px;font:600 .95rem var(--serif);color:var(--ink)}.sub p{margin:.4em 0}
 .todo details.deep>summary{cursor:pointer;font:600 .92rem var(--serif);color:var(--green);list-style-position:outside}
 .todo .deepin{margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 .todo .deepin h3:first-child{margin-top:0}
@@ -393,7 +394,8 @@ function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B7
 /* ---------- This year's tax (tax estimator, 2026 rules) ---------- */
 const ORD=[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]];
 const QUAL=[[0,0,49450],[.15,49450,545500],[.20,545500,Infinity]];
-const fold=(t,h)=>`<details class="fold"><summary>${t}</summary><div class="foldin">${h}</div></details>`;
+// a titled section inside a plan item (plain, not another dropdown)
+const fold=(t,h)=>`<div class="sub"><h4>${t}</h4>${h}</div>`;
 const IRM=[[0,109000,202.90,0],[109000,137000,284.10,14.50],[137000,171000,405.80,37.50],[171000,205000,527.50,60.40],[205000,500000,649.20,83.30],[500000,Infinity,689.90,91.00]];
 const irmaaFor=m=>{let i=0;IRM.forEach((b,k)=>{if(m>b[0])i=k});const b=IRM[i];return{tier:i,annual:((b[2]-202.90)+b[3])*12}};
 function split(base,amt,br){let rem=amt,cur=base;return br.map(([r,lo,hi])=>{if(rem<=0||cur>=hi)return{r,lo,hi,x:0,t:0};const x=Math.min(rem,Math.max(0,hi-Math.max(lo,cur)));cur+=x;rem-=x;return{r,lo,hi,x,t:x*r}})}
@@ -894,14 +896,14 @@ function render(R){
     <tr><td>Brokerage runs out, typical future</td><td>${yr(H.A.dep)}</td>${c3(h=>yr(h.A.dep))}<td>${yr(H.Z.dep)}</td></tr></table></div>`+
     fold('How these numbers are made',`<p><b>This plan</b> is the conversion method from step 3 (${nm.toLowerCase()}). <b>Fill 24% bracket</b> and <b>No conversions</b> are shown for comparison. Each is run year by year on every one of ${H.src}, with my accounts, income and taxes${andMed}, ${FX?`spending my chosen ${fmt(I.setsp)} a year plus inflation`:`spending the most its guardrails allow at my ${tgp}% target`}. A <b>typical future</b> is the middle one: half came out higher and half lower. <b>Strong markets</b> grow my pre-tax accounts the most, so they bring the biggest RMDs, tax and IRMAA later; that's the risk converting protects against.${FX?' <b>Left after tax</b> counts Roth, brokerage and cash in full, and pre-tax money after tax at my own bracket at the end.':''}</p>`)+
     fold('Why the strategies often end up close',`<p>Converting only helps when my tax rate later would be higher than the rate I pay now: paying tax now and letting the Roth grow gives the same result as paying the same rate later. When my spending already draws the pre-tax accounts down through the 22–24% brackets, converting mostly changes <i>when</i> I pay, not the rate, and tax paid early gives up growth. Converting matters more if I spend less, if tax rates rise (not assumed here), or for heirs, who must empty inherited pre-tax accounts within 10 years at their own rates.</p>`):'';
-  conv+=`<details style="margin-top:8px"><summary class="note" style="cursor:pointer">Steady-growth projection (${(I.g*100).toFixed(1)}% every year), for reference</summary><div class="scroll"><table>
+  conv+=`<div class="sub"><h4>Steady-growth projection (${(I.g*100).toFixed(1)}% every year), for reference</h4><div class="scroll"><table>
     <tr><th></th><th>This plan</th><th>No conversions</th></tr>
     <tr><td>Most I can spend after tax each year so the money lasts to 100 with my cushion left at 95, in today's dollars</td><td>${fmt(P.living)}</td><td>${fmt(P.zliving)}</td></tr>
     <tr><td>Federal income tax to 100</td><td>${fmt(P.ft)}</td><td>${fmt(P.zft)}</td></tr>
     <tr><td>IRMAA surcharges to 100</td><td>${fmt(P.irm)}</td><td>${fmt(P.zirm)}</td></tr>
     <tr><td>Age-75 RMD (${y75})</td><td>${P.a75?rk(P.a75.rmd):'—'}</td><td>${P.z75?rk(P.z75.rmd):'—'}</td></tr>
     <tr><td>Brokerage runs out</td><td>${P.dep||'after '+(I.by+100)}</td><td>${P.zdep||'after '+(I.by+100)}</td></tr></table></div>
-    <p class="note">Every year earns exactly ${(I.g*100).toFixed(1)}% (${(P.gR*100).toFixed(1)}% after inflation), so no bad years. It overstates what I can spend; my budget comes from the guardrails instead. Each year is solved for its taxes and withdrawals together. Cash-flow check: every projected year balances${P.imb<1?' to the dollar':` within ${fmt(P.imb)}`}.${P.short?' <span class="warn">Assets run short in this projection.</span>':''}</p></details>`;
+    <p class="note">Every year earns exactly ${(I.g*100).toFixed(1)}% (${(P.gR*100).toFixed(1)}% after inflation), so no bad years. It overstates what I can spend; my budget comes from the guardrails instead. Each year is solved for its taxes and withdrawals together. Cash-flow check: every projected year balances${P.imb<1?' to the dollar':` within ${fmt(P.imb)}`}.${P.short?' <span class="warn">Assets run short in this projection.</span>':''}</p></div>`;
 
   // Tax card
   const row=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
@@ -951,7 +953,7 @@ function render(R){
 
   return`<div class="plan">
   <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My to-do list</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<div class="note" style="margin-top:8px"><b>How to cover it');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
-    const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<details class="fold"><summary>[^<]*<\/summary><div class="foldin">/,'').replace(/<\/div><\/details>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
+    const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<div class="sub"><h4>[^<]*<\/h4>/,'').replace(/<\/div>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
     return `<li><div>${x}${D&&D[1]?`<details class="deep"><summary>${D[0]}</summary><div class="deepin">${D[1]}</div></details>`:''}</div></li>`}).join('')}</ol></div>
   <div class="card span"><h2>Cross-checking in my apps</h2>${links}</div>
   <div class="card span no-save"><h2>Keep a record</h2><p class="note" style="margin-top:0">Saves a dated copy of this plan, with everything I entered and a link to reopen it, as one HTML file to keep with this year's tools.</p><div class="btns" style="justify-content:flex-start"><button class="btn" type="button" id="saveplan">Save this year's plan</button></div><p class="note" id="saveplanmsg"></p></div>
