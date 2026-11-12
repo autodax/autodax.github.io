@@ -209,15 +209,15 @@ p{max-width:72ch}
   <div class="group">Taxable brokerage</div>
   <div class="acclist" data-g="brk"></div>
   <div class="grid" style="margin-top:10px">
-    <div><label for="bas">Cost basis, total ($)</label><input id="bas" type="number" inputmode="decimal" step="1000" value="172000"><div class="help" id="basHint"></div><div class="help">What I paid for my brokerage holdings (not counting the emergency fund), including reinvested dividends. Usually shown on the positions page as total cost basis. The wizard uses it to work out how much of each brokerage sale is taxable gain.</div></div>
-    <div><label for="div">Dividends per year</label><input id="div" type="number" inputmode="decimal" step="100" value="4000"><div class="help">Dividends the brokerage paid over the last 12 months. Taxed every year even when reinvested.</div></div>
+    <div><label for="bas">Cost basis, total ($)</label><input id="bas" type="number" inputmode="decimal" step="1000" value=""><div class="help" id="basHint"></div><div class="help">What I paid for my brokerage holdings (not counting the emergency fund), including reinvested dividends. Usually shown on the positions page as total cost basis. The wizard uses it to work out how much of each brokerage sale is taxable gain.</div></div>
+    <div><label for="div">Dividends per year</label><input id="div" type="number" inputmode="decimal" step="100" value=""><div class="help">Dividends the brokerage paid over the last 12 months. Taxed every year even when reinvested.</div></div>
   </div>
   <div class="group">Cash (checking and savings)</div>
   <div class="acclist" data-g="cash"></div>
   <div class="grid" style="margin-top:10px">
     <div><label for="cashMin">Cash to keep on hand (optional)</label><input id="cashMin" type="number" inputmode="decimal" step="500" value="" placeholder="0"><div class="help">The plan won't spend checking below this amount.</div></div>
   </div>
-  <div hidden id="accTotals"><input id="p403" type="number" value="1500000"><input id="p457" type="number" value=""><input id="pira" type="number" value=""><input id="r403" type="number" value="258000"><input id="r457" type="number" value=""><input id="rira" type="number" value=""><input id="brk" type="number" value="344000"><input id="ef" type="number" value=""><input id="efp" type="number" value=""><input id="cash" type="number" value=""><input id="acct" type="text" value=""></div>
+  <div hidden id="accTotals"><input id="p403" type="number" value=""><input id="p457" type="number" value=""><input id="pira" type="number" value=""><input id="r403" type="number" value=""><input id="r457" type="number" value=""><input id="rira" type="number" value=""><input id="brk" type="number" value=""><input id="ef" type="number" value=""><input id="efp" type="number" value=""><input id="cash" type="number" value=""><input id="acct" type="text" value=""></div>
   <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px">
     <div><label for="mkt0">Market value a year ago (optional)</label><input id="mkt0" type="number" inputmode="decimal" step="any" value=""><div class="help">My main stock fund's price on this date last year (<span class="y" data-o="-1"></span>), or the S&amp;P 500 level. Any measure works if both boxes use the same one. S&amp;P 500 closes for every day of the past year: <a href="https://finance.yahoo.com/quote/%5EGSPC/history/" target="_blank" rel="noopener">Yahoo Finance</a> or <a href="https://fred.stlouisfed.org/series/SP500" target="_blank" rel="noopener">FRED</a>. On a weekend or holiday, use the last trading day before it. Dividends aren't counted, which makes a drop look slightly bigger.</div></div>
     <div><label for="mkt1">Market value now (optional)</label><input id="mkt1" type="number" inputmode="decimal" step="any" value=""><div class="help" id="mktHint">If I fill in both, the next question is answered automatically.</div></div>
@@ -237,8 +237,8 @@ p{max-width:72ch}
   <p class="lead">This year's (<span class="y" data-o="0"></span>) income sets the tax for the <span class="y" data-o="0"></span> tax year, which decides how much I can convert. This year's (<span class="y" data-o="0"></span>) spending is the starting point for next year's (<span class="y" data-o="1"></span>) budget.</p>
   <div class="grid">
     <div><label for="yr">Plan year</label><input id="yr" type="number" inputmode="numeric" step="1" value="2027"><div class="help">The year I'm doing this in. The conversion and tax are for this year (<span class="y" data-o="0"></span>); the spending budget is for January–December of next year (<span class="y" data-o="1"></span>).</div></div>
-    <div><label for="by">Birth year (November birthday)</label><input id="by" type="number" inputmode="numeric" step="1" value="1966"><div class="help">Sets my age for the standard deduction, Medicare, Social Security and RMDs (which start at 75).</div></div>
-    <div><label for="lw">Last working year</label><input id="lw" type="number" inputmode="numeric" step="1" value="2028"><div class="help">The last calendar year I'll earn a salary. Changing it adds or removes the wage rows below.</div></div>
+    <div><label for="by">Birth year (November birthday)</label><input id="by" type="number" inputmode="numeric" step="1" value=""><div class="help">Sets my age for the standard deduction, Medicare, Social Security and RMDs (which start at 75).</div></div>
+    <div><label for="lw">Last working year</label><input id="lw" type="number" inputmode="numeric" step="1" value=""><div class="help">The last calendar year I'll earn a salary. Changing it adds or removes the wage rows below.</div></div>
   </div>
   <div class="group">Wages and Roth contributions by year</div>
   <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Future years are estimates in that year's dollars.</p>
@@ -256,7 +256,7 @@ p{max-width:72ch}
   </div>
   <div class="group">This year (<span class="y" data-o="0"></span>) and next year (<span class="y" data-o="1"></span>)</div>
   <div class="grid">
-    <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value="110000"><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Medicare premiums, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this amount. If I leave this blank, the wizard sets next year's budget to the amount that has my target chance (step 4) of lasting.</div></div>
+    <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value=""><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Medicare premiums, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this amount. If I leave this blank, the wizard sets next year's budget to the amount that has my target chance (step 4) of lasting.</div></div>
     <div><label for="bwd">Brokerage withdrawals this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="bwd" type="number" inputmode="decimal" step="500" value="" placeholder="calculated"><div class="help" id="bwdHint"></div></div>
     <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>)</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. It covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
     <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. The wizard uses it for the safe harbor: the minimum I must pay during the year, through withholding or estimated payments, to avoid an underpayment penalty.</div></div>
@@ -366,7 +366,7 @@ const pc=(x,d=1)=>(x*100).toFixed(d)+'%';
 const sumT=r=>r.reduce((a,x)=>a+x.t,0);
 
 /* ---------- Social Security ---------- */
-const AGES=[62,63,64,65,66,67,68,69,70],DEFAMT=[2316,2513,2729,3008,3294,3587,3692,4043,4648];
+const AGES=[62,63,64,65,66,67,68,69,70],DEFAMT=['','','','','','','','',''];
 $('ssgrid').innerHTML=AGES.map((a,i)=>`<div><label for="ss${a}">Age ${a}</label><input id="ss${a}" type="number" inputmode="decimal" step="1" value="${DEFAMT[i]}"></div>`).join('');
 function ssTable(){const t={};AGES.forEach(a=>{const x=num('ss'+a);if(x>0)t[a]=x});return t}
 function rebuildSS(){const cur=val('ssa')||'70',t=ssTable(),av=AGES.filter(a=>t[a]);
@@ -375,7 +375,7 @@ function rebuildSS(){const cur=val('ssa')||'70',t=ssTable(),av=AGES.filter(a=>t[
 $('mix').innerHTML=[100,95,90,85,80,70,60,50,40,30,20].map(p=>`<option value="${p}"${p==90?' selected':''}>${p} / ${100-p}</option>`).join('');
 
 /* ---------- Wages by year ---------- */
-const WK={2026:[210000,71500],2027:[138000,71500],2028:[113000,70000]};
+const WK={};
 function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y=+e.dataset.y;(WK[y]=WK[y]||[0,0])[+e.dataset.k]=+e.value||0})}
 function renderWork(){saveWork();const s=num('yr'),l=Math.min(num('lw'),s+30);let h='';
   if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);
@@ -989,6 +989,7 @@ function show(s){cur=s;{const b=document.querySelector(`#steps button[data-s="${
   document.querySelectorAll('#steps button').forEach(b=>{if(+b.dataset.s===s)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
   window.scrollTo(0,0);fitSelects();if(s===5)plan()}
 function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dataset.done)return;lastKey=key;
+  if(!(num('by')>1900)){$('out').innerHTML='<div class="card"><p class="warn">Enter my birth year on step 2 to see my plan.</p></div>';$('out').dataset.done='';lastKey='';return}
   $('out').dataset.done='';$('out').innerHTML='<div class="working">Working out my plan…</div>';
   setTimeout(()=>{let h;try{h=render(compute())}catch(e){h=`<div class="card"><p class="warn">Something in the inputs couldn't be calculated (${e.message}). Check the steps above.</p></div>`}
     $('out').innerHTML=h;$('out').dataset.done='1'},30)}
@@ -1078,7 +1079,7 @@ document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest
   if(x.classList.contains('ax')){const i=+x.closest('.accrow').dataset.i;ACC.splice(i,1)}
   else{const g=x.closest('.acclist').dataset.g;ACC.push({g,n:'',t:ACCT_T[g]?ACCT_T[g][0][0]:'',b:0,e:false})}
   const box=x.closest('.acclist'),add=x.classList.contains('accadd');accRender();accSync(true);if(add&&box){const rows=box.querySelectorAll('.accrow');const l=rows[rows.length-1];if(l)l.querySelector('.an').focus()}});
-function state(){saveWork();const o={};fields().forEach(e=>{if(e.value!=='')o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
+function state(){saveWork();const o={};fields().forEach(e=>{o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
 function save(){try{localStorage.setItem('rpwState',JSON.stringify(state()))}catch(e){}}
 function load(o){if(!o)return;if(o._wk){try{const w=JSON.parse(o._wk);Object.keys(WK).forEach(k=>delete WK[k]);Object.assign(WK,w)}catch(e){}}
   Object.keys(o).forEach(k=>{if(/^w\d{4}[ab]$/.test(k)){const y=+k.slice(1,5);(WK[y]=WK[y]||[0,0])[k[5]==='a'?0:1]=+o[k]||0}});
@@ -1092,19 +1093,16 @@ const b64u={to:u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharC
   from:t=>{const s=atob(t.replace(/-/g,'+').replace(/_/g,'/'));const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}};
 const chk=t=>{let h=0x811c9dc5;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)};
 const pipe=async(u,st)=>new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(st)).arrayBuffer());
-// To keep links short, the link leaves out: entries that match the wizard's starting values (DEF), the Social Security
-// amounts by age (they stay as written in this file), and the account totals (rebuilt from the account list).
-let DEF={};const TOT=['p403','p457','pira','r403','r457','rira','brk','ef','efp','cash'],GI={pre:'p',roth:'r',brk:'b',cash:'c'},IG={p:'pre',r:'roth',b:'brk',c:'cash'};
-function slim(o){const x={...o};Object.keys(x).forEach(k=>{if(/^ss\d\d$/.test(k)||x[k]===DEF[k])delete x[k]});
-  Object.keys(DEF).forEach(k=>{if(!(k in o)&&!/^ss\d\d$/.test(k))x[k]=''});
-  if(x.acct){TOT.forEach(k=>delete x[k]);try{x.acct=JSON.parse(x.acct).map(a=>{const r=[GI[a.g],a.n,+a.b||0];if(a.t||a.e)r.push(a.t||'');if(a.e)r.push(1);return r})}catch(e){}}
-  return x}
-function fatten(x){const o={...DEF,...x};
+// Short links saved for a few minutes on Nov 12, 2026 (#c=...) left out entries that matched these starting values.
+const OLD_DEF={"bas":"172000","div":"4000","p403":"1500000","r403":"258000","brk":"344000","down":"no","yr":"2027","by":"1966","lw":"2028","lsp":"110000","ssa":"70","ss62":"2316","ss63":"2513","ss64":"2729","ss65":"3008","ss66":"3294","ss67":"3587","ss68":"3692","ss69":"4043","ss70":"4648","model":"target","ttype":"eff","teff":"17","tbrk":"22","tamt":"40000","rtgt":"40000","corder":"small","cmax":"74","pay":"roll","meth":"bt","mix":"90","mean":"6","vol":"14","wrap":"0","inf":"3","bmode":"g","end":"93","tgt":"85","lowP":"72","upP":"95","cush":"300000"};
+const IG={p:'pre',r:'roth',b:'brk',c:'cash'};
+function fatten(x){const o={...OLD_DEF,...x};
   if(Array.isArray(x.acct))o.acct=JSON.stringify(x.acct.map(r=>({g:IG[r[0]],n:r[1],t:r[3]||'',b:r[2],e:!!r[4]})));
   return o}
-async function packState(o){const j=JSON.stringify(slim(o));
+// The link carries every entry, including blank ones, so it never depends on values written in this file.
+async function packState(o){const j=JSON.stringify(o);
   if(typeof CompressionStream==='undefined')return new URLSearchParams(o).toString();
-  return 'c='+b64u.to(await pipe(new TextEncoder().encode(j),new CompressionStream('deflate-raw')))+'.'+chk(j)}
+  return 'z='+b64u.to(await pipe(new TextEncoder().encode(j),new CompressionStream('deflate-raw')))+'.'+chk(j)}
 async function fromHash(){const h=location.hash.slice(1);if(!h||!h.includes('='))return null;
   if(/^[cz]=/.test(h)){try{const [d,c]=h.slice(2).split('.');const j=new TextDecoder().decode(await pipe(b64u.from(d),new DecompressionStream('deflate-raw')));
       if(chk(j)!==c)throw 0;const o=JSON.parse(j);return h[0]==='c'?fatten(o):o}catch(e){linkDamaged();return null}}
@@ -1118,7 +1116,7 @@ async function saveLink(){const s=state();delete s._wk;const qs=await packState(
   try{navigator.clipboard.writeText(u).then(()=>done(true),()=>{try{i.select();done(document.execCommand('copy'))}catch(e){done(false)}})}catch(e){done(false)}}
 
 rebuildSS();
-(async()=>{DEF=state();delete DEF._wk;let initial=await fromHash();if(!initial){try{initial=JSON.parse(localStorage.getItem('rpwState')||'null')}catch(e){}}
+(async()=>{let initial=await fromHash();if(!initial){try{initial=JSON.parse(localStorage.getItem('rpwState')||'null')}catch(e){}}
 load(initial);if(!ACC.length)accInit();renderWork();sync()})();
 document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#work'))saveWork();if(e.target.id==='yr'||e.target.id==='lw')renderWork();if(/^ss\d\d$/.test(e.target.id))rebuildSS();sync();save();$('out').dataset.done=''});
 document.addEventListener('change',()=>{sync();save()});
