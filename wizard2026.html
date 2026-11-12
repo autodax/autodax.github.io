@@ -743,8 +743,7 @@ function render(R){
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='now'});
   // Conversion
   if(R.C>0){
-    const AC=I.accRows.map(a=>({...a})).sort((a,b)=>a.b-b.b);
-    {const f=AC.findIndex(a=>a.c===I.corder);if(f>0)AC.unshift(AC.splice(f,1)[0])}
+    const AC=I.accRows.map(a=>({...a})).sort((a,b)=>(b.c===I.corder)-(a.c===I.corder)||a.b-b.b);
     let left=R.C;const SPL=[];for(const a of AC){if(left<=0)break;const x=Math.min(left,a.b);SPL.push({n:a.n,x,all:x>=a.b-1});left-=x}
     let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax to Roth${SPL.length===1?`, from the <b>${SPL[0].n}</b>${SPL[0].all?' (empties it)':''}`:''}.</div><ul>`;
     if(SPL.length>1)li+=`<li>From: ${SPL.map(p=>`${p.n} <b class="amt">${fmt(p.x)}</b>${p.all?' (empties it)':''}`).join('; ')}. Split the withholding in proportion, or take it all from the largest piece.</li>`;
@@ -987,7 +986,7 @@ function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dat
 const OPT={
  down:{no:'Normal year: spending comes from take-home pay first, then cash, then brokerage.',
    yes:'Spend from the emergency fund instead of selling investments that just fell, and consider converting more (each dollar converted moves more shares). How to tell: I compare my main stock fund or the S&P 500 to the same date last year ({Y-1}), dividends included. In 1871–2022 history, using the fund after a 5% drop worked as well as any threshold, and it worked best spent once rather than refilled.'},
- corder:{small:'Takes the conversion from the account with the smallest pre-tax balance first, so accounts empty out and close sooner on the way to one Roth account.',ira:'Takes the conversion from the traditional IRA first, then the smallest of the rest.','457':'Takes the conversion from the 457(b) first, then the smallest of the rest.','403':'Takes the conversion from the 403(b) first, then the smallest of the rest.'},
+ corder:{small:'Converts from the smallest pre-tax account first, so accounts empty out and close sooner.',ira:'Converts from the traditional IRA first, then the smallest of the rest.','457':'Converts from the 457(b) first, then the smallest of the rest.','403':'Converts from the 403(b) accounts first, then the smallest of the rest.'},
  model:{fixed:'Converts exactly the amount I enter. The plan shows the tax it adds, how much to withhold, the refill and the safe-harbor check. The convert-more check still runs.',target:'Converts as much as fits under a limit I choose, using this year\'s ({Y0}) actual income. Simple and year-by-year.',
    autog:'Tries the same 15 strategies as Auto, but scores each one across the guardrail futures (historical or simulated, from step 4) instead of one steady growth rate: the after-tax spending it supports at my target chance of lasting. Picks the best score; near-ties go to the lowest lifetime tax. Each strategy follows its own conversion schedule in every future. Takes a few seconds.',
  auto:'Tries 15 strategies (no conversions, effective-rate caps from 10% to 24%, and filling the 12%, 22% or 24% bracket each year), runs each one year by year to age 100 with taxes, Medicare and my withdrawals, and picks the one that supports the most after-tax spending. When strategies are within 0.2% of each other, it picks the one with the lowest lifetime tax.',
@@ -1006,6 +1005,9 @@ const OPT={
    cus:'Random simulated markets using return and volatility I type in, for example from another firm\'s forecast.'},
  wrap:{0:'Uses only start years with a complete history after them (fewer, but all real).',1:'Lets late start years loop back to 1871 so every year is a start year. Artificial joins; treat results with some caution.'}};
 function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e)e.textContent=(OPT[k][val(k)]||'').replace(/\{Y(-?\d)\}/g,(m,o)=>yy+ +o)}
+  // the conversion order with the accounts entered on step 1
+  {const e=$('x-corder');if(e&&typeof ACC!=='undefined'){const co=val('corder'),TN={403:'403(b)',457:'457(b)',ira:'Traditional IRA'},L=ACC.filter(a=>a.g==='pre'&&!a.e&&+a.b>0).map(a=>({n:a.n||TN[a.t],c:a.t,b:+a.b})).sort((a,b)=>(b.c===co)-(a.c===co)||a.b-b.b),E=ACC.filter(a=>a.g==='pre'&&a.e&&+a.b>0);
+    if(L.length)e.innerHTML=escA(OPT.corder[co]||'')+`<ol style="margin:6px 0 0;padding-left:1.4em">${L.map(a=>`<li>${escA(a.n)}${a.n.toLowerCase().includes(TN[a.c].toLowerCase())?'':' · '+TN[a.c]} · ${fmt(a.b)}</li>`).join('')}</ol>`+(E.length?`<div style="margin-top:4px">Never converted (emergency fund): ${E.map(a=>escA(a.n||'pre-tax')).join(', ')}.</div>`:'')}}
   document.querySelectorAll('.y').forEach(e=>{e.textContent=yy?String(yy+ +e.dataset.o):''});
   {const m=$('model');if(m){m.options[0].text=`My tax target for this year (${yy})`;m.querySelector('option[value=none]').text=`No conversion this year (${yy})`}}
   const t=ssTable(),a=+val('ssa');if($('x-ssa'))$('x-ssa').textContent=a?`Benefits start in November ${num('by')+a}, the month I turn ${a}, so the wizard counts one month in that first year. ${a===70?'Claiming at 70 gives the largest benefit for life, and it works like an inflation-protected annuity.':'Claiming before 70 gives a smaller benefit for life.'} Amounts come from my statement below.`:'';}
