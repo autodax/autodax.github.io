@@ -163,6 +163,10 @@ p{max-width:72ch}
 .accrow .aet-s{display:none}
 .accfoot .btn{white-space:nowrap}
 @media (max-width:640px){.accrow{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) auto auto;column-gap:6px;row-gap:6px}.accrow.nt{grid-template-columns:minmax(0,1fr) auto auto}.accrow.nt.ne{grid-template-columns:minmax(0,1fr) auto}.accrow .an{grid-column:1/-1}.accrow .aet-l{display:none}.accrow .aet-s{display:inline}.accrow + .accrow{border-top:1px solid var(--line);padding-top:8px}}
+.todo details.deep{margin:10px 0 2px}
+.todo details.deep>summary{cursor:pointer;font:600 .92rem var(--serif);color:var(--green);list-style-position:outside}
+.todo .deepin{margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.todo .deepin h3:first-child{margin-top:0}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}@media (max-width:600px){body{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}}</style>
 </head>
@@ -702,7 +706,7 @@ function render(R){
   // Link to the tax estimator for next year's figures (next year's file when it exists)
   const taxNext=()=>{const p=R.NC.tp,ny=I.yr+1,file=FILEYEAR===2026?'tax2027.html':`tax${FILEYEAR}.html`,o={wages:Math.round(p.wages),wrate:Math.ceil(p.wh+(I.pay==='wh'?Math.min(R.NC.total,R.NC.C):0)),wtype:'amt',ira:Math.round(p.ira),ssa:Math.round(p.ssa),ndiv:Math.round(p.ndiv),qdiv:Math.round(p.qdiv),stcg:0,ltcgPlan:Math.round(p.ltcgPlan),ltcg:Math.ceil(p.ltcg),magi2yr:p.o65?Math.round(I.lagi||0):0,age:p.o65?'over65':'under65',solveBasis:I.bp*100,bracketSel:I.tbrk,rateSel:Math.min(22,Math.max(15,Math.round(I.teff)))};
     return{url:'https://autodax.github.io/'+file+'#'+Object.entries(o).filter(([k,v])=>v!==''&&v!=null&&!Number.isNaN(v)).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&'),yr:file.slice(3,7),ny}};
-  let todo=[];
+  let todo=[];const KIND=[];
   {const N=I.NOW;if(!I.lspBlank){const m=Math.max(0,11-today.getMonth()),rows=[['Take-home pay',N.thp],['Social Security',N.ss],['Required minimum distribution',N.rmd],['Other pre-tax withdrawals',N.oth],['Brokerage',N.bwd]].filter(x=>x[1]>0);
     let li=`<span class="when">Jan–Dec ${I.yr}</span><div>This year's (${I.yr}) spending: about <b class="amt">${fmt(N.spend)}</b>, paid from:</div><ul>`;
     rows.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)}${k==='Take-home pay'&&N.w?` (${fmt(N.w)} wages − ${fmt(N.k)} Roth − ${fmt(N.wh)} federal tax − ${fmt(N.fica)} FICA, Social Security and Medicare tax)`:''}${k==='Brokerage'?`${N.typed?' (as entered)':' (what\'s left after the other sources)'}, about ${fmt(N.bwd/12)} a month`:''}</li>`});
@@ -712,6 +716,7 @@ function render(R){
     if(N.bwd>0&&m>0)li+=`<p class="note">Through December, keep brokerage transfers at about ${fmt(N.bwd/12)} a month.</p>`;
     if(N.thp>0)li+=`<p class="note">Take-home pay is an estimate that leaves out insurance and other paycheck deductions. My real paychecks will be a bit smaller, so I may need to withdraw a little more from brokerage. If I know my actual withdrawals, type them on step 2.</p>`;
     todo.push(li)}}
+  todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='now'});
   // Conversion
   if(R.C>0){
     const AC=I.accRows.map(a=>({...a})).sort((a,b)=>a.b-b.b);
@@ -735,6 +740,7 @@ function render(R){
     if(R.more&&(R.more.yes||R.more.down))li+=`<ul><li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li></ul>`;
     todo.push(li);
   }
+  todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='conv'});
   // Estimated tax
   {const yrs=[[I.yr,3,15],[I.yr,5,15],[I.yr,8,15],[I.yr+1,0,15]];
     let li=`<span class="when">${I.pay==='qtr'?`Quarterly, for ${I.yr}'s tax`:'Before April 15, '+(I.yr+1)}</span>`;
@@ -743,6 +749,7 @@ function render(R){
     else li+=R.safe?`<div><span class="pill ok">No estimated payments needed</span> Withholding of ${fmt(R.pays)} covers the ${fmt(R.req)} safe-harbor amount${R.prior==null?' (90% of this year\'s ('+I.yr+') tax; enter last year\'s ('+(I.yr-1)+') tax on step 2 to check 110% of it)':''}. Withholding counts as paid evenly through the year.</div>`:
       `<div><span class="pill warn">Underpayment risk</span> Withholding of ${fmt(R.pays)} is below the ${fmt(R.req)} safe-harbor amount. Increase the conversion withholding or make an estimated payment of ${fmt(R.req-R.pays)} by Jan 15, ${I.yr+1}.</div>`;
     todo.push(li)}
+  todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='est'});
   // Spending
   if(!G.err){const W=G.W,m=W/12;let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December. Federal taxes${medTxt?' and Medicare premiums are':' are'} paid on top.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
     R.src.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
@@ -754,6 +761,7 @@ function render(R){
       if(M.noAgi)li+=`<li class="warn">Enter last year's (${I.yr-1}) AGI on step 2 to include any IRMAA surcharge.</li>`}}
     if(R.unfunded>1)li+=`<li class="warn">${fmt(R.unfunded)} can't be funded from my accounts.</li>`;
     todo.push(li+'</ul>')}
+  todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='next'});
   // Next year estimate reminder
   {const N=R.N,NC=R.NC,Y=I.yr+1,conv=NC.C>0,rw=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
     const req=Math.min(.9*NC.tax,N.prior),minX=Math.max(0,req-N.wh),tot=NC.total,hp=Math.max(0,NC.gainTax+NC.other);
@@ -780,6 +788,7 @@ function render(R){
     li+=`<li><b>${conv?'D':'C'}. Quarterly estimated payments.</b> ${fmt(Math.ceil(tot/4))} on Apr 15, Jun 15 and Sep 15, ${Y} and Jan 15, ${Y+1}${minX>0&&minX<tot?` (at least ${fmt(Math.ceil(minX/4))} each to avoid a penalty)`:''}.${conv?' The conversion\'s share isn\'t known until I convert, so this is the least convenient.':''}</li></ul>`;
     li+=`<p class="note">Uses ${R.NR?`${I.yr+1} IRS brackets and standard deduction (${R.NR.src})`:`${I.yr} brackets`}, the ${fmt(N.brkSale)} brokerage withdrawal shown in item 3 at ${Math.round(I.bp*100)}% basis, and the conversion rule from step 3${NC.tax&&N.niit>0?', including the 3.8% net investment income tax':''}. Next fall's (${I.yr+1}) run replaces this with actual numbers.</p>`;
     todo.push(li)}}
+  todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='ntax'});
   // Social Security / RMD reminders
   if(I.age===64||I.age===65){const Y=I.by+65,end=new Date(Y+1,2,0).getDate(),now=I.age===65;
     let li=`<span class="when">${now?`Now: Aug ${Y} – Feb ${Y+1}`:`Aug ${Y} – Feb ${Y+1}`}</span><div>Sign up for Medicare. My sign-up window runs <b>August 1, ${Y} to February ${end}, ${Y+1}</b>, around my 65th birthday in November ${Y}. Signing up by October 31, ${Y} starts coverage on November 1.</div><ul>`;
@@ -799,36 +808,36 @@ function render(R){
   if(I.rmd>0)todo.push(`<span class="when">By Dec 31, ${I.yr}</span><div>Take my RMD of <b class="amt">${fmt(I.rmd)}</b> from pre-tax accounts. It can't be converted.</div>`);
 
   // Spending card
-  let spend='';
+  let spend='',moneyOrder='';
   if(G.err)spend=`<p class="warn">${G.err}</p>`;else{
     const pct=x=>Math.round(x*100)+'%',lo=pct(I.lo),up=pct(I.up),tg=pct(I.tg),Y=I.yr,N=I.yr+1;
     const why={target:`I didn't enter this year's (${Y}) spending, so the budget is the most that lasts to ${I.end} in ${tg} of the market histories tested, my target.`,
       hold:`I spent ${fmt(G.Tlast)} this year (${Y}). With inflation that's ${fmt(G.W)}, and it lasts to ${I.end} in ${pct(G.P1)} of the market histories tested. That's between my ${lo} and ${up} guardrails, so the budget just rises with inflation.`,
       raise:`I spent ${fmt(G.Tlast)} this year (${Y}). With inflation that's ${fmt(G.W0)}, which lasts to ${I.end} in ${pct(G.P0)} of the market histories tested. That's above my ${up} guardrail, so the budget is raised to ${fmt(G.W)}, the most that still lasts in ${up} of them.`,
       cut:`I spent ${fmt(G.Tlast)} this year (${Y}). With inflation that's ${fmt(G.W0)}, which lasts to ${I.end} in only ${pct(G.P0)} of the market histories tested. That's below my ${lo} guardrail, so the budget is cut to ${fmt(G.W)}, the most that lasts in ${lo} of them.`}[G.mode];
-    spend=`<div class="note" style="margin:0">After-tax spending budget for ${N} (Jan–Dec)</div><div class="big">${fmt(G.W)}</div><div>about <b>${fmt(G.W/12)}</b> a month. Federal taxes, including tax on Roth conversions${medTxt?', and Medicare premiums come':', come'} on top.</div>
-    <p class="note">${why}</p>
+    spend=`<p class="note" style="margin-top:0">${why}</p>
     <h3>Where it comes from in ${N}</h3>
     <div class="scroll"><table><tr><th>Source</th><th>${N}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}${(()=>{const T=R.src.reduce((a,[k,x])=>a+x,0);return `<tr class="tot"><td>Total${R.med.mo>0?' (budget plus Medicare)':''}</td><td>${fmt(T)}</td><td>${fmt(T/12)}</td></tr>`})()}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${N}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
     <p class="note">Until January, keep my current pace. Next fall (${N}), enter my ${N} spending as that year's and the guardrails check it again.</p>`;
-    const lad=[{W:G.Wraise,p:I.up,l:'Guardrail that triggers a raise'},{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:'Guardrail that triggers a cut'}];
-    const hit=lad.find(r=>Math.abs(r.W-G.W)<1);if(hit)hit.me=1;else lad.push({W:G.W,p:G.P1,l:'',me:1});lad.sort((a,b)=>a.W-b.W);
-    spend+=fold('How the guardrails set this budget',`<p>Each spending level is tested against ${G.src}, run year by year with my accounts, income, taxes${medTxt?', Roth conversions and Medicare':' and Roth conversions'}. The more I spend, the lower the chance my money lasts to ${I.end}:</p>
-      <div class="scroll"><table style="max-width:560px"><tr><th></th><th>Spending in ${N}</th><th>Chance it lasts</th></tr>${lad.map(r=>`<tr${r.me?' style="font-weight:700"':''}><td style="font-family:var(--serif)">${r.me?'My budget'+(r.l?', at the '+r.l.charAt(0).toLowerCase()+r.l.slice(1):''):r.l}</td><td>${fmt(r.W)}</td><td>${pct(r.p)}</td></tr>`).join('')}</table></div>
-      <p>If the chance at this year's spending is above ${up}, the budget is raised; below ${lo}, it's cut. In between it only rises with inflation, so it stays steady through ordinary ups and downs. These amounts are in ${N} dollars at today's balances. The long-range check further down uses today's dollars, so its amounts look about ${(I.inf*100).toFixed(1)}% lower.</p>`);
-    spend+=fold('Where each year\'s money comes from',`<p>Every year, the plan pays for spending${medTxt?', Medicare premiums':''}, Roth contributions from pay, FICA and federal tax in this order:</p><ol>
+    moneyOrder=fold('Where each year\'s money comes from',`<p>Every year, the plan pays for spending${medTxt?', Medicare premiums':''}, Roth contributions from pay, FICA and federal tax in this order:</p><ol>
       <li>Income: take-home wages${ssTxt?', Social Security':''}${I.age+1>=75?' and any required distribution (RMD)':''}.</li>
       <li>${I.cashMin>0?`Cash above my ${fmt(I.cashMin)} cushion.`:'Cash.'}</li>
       <li>The emergency fund, but only in a year after the market dropped more than 5%.</li>
       <li>Brokerage: only the gain on shares sold is taxed, at capital-gain rates.</li>
       <li>Pre-tax accounts (taxed as ordinary income).</li>
       <li>Roth last, since it never adds tax.</li></ol>
-      <p>Withdrawals raise the tax, and the tax needs more withdrawals, so each year's tax and withdrawals are solved together until they agree to the dollar.</p>`)}
+      <p>Withdrawals raise the tax, and the tax needs more withdrawals, so each year's tax and withdrawals are solved together until they agree to the dollar.</p>`);
+    const lad=[{W:G.Wraise,p:I.up,l:'Guardrail that triggers a raise'},{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:'Guardrail that triggers a cut'}];
+    const hit=lad.find(r=>Math.abs(r.W-G.W)<1);if(hit)hit.me=1;else lad.push({W:G.W,p:G.P1,l:'',me:1});lad.sort((a,b)=>a.W-b.W);
+    spend+=fold('How the guardrails set this budget',`<p>Each spending level is tested against ${G.src}, run year by year with my accounts, income, taxes${medTxt?', Roth conversions and Medicare':' and Roth conversions'}. The more I spend, the lower the chance my money lasts to ${I.end}:</p>
+      <div class="scroll"><table style="max-width:560px"><tr><th></th><th>Spending in ${N}</th><th>Chance it lasts</th></tr>${lad.map(r=>`<tr${r.me?' style="font-weight:700"':''}><td style="font-family:var(--serif)">${r.me?'My budget'+(r.l?', at the '+r.l.charAt(0).toLowerCase()+r.l.slice(1):''):r.l}</td><td>${fmt(r.W)}</td><td>${pct(r.p)}</td></tr>`).join('')}</table></div>
+      <p>If the chance at this year's spending is above ${up}, the budget is raised; below ${lo}, it's cut. In between it only rises with inflation, so it stays steady through ordinary ups and downs. These amounts are in ${N} dollars at today's balances. The long-range check further down uses today's dollars, so its amounts look about ${(I.inf*100).toFixed(1)}% lower.</p>`);
+}
 
   // Conversion card
   let conv=`<div class="tiles"><div class="tile"><div class="k">Conversion in ${I.yr}</div><div class="v">${fmt(R.C)}</div></div><div class="tile"><div class="k">Tax withheld (${I.yr})</div><div class="v">${fmt(R.Wh)}</div></div><div class="tile"><div class="k">Effective rate (${I.yr})</div><div class="v">${pc(t.eff)}</div></div><div class="tile"><div class="k">Top bracket (${I.yr})</div><div class="v">${Math.round(t.mar*100)}%</div></div></div>
-    <p class="note" style="margin-top:0">${R.cWhy}</p>`;
+    ${R.C>0?`<p class="note" style="margin-top:0">${R.cWhy}</p>`:''}`;
   if(I.age>=63&&R.C>0){const agi=t.tot;let k=0;for(let i=0;i<IRM.length;i++)if(agi>IRM[i][0])k=i;const sur=b=>((b[2]-PARTB)+b[3])*12,nx=IRM[k+1];
     conv+=`<p class="note"><span class="pill">IRMAA</span> This conversion raises my ${I.yr} AGI to ${fmt(agi)}, and Medicare uses it to set my premiums in ${I.yr+2}, two years later. ${k===0?`That's under the first IRMAA threshold (${fmt(IRM[1][0])} in today's tiers), so no surcharge.`:`That's in IRMAA tier ${k} (above ${fmt(IRM[k][0])} in today's tiers), adding about ${fmt(sur(IRM[k]))} a year to Medicare.`}${nx?` Another ${fmt(nx[0]-agi)} of income would cross into the next tier (+${fmt(sur(nx)-sur(IRM[k]))} a year).`:''} Tiers rise with inflation, so check the ${I.yr+2} figures when they're published.</p>`}
   if(R.more)conv+=`<h3>Should I convert more?</h3><p class="note"><span class="pill ${R.more.yes?'warn':'ok'}">${R.more.yes?'Consider it':'Not needed'}</span> ${R.more.txt}</p>${R.more.down?`<p class="note"><span class="pill warn">Market down</span> ${R.more.down}</p>`:''}`;
@@ -898,10 +907,9 @@ function render(R){
   ${ssTxt||R.mixNote?`<p class="note">${ssTxt?'The planner uses its own built-in Social Security amounts. ':''}${R.mixNote||''}</p>`:''}`;
 
   return`<div class="plan">
-  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My to-do list for the rest of ${I.yr} and ${I.yr+1}</h2><ol class="todo">${todo.map(x=>`<li><div>${x}</div></li>`).join('')}</ol></div>
-  <div class="card"><h2>How much to pay myself in ${I.yr+1}</h2>${spend}</div>
-  <div class="card"><h2>Roth conversion in ${I.yr}</h2>${conv}</div>
-  <div class="card span"><h2>${I.yr} tax scenario</h2>${tax}</div>
+  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My to-do list for the rest of ${I.yr} and ${I.yr+1}</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<div class="note" style="margin-top:8px"><b>How to cover it');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
+    const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<details class="fold"><summary>[^<]*<\/summary><div class="foldin">/,'').replace(/<\/div><\/details>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
+    return `<li><div>${x}${D&&D[1]?`<details class="deep"><summary>${D[0]}</summary><div class="deepin">${D[1]}</div></details>`:''}</div></li>`}).join('')}</ol></div>
   <div class="card span"><h2>Cross-checking in my apps</h2>${links}</div>
   <div class="card span no-save"><h2>Keep a record</h2><p class="note" style="margin-top:0">Saves a dated copy of this plan, with everything I entered and a link to reopen it, as one HTML file to keep with this year's tools.</p><div class="btns" style="justify-content:flex-start"><button class="btn" type="button" id="saveplan">Save this year's plan</button></div><p class="note" id="saveplanmsg"></p></div>
   <div class="card span"><h2>My rules</h2><ul class="rules">
@@ -1057,7 +1065,7 @@ async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchP
   const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');const d=new Date(),ds=d.toISOString().slice(0,10),dl=d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   const html=`<!DOCTYPE html><html lang="en" data-theme="light"><head><meta name="color-scheme" content="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Retirement plan ${esc(yr)} (saved ${ds})</title><style>${css}\n.inp td{text-align:left;white-space:normal}.inp td:first-child{font-family:var(--serif);width:60%}.inp td:last-child{font-family:var(--mono)}</style></head><body><div class="wrap">
     <header class="top"><h1>Retirement plan for ${esc(yr)}</h1></header><p class="sub">Saved ${dl} from the Retirement Planning Wizard. <a href="${esc(base+'#'+qs)}">Reopen this plan in the wizard</a>.</p>
-    ${out.innerHTML}<div class="card"><h2>What I entered</h2>${ins}</div></div></body></html>`;
+    ${out.innerHTML.replace(/<details(?![^>]*\bopen\b)/g,'<details open')}<div class="card"><h2>What I entered</h2>${ins}</div></div></body></html>`;
   const fn=`plan${yr}-saved-${ds}.html`,msg=t=>{const m=$('saveplanmsg');if(m)m.textContent=t};
   let dlc=null;try{dlc=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){dlc=null}
   if(dlc){try{await dlc.save({filename:fn,data:html});msg(`Saved as ${fn}.`)}catch(e){msg(e&&e.code==='declined'?'Not saved.':e&&e.code==='rate_limited'?'A save is already waiting for an answer. Try again in a moment.':'Saving a file isn\'t available here. The GitHub copy (autodax.github.io) can save it.')}return}
