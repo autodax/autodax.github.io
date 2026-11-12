@@ -331,6 +331,8 @@ p{max-width:72ch}
   <p class="note" id="mvNote"></p>
   <div class="group">Guardrails (chance my money lasts)</div>
   <div class="grid">
+    <div class="full"><label for="bmode">Next year's budget</label><select id="bmode"><option value="g" selected>Set by the guardrails: raised or cut as needed</option><option value="set">An amount I choose: cut only if needed</option></select><div class="help">With an amount I choose, the guardrails never raise the budget; they still cut it if the chance of lasting falls below the cut level.</div></div>
+    <div><label for="setsp">Amount I plan to spend each year, today's $</label><input id="setsp" type="number" inputmode="decimal" step="1000" value=""><div class="help">After tax, not counting Medicare premiums. Next year's budget is this plus inflation.</div></div>
     <div><label for="end">Age my money should last to</label><input id="end" type="number" inputmode="numeric" step="1" value="93"><div class="help">How long the money has to last. Higher is more cautious.</div></div>
     <div><label for="tgt">Target chance, %</label><input id="tgt" type="number" inputmode="decimal" step="1" value="85"><div class="help">Used only when this year's (<span class="y" data-o="0"></span>) spending is blank: the budget that gives this chance.</div></div>
     <div><label for="lowP">Cut if below, %</label><input id="lowP" type="number" inputmode="decimal" step="1" value="72"><div class="help">If this year's (<span class="y" data-o="0"></span>) spending plus inflation has a lower chance than this, the budget is cut back to the level with this chance.</div></div>
@@ -588,7 +590,7 @@ function inputs(){saveWork();
     wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),int:isBlank('int')?num('ef')*.03:num('int'),intEst:isBlank('int'),stg:num('stg'),oth:num('oth'),rmd,rmdP,ssThis,
     NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?WK[yr+1][1]:0,inf):num('thp'),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
     model:val('model'),corder:val('corder'),acc:{p403:num('p403'),p457:num('p457'),pira:num('pira')},accRows:ACC.filter(a=>a.g==='pre'&&!a.e&&+a.b>0).map(a=>({n:a.n||({403:'403(b)',457:'457(b)',ira:'Traditional IRA'})[a.t],c:a.t,b:+a.b})),camt:num('camt'),camtN:isBlank('camtN')?num('camt'):num('camtN'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:val('pay'),
-    meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,g,cush:num('cush'),
+    meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,bmode:val('bmode'),setsp:num('setsp'),g,cush:num('cush'),
     WK:JSON.parse(JSON.stringify(WK)),lw:num('lw'),T:ssTable()};
   _r.ltg=_r.ltgTyped?num('ltg'):_r.NOW.gains;return _r}
 
@@ -624,7 +626,9 @@ function compute(){const I=inputs();
   const sTmp=I.model==='target'||I.model==='fixed'?scenario(I,R.C||0):R.base;
   I.effPlan=(I.model==='target'&&I.ttype==='amt')||I.model==='fixed'?Math.max(.05,sTmp.t.eff):I.teff/100;
   R.P=longRange(I,canConv,R);
-  {const G0=R.P.G,f=1+I.inf;if(G0.err)R.G={err:G0.err};else if(I.lspBlank){const S=G0.at(I.tg);R.G={mode:'target',W:S*f,P1:G0.prob(S),Wtg:S*f,Wcut:G0.at(I.lo)*f,Wraise:G0.at(I.up)*f,src:G0.src}}
+  {const G0=R.P.G,f=1+I.inf;if(G0.err)R.G={err:G0.err};
+    else if(I.bmode==='set'&&I.setsp>0){const S0=I.setsp,Sc=G0.at(I.lo),S=Math.min(S0,Sc);R.G={mode:S0>Sc?'setcut':'set',W:S*f,Wtg:G0.at(I.tg)*f,W0:S0*f,P0:G0.prob(S0),P1:G0.prob(S),Wcut:Sc*f,Wraise:G0.at(I.up)*f,src:G0.src}}
+    else if(I.lspBlank){const S=G0.at(I.tg);R.G={mode:'target',W:S*f,P1:G0.prob(S),Wtg:S*f,Wcut:G0.at(I.lo)*f,Wraise:G0.at(I.up)*f,src:G0.src}}
     else{const S0=I.lsp,P0=G0.prob(S0),Sc=G0.at(I.lo),Sr=G0.at(I.up),S=Math.min(Math.max(S0,Sr),Sc);R.G={mode:S0>Sc?'cut':S0<Sr?'raise':'hold',W:S*f,Wtg:G0.at(I.tg)*f,W0:S0*f,P0,P1:G0.prob(S),Wcut:Sc*f,Wraise:Sr*f,Tlast:I.lsp,src:G0.src}}}
   if(I.model==='auto'||I.model==='autog'||I.model==='level'){R.C=canConv?Math.floor(Math.min(R.P.C0,Math.max(0,I.pre-I.rmdP))/100)*100:0;
     R.cWhy=(canConv?R.P.note:`I'm past my last conversion age (${I.cmax}).`)+(canConv&&R.C===0?` The planner has no conversion in ${I.yr}${I.wage>0?', mostly because of my wages':''}.`:'')}
@@ -810,7 +814,9 @@ function render(R){
   let spend='',moneyOrder='';
   if(G.err)spend=`<p class="warn">${G.err}</p>`;else{
     const pct=x=>Math.round(x*100)+'%',lo=pct(I.lo),up=pct(I.up),tg=pct(I.tg),Y=I.yr,N=I.yr+1;
-    const why={target:`I didn't enter this year's (${Y}) spending, so the budget is the most that lasts to ${I.end} in ${tg} of the market histories tested, my target.`,
+    const why={set:`I chose to spend ${fmt(I.setsp)} a year in today's dollars, which is ${fmt(G.W)} in ${N}. It lasts to ${I.end} in ${pct(G.P0)} of the market histories tested, above my ${lo} guardrail that triggers a cut, so it stays as I set it.`,
+      setcut:`I chose to spend ${fmt(I.setsp)} a year in today's dollars (${fmt(G.W0)} in ${N}), but that lasts to ${I.end} in only ${pct(G.P0)} of the market histories tested. That's below my ${lo} guardrail that triggers a cut, so the budget is cut to ${fmt(G.W)}, the most that lasts in ${lo} of them.`,
+      target:`I didn't enter this year's (${Y}) spending, so the budget is the most that lasts to ${I.end} in ${tg} of the market histories tested, my target.`,
       hold:`I spent ${fmt(G.Tlast)} this year (${Y}). With inflation that's ${fmt(G.W)}, and it lasts to ${I.end} in ${pct(G.P1)} of the market histories tested. That's between my ${lo} and ${up} guardrails, so the budget just rises with inflation.`,
       raise:`I spent ${fmt(G.Tlast)} this year (${Y}). With inflation that's ${fmt(G.W0)}, which lasts to ${I.end} in ${pct(G.P0)} of the market histories tested. That's above my ${up} guardrail, so the budget is raised to ${fmt(G.W)}, the most that still lasts in ${up} of them.`,
       cut:`I spent ${fmt(G.Tlast)} this year (${Y}). With inflation that's ${fmt(G.W0)}, which lasts to ${I.end} in only ${pct(G.P0)} of the market histories tested. That's below my ${lo} guardrail, so the budget is cut to ${fmt(G.W)}, the most that lasts in ${lo} of them.`}[G.mode];
@@ -818,7 +824,7 @@ function render(R){
     <h3>Where it comes from in ${N}</h3>
     <div class="scroll"><table><tr><th>Source</th><th>${N}</th><th>Per month</th></tr>${R.src.map(([k,x])=>`<tr><td>${k}</td><td>${fmt(x)}</td><td>${fmt(x/12)}</td></tr>`).join('')}${(()=>{const T=R.src.reduce((a,[k,x])=>a+x,0);return `<tr class="tot"><td>Total${R.med.mo>0?' (budget plus Medicare)':''}</td><td>${fmt(T)}</td><td>${fmt(T/12)}</td></tr>`})()}</table></div>
     ${R.med.mo>0?`<p class="note">Medicare for ${N}: ${fmt(R.med.total)} (Part B${R.med.irm>0?' plus IRMAA':''}), on top of the budget${R.med.ssN>=R.med.total?', taken out of my Social Security deposits':''}. Part D drug-plan premiums depend on my plan and aren't included.</p>`:''}
-    <p class="note">Until January, keep my current pace. Next fall (${N}), enter my ${N} spending as that year's and the guardrails check it again.</p>`;
+    <p class="note">Until January, keep my current pace. Next fall (${N}), ${G.mode==='set'||G.mode==='setcut'?'run the plan again so the guardrails can check my amount':`enter my ${N} spending as that year's and the guardrails check it again`}.</p>`;
     moneyOrder=fold('Where each year\'s money comes from',`<p>Every year, the plan pays for spending${medTxt?', Medicare premiums':''}, Roth contributions from pay, FICA and federal tax in this order:</p><ol>
       <li>Income: take-home wages${ssTxt?', Social Security':''}${I.age+1>=75?' and any required distribution (RMD)':''}.</li>
       <li>${I.cashMin>0?`Cash above my ${fmt(I.cashMin)} cushion.`:'Cash.'}</li>
@@ -827,11 +833,12 @@ function render(R){
       <li>Pre-tax accounts (taxed as ordinary income).</li>
       <li>Roth last, since it never adds tax.</li></ol>
       <p>Withdrawals raise the tax, and the tax needs more withdrawals, so each year's tax and withdrawals are solved together until they agree to the dollar.</p>`);
-    const lad=[{W:G.Wraise,p:I.up,l:'Guardrail that triggers a raise'},{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:'Guardrail that triggers a cut'}];
+    const setM=G.mode==='set'||G.mode==='setcut';
+    const lad=[...(setM?[]:[{W:G.Wraise,p:I.up,l:'Guardrail that triggers a raise'}]),{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:'Guardrail that triggers a cut'}];
     const hit=lad.find(r=>Math.abs(r.W-G.W)<1);if(hit)hit.me=1;else lad.push({W:G.W,p:G.P1,l:'',me:1});lad.sort((a,b)=>a.W-b.W);
     spend+=fold('How the guardrails set this budget',`<p>Each spending level is tested against ${G.src}, run year by year with my accounts, income, taxes${medTxt?', Roth conversions and Medicare':' and Roth conversions'}. The more I spend, the lower the chance my money lasts to ${I.end}:</p>
       <div class="scroll"><table style="max-width:560px"><tr><th></th><th>Spending in ${N}</th><th>Chance it lasts</th></tr>${lad.map(r=>`<tr${r.me?' style="font-weight:700"':''}><td style="font-family:var(--serif)">${r.me?'My budget'+(r.l?', at the '+r.l.charAt(0).toLowerCase()+r.l.slice(1):''):r.l}</td><td>${fmt(r.W)}</td><td>${pct(r.p)}</td></tr>`).join('')}</table></div>
-      <p>If the chance at this year's spending is above ${up}, the budget is raised; below ${lo}, it's cut. In between it only rises with inflation, so it stays steady through ordinary ups and downs. These amounts are in ${N} dollars at today's balances. The long-range check further down uses today's dollars, so its amounts look about ${(I.inf*100).toFixed(1)}% lower.</p>`);
+      <p>${setM?`I chose the amount, so the budget is never raised. If its chance falls below ${lo}, it's cut. Otherwise it only rises with inflation, so it stays steady`:`If the chance at this year's spending is above ${up}, the budget is raised; below ${lo}, it's cut. In between it only rises with inflation, so it stays steady`} through ordinary ups and downs. These amounts are in ${N} dollars at today's balances. The long-range check further down uses today's dollars, so its amounts look about ${(I.inf*100).toFixed(1)}% lower.</p>`);
 }
 
   // Conversion card
@@ -982,7 +989,7 @@ function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e
 
 function sync(){explain();
   {const y=num('yr'),b=$('yrwarn');if(b){if(y&&y!==FILEYEAR){const st=state();delete st._wk;b.hidden=false;b.innerHTML=`<b>This wizard uses ${FILEYEAR} tax rules, but the plan year is ${y}.</b> ${y<FILEYEAR?`For a ${y} plan, <a href="wizard${y}.html#${new URLSearchParams(st)}">open wizard${y}.html</a> with these same entries.`:`For a ${y} plan, <a href="wizard${y}.html#${new URLSearchParams(st)}">open wizard${y}.html</a> with these same entries. If it doesn't open, the ${y} version isn't out yet; it comes once the ${y} tax figures are published.`}`}else{b.hidden=true;b.innerHTML=''}}}const m=val('model'),tt=val('ttype'),me=val('meth');
-  const VIS={corder:m!=='none',camt:m==='fixed',camtN:m==='fixed',ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
+  const bm=val('bmode')==='set';const VIS={setsp:bm,tgt:!bm,upP:!bm,corder:m!=='none',camt:m==='fixed',camtN:m==='fixed',ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
   for(const id in VIS){const e=$(id);if(e&&e.parentElement)e.parentElement.hidden=!VIS[id]}
   $('tbrkLbl').textContent=m==='level'?'Bracket I won\'t go above':'Bracket I fill to';
   $('yrpill').textContent=val('yr');$('tyHead').textContent=`${val('yr')} other income`;
