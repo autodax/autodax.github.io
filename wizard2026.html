@@ -754,7 +754,7 @@ function render(R){
     todo.push(li)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='est'});
   // Spending
-  if(!G.err){const W=G.W,m=W/12;let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December. Federal taxes${medTxt?' and Medicare premiums are':' are'} paid on top.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
+  if(!G.err){const W=G.W,m=W/12;const setM=G.mode==='set'||G.mode==='setcut',pctS=x=>Math.round(x*100)+'%';let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>${setM?'<span class="pill info">Amount I chose on step 4</span>':'<span class="pill info">Set by the guardrails</span>'} Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December. Federal taxes${medTxt?' and Medicare premiums are':' are'} paid on top.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
     R.src.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
     if(R.src.some(s=>s[0]==='Brokerage'))li+=`<li>Set up the automatic monthly transfer from brokerage to checking.</li>`;
     if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting it (plus its tax, withheld) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
@@ -763,7 +763,9 @@ function render(R){
         :`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}${M.mo<12?`, ${M.mo} months starting November`:''}) is paid on top of my spending budget, by bill or automatic payment${M.ssN>0?' until Social Security starts':''}. My Social Security doesn't start until ${I.by+I.ssA}.</li>`;
       if(M.noAgi)li+=`<li class="warn">Enter last year's (${I.yr-1}) AGI on step 2 to include any IRMAA surcharge.</li>`}}
     if(R.unfunded>1)li+=`<li class="warn">${fmt(R.unfunded)} can't be funded from my accounts.</li>`;
-    todo.push(li+'</ul>')}
+    const how=setM?`<p class="note" style="color:var(--ink)"><b>Where this comes from:</b> I set it on step 4 under <b>Next year's budget → An amount I choose</b> (${fmt(I.setsp)} a year in today's dollars, plus inflation${G.mode==='setcut'?`, then cut by the guardrails because that amount fell below my ${pctS(I.lo)} chance`:''}).${G.mode==='setcut'?'':' It is <b>not</b> the most I could spend.'} For the most I can spend safely${G.mode==='setcut'?' at my target chance':''}, choose <b>Set by the guardrails</b> there instead and leave this year's spending blank on step 2: the budget becomes the most that lasts to ${I.end} in ${pctS(I.tg)} of the market histories tested, about <b>${fmt(G.Wtg)}</b> in ${I.yr+1}.</p>`
+      :`<p class="note" style="color:var(--ink)"><b>Where this comes from:</b> the guardrails on step 4 (<b>Next year's budget → Set by the guardrails</b>), starting from ${I.lspBlank?`the most that lasts at my ${pctS(I.tg)} target, since this year's spending is blank on step 2`:`this year's spending on step 2`}. To spend a fixed amount of my choosing instead, pick <b>An amount I choose</b> there.</p>`;
+    todo.push(li+'</ul>'+how)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='next'});
   // Next year estimate reminder
   {const N=R.N,NC=R.NC,Y=I.yr+1,conv=NC.C>0,rw=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
