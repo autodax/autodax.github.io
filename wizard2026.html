@@ -488,14 +488,14 @@ function prep(I,C0){const s=scenario(I,C0),Wh=I.pay==='qtr'?0:Math.min(s.owed,C0
     st:{pre:Math.max(0,I.pre-C0-I.rmdP),roth:I.roth+C0-Wh+refill,brk,bas,cash,ef:I.ef,efp:Math.max(0,I.efp-(I.rmd-I.rmdP))},agiM1:I.lagi>0?I.lagi/(1+I.inf):s.t.tot,agi0:s.t.tot}}
 
 /* Run the years from next year on. opt: S (yearly after-tax spending, today's $), pol, g (real growth) or ret(k), down0, end (age), stop (stop at first shortfall), rec (keep rows) */
-function runYears(P,opt){let{pre,roth,brk,bas,cash,ef}=P.st,efp=P.st.efp||0;const agi=[P.agiM1,P.agi0],rows=[];let short=false,shortAge=0,tax=0,irm=0,imb=0,a95=null,dep=0,rmd75=null;
+function runYears(P,opt){let{pre,roth,brk,bas,cash,ef}=P.st,efp=P.st.efp||0;const agi=[P.agiM1,P.agi0],rows=[];let lastR=null,lastOrd=0,short=false,shortAge=0,tax=0,irm=0,imb=0,a95=null,dep=0,rmd75=null;
   for(let k=0;;k++){const y=P.Y1+k,age=y-P.by;if(age>opt.end)break;
     const r=rulesAt(y,P.Y0,P.inf),d=r.d,wk=y<=P.lw&&P.WK[y]?P.WK[y]:[0,0],w=wk[0]/d,K=wk[1]/d;
     const ss=P.ssA&&age>=P.ssA?P.ssY*(age===P.ssA?1/12:1):0,rmdA=age>=75?(pre+efp)/(DIV[Math.min(age,100)]):0,rmdP=pre+efp>0?rmdA*pre/(pre+efp):0;
     const mo=age<65?0:age===65?2:12,irmY=mo?irmaaR(agi[k],r)*mo/12:0,med=mo?PARTB*mo+irmY:0;
     const down=k===0?!!opt.down0:(opt.ret?opt.ret(k-1)<-.05:false);
     const x={S:opt.S,med,K,fi:ficaR(w,r),w,ss,rmd:rmdA,rmdP,pre,roth,brk,bas,cash,cashMin:P.cashMin,ef,efp,down,div:brk*P.yld,intr:ef*P.efR,age,r,cmax:P.cmax};
-    const C=convFor(x,opt.pol,k),f=yearFlow(x,C),g=opt.ret?opt.ret(k):opt.g;
+    const C=convFor(x,opt.pol,k),f=yearFlow(x,C),g=opt.ret?opt.ret(k):opt.g;lastR=r;lastOrd=f.res.ordT;
     tax+=f.T;irm+=irmY;imb=Math.max(imb,Math.abs(f.imb));if(age===75)rmd75=rmdA;
     if(f.sh>1&&!short){short=true;shortAge=age}
     if(opt.rec)rows.push({y,age,w,K,ss,rmd:rmdA,C,X:f.X,W:f.W,Rw:f.Rw,cashU:f.cashU,efU:f.efU,epU:f.epU,sh:f.sh,T:f.T,med,irm:irmY,agi:f.res.tot,ordT:f.res.ordT,pre,roth,brk,cash,ef,efp,div:x.div,intr:x.intr,ltcg:f.X*(1-f.bf),imb:f.imb});
@@ -505,7 +505,11 @@ function runYears(P,opt){let{pre,roth,brk,bas,cash,ef}=P.st,efp=P.st.efp||0;cons
     bas=bas/(1+P.inf);cash=Math.max(0,cash-f.cashU)/(1+P.inf);ef=Math.max(0,ef-f.efU)*(1+P.efR)/(1+P.inf);
     if(!dep&&brk<1&&P.st.brk>0)dep=y;agi.push(f.res.tot);
     if(age===95)a95=pre+roth+brk+cash+ef+efp}
-  return{rows,short,shortAge,tax,irm,imb,a95,dep,rmd75}}
+  return{rows,short,shortAge,tax,irm,imb,a95,dep,rmd75,fin:{pre,roth,brk,cash,ef,efp},mr:lastR?mrOf(lastR,lastOrd):0}}
+/* My own bracket: the rate on the next dollar of ordinary income */
+const mrOf=(r,o)=>{for(const b of r.ord)if(o<b[2])return b[0];return r.ord[r.ord.length-1][0]};
+/* What I'd have after tax at the end: Roth, brokerage and cash in full, pre-tax money after tax at my own bracket then */
+const afterTax=o=>o.short?0:o.fin.roth+o.fin.brk+o.fin.cash+o.fin.ef+(o.fin.pre+o.fin.efp)*(1-o.mr);
 
 /* Highest yearly after-tax spending (today's $) that never runs short through 100 and keeps the age-95 cushion */
 function susSpend(P,pol,g,cush,down0){const feas=S=>{const o=runYears(P,{S,pol,g,end:100,stop:true,down0});return!o.short&&(o.a95==null||o.a95>=cush)};
@@ -544,7 +548,22 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
     if(p.k==='amt')return solveC(I,s=>s.t.tax<=p.v);if(p.k==='fixed')return R.C||0;if(p.k==='level')return Math.min(Math.round(p.v),solveC(I,s=>s.t.ordT<=topOf(p.cap)));return 0};
   const zP=prep(I,0),zS=susSpend(zP,{k:'none'},gR,cush,I.down);let pol,C0,note='',cands=null,living;
   let pickG=null;
-  if(I.model==='autog'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
+  const SET=(I.model==='auto'||I.model==='autog')&&I.bmode==='set'&&I.setsp>0;
+  if(SET){
+    // I chose how much to spend, so the rest should end up in the Roth: every strategy is run at my amount and judged by what it leaves me after tax at my plan-to age
+    cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24,32].map(v=>({k:'brk',v})));const S=I.setsp,hist=I.model==='autog';
+    const yrs=I.end-(I.age+1)+1,pth=hist?paths(I,yrs):null,med=a=>{a.sort((x,y)=>x-y);return a[Math.floor((a.length-1)/2)]};
+    cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;
+      if(hist&&!pth.err){const v=[],rt=[],tx=[];let ok=0;for(let n=0;n<pth.N;n++){const o=runYears(c.P,{S,pol:c,ret:k=>pth.get(n,k),end:I.end,down0:I.down});v.push(afterTax(o));rt.push(o.short?0:o.fin.roth);tx.push(o.tax+o.irm);if(!o.short)ok++}
+        c.val=med(v);c.roth=med(rt);c.tax=med(tx);c.mr=null;c.ok=ok/pth.N}
+      else{const o=runYears(c.P,{S,pol:c,g:gR,end:I.end,down0:I.down});c.val=afterTax(o);c.roth=o.short?0:o.fin.roth;c.tax=o.tax+o.irm;c.mr=o.mr;c.ok=o.short?0:1}});
+    const pick=cands.slice().sort((a,b)=>b.val-a.val||b.roth-a.roth)[0],zc=cands[0];pol=pick;C0=pick.C0;living=S;
+    const nm=hist?'<i>Auto with guardrails</i>':'<i>Auto</i>',where=hist&&!pth.err?` typically, across ${pth.src}`:` with steady ${(I.g*100).toFixed(1)}% growth`;
+    note=`I chose to spend ${fmt(S)} a year (step 4), so the ${nm} model looked for the strategy that leaves the most after tax at ${I.end} at that spending${where}. `+
+      (pick.k==='none'?'Not converting does best.':pick.k==='eff'?`It picked conversions up to ${/^(8|11|18)\d?$/.test(String(Math.round(pick.v*100)))?'an':'a'} ${Math.round(pick.v*100)}% effective rate each year through age ${I.cmax}.`:`It picked filling the ${pick.v}% bracket each year through age ${I.cmax}.`)+
+      ` That leaves about ${fmt(pick.val)} after tax in today's dollars, ${fmt(pick.roth)} of it in the Roth${pick.k==='none'?'':`, compared with ${fmt(zc.val)} (${fmt(zc.roth)} in the Roth) without converting`}. Money still in pre-tax accounts counts after tax at my own bracket in my last year${pick.mr!=null?` (${Math.round(pick.mr*100)}%)`:''}.`+(pick.ok<I.tg?` <b>Note:</b> ${fmt(S)} lasts to ${I.end} in only ${Math.round(pick.ok*100)}% of those futures.`:'');
+    if(hist){const o=runYears(pick.P,{S,pol:pick,g:gR,end:100,rec:true,down0:I.down});pickG=guardrailAT(I,pick.P,{k:'sched',a:o.rows.map(x=>x.C)})}}
+  else if(I.model==='autog'){cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(v=>({k:'eff',v:v/100})),[12,22,24].map(v=>({k:'brk',v})));
     cands.forEach(c=>{c.C0=thisC(c);c.P=c.C0>0?prep(I,c.C0):zP;c.S=c.k==='none'?zS:susSpend(c.P,c,gR,cush,I.down);const o=runYears(c.P,{S:c.S,pol:c,g:gR,end:100,rec:true,down0:I.down});c.tax=o.tax+o.irm;
       c.sp={k:'sched',a:o.rows.map(x=>x.C)};c.G=guardrailAT(I,c.P,c.sp);c.score=c.G.err?0:c.G.at(I.tg)});
     const best=Math.max(...cands.map(c=>c.score)),ties=cands.filter(c=>c.score>=best-Math.max(50,best*.002));
@@ -564,6 +583,8 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
     pol={k:'level',v:Lv,cap:I.tbrk};C0=thisC(pol)}
   else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:I.camtN/(1+I.inf),v:I.camtN/(1+I.inf)}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
   const P=C0>0?prep(I,C0):zP;if(living==null)living=pol.k==='none'?zS:susSpend(P,pol,gR,cush,I.down);
+  // With an amount I chose, every projection runs at that spending
+  if(I.bmode==='set'&&I.setsp>0)living=I.setsp;
   const main=runYears(P,{S:living,pol,g:gR,end:100,rec:true,down0:I.down}),zero=runYears(zP,{S:zS,pol:{k:'none'},g:gR,end:100,rec:true,down0:I.down}),hi2=runYears(P,{S:living,pol,g:gR+.02,end:100,rec:true,down0:I.down}),zhi2=runYears(zP,{S:zS,pol:{k:'none'},g:gR+.02,end:100,rec:true,down0:I.down});
   const lim22=x=>{const r=rulesAt(x.y,I.yr,I.inf),t22=r.ord.find(b=>Math.round(b[0]*100)==22)[2],f=ira=>taxCore({wages:x.w,ira,int:x.intr,qdiv:x.div,ltcg:x.ltcg,ss:x.ss,o65:x.age>=65},r).ordT<=t22;
     if(!f(0))return 0;let lo=0,hi=5e6;for(let n=0;n<40;n++){const m=(lo+hi)/2;f(m)?lo=m:hi=m}return lo};
@@ -912,7 +933,7 @@ function render(R){
   // The planner runs the same method I picked here, with the same market futures for Auto with guardrails
   const tt=I.model==='target'?I.ttype:I.model;
   Object.assign(rp,{ssclaim:I.ssA||70,ttype:tt,cmax:I.cmax,autosafe:'no',tval:tt==='level'||tt==='brk'?I.tbrk:tt==='eff'?I.teff:tt==='amt'?Math.round(I.tamt):tt==='fixed'?Math.round(I.camtN/(1+I.inf)):'',fixn:'',rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush,
-    meth:I.meth==='bt'?'bt':'sim',mix:I.mix,wrap:I.wrap?1:0,mean:I.M.mean,vol:I.M.vol,end:I.end,tgt:Math.round(I.tg*100),down0:I.down?1:0,
+    meth:I.meth==='bt'?'bt':'sim',mix:I.mix,wrap:I.wrap?1:0,mean:I.M.mean,vol:I.M.vol,end:I.end,tgt:Math.round(I.tg*100),down0:I.down?1:0,setsp:I.bmode==='set'&&I.setsp>0?Math.round(I.setsp):'',
     // where the long-range check starts: January next year, after this year's plan (same state the wizard projects)
     wz:(()=>{const r=x=>Math.round(x*100)/100,S=P=>{const st={};for(const k in P.st)st[k]=r(P.st[k]);return{st,agi0:r(P.agi0)}},P0=prep(I,0),alt={};
       // each strategy's own starting point when this year's conversion differs (and the chosen plan's)
