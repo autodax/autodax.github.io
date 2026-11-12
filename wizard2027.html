@@ -876,28 +876,23 @@ function render(R){
   if(R.more)conv+=`<h3>Should I convert more?</h3><p class="note"><span class="pill ${R.more.yes?'warn':'ok'}">${R.more.yes?'Consider it':'Not needed'}</span> ${R.more.txt}</p>${R.more.down?`<p class="note"><span class="pill warn">Market down</span> ${R.more.down}</p>`:''}`;
   const yr=d=>d===Infinity||!d?`after ${I.by+I.end}`:d,pctx=x=>Math.round(x*100)+'%';
   const AH=P.alt?P.alt.H:null,c3=f=>AH?`<td>${f(AH)}</td>`:'',tgp=Math.round(I.tg*100),an=/^(8|11|18)\d?$/.test(String(tgp))?'an':'a',FX=H&&H.fixed,nm=polName(P.pol);
-  // plain-language reading of the table, with my numbers
-  const say=[];if(H){const tx=h=>h.ft[1]+h.irm[1],dT=tx(H.Z)-tx(H.A);
-    if(FX){const dv=H.A.val-H.Z.val;
-      say.push(`<b>Spending:</b> my chosen ${fmt(I.setsp)} a year lasts to ${I.end} in ${pctx(H.A.ok)} of futures with this plan${Math.abs(H.A.ok-H.Z.ok)>=.01?` and ${pctx(H.Z.ok)} without converting`:''}.`);
-      say.push(`<b>What's left:</b> in a typical future this plan leaves ${fmt(H.A.val)} after tax at ${I.end}, ${fmt(H.A.roth)} of it in the Roth. That's ${fmt(Math.abs(dv))} ${dv>=0?'more':'less'} than not converting (${fmt(H.Z.val)}, with ${fmt(H.Z.roth)} in the Roth).`)}
-    else{const dS=H.S-H.Sz;say.push(Math.abs(dS)<Math.max(500,H.Sz*.01)?`<b>Spending:</b> this plan and not converting support about the same safe spending (${fmt(H.S)} vs ${fmt(H.Sz)} a year).`:`<b>Spending:</b> this plan supports ${fmt(Math.abs(dS))} a year ${dS>0?'more':'less'} safe spending than not converting (${fmt(H.S)} vs ${fmt(H.Sz)}).`)}
-    say.push(`<b>Tax:</b> in a typical future, this plan pays ${fmt(Math.abs(dT))} ${dT>=0?'less':'more'} federal income tax and IRMAA through ${I.end} than not converting (${fmt(tx(H.A))} vs ${fmt(tx(H.Z))}).`);
-    if(I.end>=75)say.push(`<b>RMDs at 75:</b> typically ${rk(H.A.r75[0])} with this plan vs ${rk(H.Z.r75[0])} without converting, and ${rk(H.A.r75[1])} vs ${rk(H.Z.r75[1])} in strong markets.`);
-    if(AH)say.push(FX?`<b>Filling the 24% bracket every year</b> typically leaves ${fmt(AH.A.val)} after tax (${fmt(AH.A.roth)} in the Roth), and my spending lasts in ${pctx(AH.A.ok)} of futures.`
-      :`<b>Filling the 24% bracket every year</b> ${AH.S<H.S-Math.max(500,H.S*.01)?`supports ${fmt(H.S-AH.S)} a year less safe spending (${fmt(AH.S)}), because it pays so much tax early`:`supports about the same safe spending (${fmt(AH.S)})`}, and typically pays ${fmt(Math.abs(tx(AH.A)-tx(H.A)))} ${tx(AH.A)<tx(H.A)?'less':'more'} tax and IRMAA than this plan.`)}
+  // comparison with no conversions, written into the table: "$X more" / "$X less"
+  const tx=h=>h.ft[1]+h.irm[1],vs=(d,up,dn)=>Math.abs(d)<1?'same':`${fmt(Math.abs(d))} ${d>0?up:dn}`;
   conv+=H?`<h3>Long-range check</h3><p class="note" style="margin-top:0">How each strategy plays out across ${H.src}, in today's dollars, through age ${I.end}${FX?`, spending my chosen ${fmt(I.setsp)} a year (step 4) in every strategy`:`, each spending the most it allows at my ${tgp}% target`}.</p><div class="scroll"><table>
     <tr><th></th><th>This plan<div style="font-weight:400;font-size:.85em">${nm}</div></th>${AH?'<th>Fill 24% bracket</th>':''}<th>No conversions</th></tr>
     ${FX?`<tr><td>Chance ${fmt(I.setsp)} a year lasts to ${I.end}</td><td>${pctx(H.A.ok)}</td>${c3(h=>pctx(h.A.ok))}<td>${pctx(H.Z.ok)}</td></tr>
     <tr><td>Left after tax at ${I.end}, typical future</td><td>${fmt(H.A.val)}</td>${c3(h=>fmt(h.A.val))}<td>${fmt(H.Z.val)}</td></tr>
-    <tr><td>of which in the Roth</td><td>${fmt(H.A.roth)}</td>${c3(h=>fmt(h.A.roth))}<td>${fmt(H.Z.roth)}</td></tr>`
-    :`<tr><td>Safe spending: the most I can spend after tax with ${an} ${tgp}% chance of lasting</td><td>${fmt(H.S)}</td>${c3(h=>fmt(h.S))}<td>${fmt(H.Sz)}</td></tr>`}
+    <tr><td>of which in the Roth</td><td>${fmt(H.A.roth)}</td>${c3(h=>fmt(h.A.roth))}<td>${fmt(H.Z.roth)}</td></tr>
+    <tr><td>Left after tax compared with no conversions</td><td>${vs(H.A.val-H.Z.val,'more','less')}</td>${c3(h=>vs(h.A.val-H.Z.val,'more','less'))}<td>—</td></tr>`
+    :`<tr><td>Safe spending: the most I can spend after tax each year with ${an} ${tgp}% chance of lasting</td><td>${fmt(H.S)}</td>${c3(h=>fmt(h.S))}<td>${fmt(H.Sz)}</td></tr>
+    <tr><td>Safe spending compared with no conversions</td><td>${vs(H.S-H.Sz,'more','less')}</td>${c3(h=>vs(h.S-H.Sz,'more','less'))}<td>—</td></tr>`}
     <tr><td>Federal income tax, typical future</td><td>${fmt(H.A.ft[1])}</td>${c3(h=>fmt(h.A.ft[1]))}<td>${fmt(H.Z.ft[1])}</td></tr>
     <tr><td>IRMAA surcharges, typical future</td><td>${fmt(H.A.irm[1])}</td>${c3(h=>fmt(h.A.irm[1]))}<td>${fmt(H.Z.irm[1])}</td></tr>
+    <tr><td>Federal income tax plus IRMAA, typical future</td><td>${fmt(tx(H.A))}</td>${c3(h=>fmt(tx(h.A)))}<td>${fmt(tx(H.Z))}</td></tr>
+    <tr><td>Tax plus IRMAA compared with no conversions</td><td>${vs(tx(H.A)-tx(H.Z),'more','less')}</td>${c3(h=>vs(tx(h.A)-tx(H.Z),'more','less'))}<td>—</td></tr>
     ${I.end>=75?`<tr><td>RMD at 75 (${y75}), typical future</td><td>${rk(H.A.r75[0])}</td>${c3(h=>rk(h.A.r75[0]))}<td>${rk(H.Z.r75[0])}</td></tr>
     <tr><td>RMD at 75 in strong markets (best 1 in 10)</td><td>${rk(H.A.r75[1])}</td>${c3(h=>rk(h.A.r75[1]))}<td>${rk(H.Z.r75[1])}</td></tr>`:''}
-    <tr><td>Brokerage runs out, typical future</td><td>${yr(H.A.dep)}</td>${c3(h=>yr(h.A.dep))}<td>${yr(H.Z.dep)}</td></tr></table></div>
-    <div class="note" style="margin-top:8px"><b>What this tells me</b><ul style="margin:4px 0 0;padding-left:1.2em">${say.map(x=>`<li>${x}</li>`).join('')}</ul></div>`+
+    <tr><td>Brokerage runs out, typical future</td><td>${yr(H.A.dep)}</td>${c3(h=>yr(h.A.dep))}<td>${yr(H.Z.dep)}</td></tr></table></div>`+
     fold('How these numbers are made',`<p><b>This plan</b> is the conversion method from step 3 (${nm.toLowerCase()}). <b>Fill 24% bracket</b> and <b>No conversions</b> are shown for comparison. Each is run year by year on every one of ${H.src}, with my accounts, income and taxes${andMed}, ${FX?`spending my chosen ${fmt(I.setsp)} a year plus inflation`:`spending the most its guardrails allow at my ${tgp}% target`}. A <b>typical future</b> is the middle one: half came out higher and half lower. <b>Strong markets</b> grow my pre-tax accounts the most, so they bring the biggest RMDs, tax and IRMAA later; that's the risk converting protects against.${FX?' <b>Left after tax</b> counts Roth, brokerage and cash in full, and pre-tax money after tax at my own bracket at the end.':''}</p>`)+
     fold('Why the strategies often end up close',`<p>Converting only helps when my tax rate later would be higher than the rate I pay now: paying tax now and letting the Roth grow gives the same result as paying the same rate later. When my spending already draws the pre-tax accounts down through the 22–24% brackets, converting mostly changes <i>when</i> I pay, not the rate, and tax paid early gives up growth. Converting matters more if I spend less, if tax rates rise (not assumed here), or for heirs, who must empty inherited pre-tax accounts within 10 years at their own rates.</p>`):'';
   conv+=`<details style="margin-top:8px"><summary class="note" style="cursor:pointer">Steady-growth projection (${(I.g*100).toFixed(1)}% every year), for reference</summary><div class="scroll"><table>
