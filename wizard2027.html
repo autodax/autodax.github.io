@@ -574,7 +574,7 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
   let alt=null;if(canConv&&H&&!(pol.k==='brk'&&pol.v===24)){const ap={k:'brk',v:24},ca=cands&&cands.find(c=>c.k==='brk'&&c.v===24),C0a=ca?ca.C0:thisC(ap),Pa=ca?ca.P:(C0a>0?prep(I,C0a):zP),
     La=ca?ca.S:susSpend(Pa,ap,gR,cush,I.down),ma=runYears(Pa,{S:La,pol:ap,g:gR,end:100,rec:true,down0:I.down}),spa={k:'sched',a:ma.rows.map(x=>x.C)},Ga=ca&&ca.G?ca.G:guardrailAT(I,Pa,spa);
     if(!Ga.err){const Ha=histCheck(I,Pa,spa,Ga,zP,GZ);if(Ha)alt={C0:C0a,H:Ha}}}
-  return{pol,C0,note,living,zliving:zS,main,zero,Cnext:(main.rows[0]?main.rows[0].C:0)*(1+I.inf),a75:m75?{rmd:m75.rmd}:null,z75:z75?{rmd:z75.rmd}:null,
+  return{cands:cands?cands.map(c=>({k:c.k,v:c.v,C0:c.C0||0})):null,pol,C0,note,living,zliving:zS,main,zero,Cnext:(main.rows[0]?main.rows[0].C:0)*(1+I.inf),a75:m75?{rmd:m75.rmd}:null,z75:z75?{rmd:z75.rmd}:null,
     SA:{r75:h75?h75.rmd:0,lim75:h75?lim22(h75):0,ex:ex?ex.y:0},N0:N0?N0.y:0,dep:main.dep,zdep:zero.dep,zr75h:(r75(zhi2.rows)||{rmd:0}).rmd,short:main.short,tax:main.tax+main.irm,ztax:zero.tax+zero.irm,ft:main.tax,zft:zero.tax,irm:main.irm,zirm:zero.irm,imb:Math.max(main.imb,zero.imb,hi2.imb,zhi2.imb),gR,G,H,alt}}
 
 /* ---------- Inputs ---------- */
@@ -901,8 +901,16 @@ function render(R){
   const spendL='https://autodax.github.io/spend2027.html#'+q(sp);
   const rp={living:Math.round(P.living),infl:I.inf*100,g:I.g*100,p403:Math.round(num('p403')+num('efp'))||'',p457:Math.round(num('p457'))||'',pira:Math.round(num('pira'))||'',r403:Math.round(num('r403'))||'',r457:Math.round(num('r457'))||'',rira:Math.round(num('rira'))||'',brk:Math.round(I.brk),bas:Math.round(I.bas),div:Math.round(I.div),gb:I.g*100,cash:Math.round(I.cash)||'',cashmin:Math.round(I.cashMin)||'',ef:Math.round(I.ef)||'',efr:I.ef>0?+(I.int/I.ef*100).toFixed(2):'',corder:I.corder,start:I.yr,by:I.by,lw:I.lw,firstc:I.yr,lastc:I.by+I.cmax};
   for(let y=I.yr;y<=I.lw;y++)if(I.WK[y]){rp['w'+y+'a']=I.WK[y][0]||'';rp['w'+y+'b']=I.WK[y][1]||''}
-  Object.assign(rp,{ssclaim:I.ssA||70,ttype:I.model==='auto'||I.model==='autog'?'auto':I.model==='level'?'level':I.ttype==='brk'?'brk':'eff',cmax:I.cmax,autosafe:'yes',tval:I.model==='level'||I.ttype==='brk'?I.tbrk:I.effPlan*100,rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush});
-  const rothL='https://autodax.github.io/roth2027.html#'+q(rp);
+  // The planner runs the same method I picked here, with the same market futures for Auto with guardrails
+  const tt=I.model==='target'?I.ttype:I.model;
+  Object.assign(rp,{ssclaim:I.ssA||70,ttype:tt,cmax:I.cmax,autosafe:'no',tval:tt==='level'||tt==='brk'?I.tbrk:tt==='eff'?I.teff:tt==='amt'?Math.round(I.tamt):tt==='fixed'?Math.round(I.camtN/(1+I.inf)):'',fixn:'',rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush,
+    meth:I.meth==='bt'?'bt':'sim',mix:I.mix,wrap:I.wrap?1:0,mean:I.M.mean,vol:I.M.vol,end:I.end,tgt:Math.round(I.tg*100),down0:I.down?1:0,
+    // where the long-range check starts: January next year, after this year's plan (same state the wizard projects)
+    wz:(()=>{const r=x=>Math.round(x*100)/100,S=P=>{const st={};for(const k in P.st)st[k]=r(P.st[k]);return{st,agi0:r(P.agi0)}},P0=prep(I,0),alt={};
+      // each strategy's own starting point when this year's conversion differs (and the chosen plan's)
+      if(R.P&&R.P.C0>0)alt.plan=S(prep(I,R.P.C0));(R.P&&R.P.cands||[]).forEach(c=>{if(c.C0>0)alt[c.k+':'+c.v]=S(prep(I,c.C0))});
+      return JSON.stringify({Y0:P0.Y0,Y1:P0.Y1,ssY:r(P0.ssY),cashMin:r(P0.cashMin),yld:+P0.yld.toFixed(6),efR:+P0.efR.toFixed(6),...S(P0),agiM1:r(P0.agiM1),alt})})()});
+  const rothL=`https://autodax.github.io/roth${FILEYEAR}.html#`+q(rp);
   const links=`<div class="links"><a href="${spendL}" target="_blank" rel="noopener">What to Withdraw This Year<span>Same balance, guardrails and returns</span></a><a href="${rothL}" target="_blank" rel="noopener">Roth Conversion Planner<span>Same accounts, wages and strategy</span></a><a href="${taxL}" target="_blank" rel="noopener">2027 Federal Tax Estimator<span>This year's (${I.yr}) income, conversion and withholding</span></a><a href="${taxNext().url}" target="_blank" rel="noopener">${taxNext().yr} Federal Tax Estimator<span>Next year's (${I.yr+1}) estimate${taxNext().yr!=String(I.yr+1)?`, on ${taxNext().yr} rules`:''}</span></a></div>
   ${ssTxt||R.mixNote?`<p class="note">${ssTxt?'The planner uses its own built-in Social Security amounts. ':''}${R.mixNote||''}</p>`:''}`;
 

@@ -169,7 +169,7 @@ function renderWork(){saveWork();const g=id=>+document.getElementById(id).value|
 if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label for="w${y}a">${y} wages (taxable, before Roth, nominal)</label><input id="w${y}a" type="number" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">${y} Roth contribution (nominal)</label><input id="w${y}b" type="number" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div>`}
 document.getElementById('work').innerHTML=h}
 const SSTBL={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
-const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="auto" selected>Auto: most after-tax spending (lowest tax among near-ties)</option><option value="low">Fill a bracket every year, for life</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option></select></div><div><label for="corder">Convert and withdraw from first</label><select id="corder"><option value="small" selected>Smallest account first (fewer accounts sooner)</option><option value="ira">Traditional IRA first</option><option value="457">457(b) first</option><option value="403">403(b) first</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="74" step="1" inputmode="decimal"></div><div><label for="autosafe">Auto: keep RMDs inside the 22% limit?</label><select id="autosafe"><option value="yes" selected>Yes (even at +2 pts growth)</option><option value="no">No (maximize spending)</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="planat">Plan at</label><select id="planat"><option value="mine" selected>My spending input</option><option value="max">Maximum sustainable spending (drain to cushion)</option></select></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
+const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="autog">Auto with guardrails: most spending at my target chance across market futures</option><option value="auto" selected>Auto: most after-tax spending (lowest tax among near-ties)</option><option value="low">Fill a bracket every year, for life</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option><option value="amt">Cap the federal tax at a dollar amount</option><option value="fixed">Convert a set amount each year</option><option value="none">No conversions</option></select><input type="hidden" id="wz" value=""></div><div><label for="meth">Market futures (Auto with guardrails)</label><select id="meth"><option value="bt" selected>Market history, 1871–2022</option><option value="sim">500 simulated futures</option></select></div><div><label for="mix">Stocks % (the rest in bonds)</label><input type="number" id="mix" value="95" step="5" inputmode="decimal"></div><div><label for="wrap">Start years</label><select id="wrap"><option value="0" selected>Only with a full history after them</option><option value="1">All, wrapping around</option></select></div><div><label for="mean">Simulated return % (nominal)</label><input type="number" id="mean" value="9.8" step=".1" inputmode="decimal"></div><div><label for="vol">Simulated volatility %</label><input type="number" id="vol" value="17.6" step=".1" inputmode="decimal"></div><div><label for="end">Plan to age</label><input type="number" id="end" value="93" step="1" inputmode="decimal"></div><div><label for="tgt">Target chance my money lasts %</label><input type="number" id="tgt" value="85" step="1" inputmode="decimal"></div><div><label for="down0">Market down more than 5% now?</label><select id="down0"><option value="0" selected>No</option><option value="1">Yes</option></select></div><div><label for="fixn">Later years' amount (set amount; blank = same)</label><input type="number" id="fixn" value="" step="1000" inputmode="decimal"></div><div><label for="corder">Convert and withdraw from first</label><select id="corder"><option value="small" selected>Smallest account first (fewer accounts sooner)</option><option value="ira">Traditional IRA first</option><option value="457">457(b) first</option><option value="403">403(b) first</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="74" step="1" inputmode="decimal"></div><div><label for="autosafe">Auto: keep RMDs inside the 22% limit?</label><select id="autosafe"><option value="yes" selected>Yes (even at +2 pts growth)</option><option value="no">No (maximize spending)</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="planat">Plan at</label><select id="planat"><option value="mine" selected>My spending input</option><option value="max">Maximum sustainable spending (drain to cushion)</option></select></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
 document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="" step="${s}" inputmode="decimal"></div>`).join('');
 document.getElementById('strategy').innerHTML=TGT;
 /* ---------- Same engine as the wizard: one tax calculation, yearly rules, year-by-year cash flow (today's dollars) ---------- */
@@ -195,20 +195,20 @@ function rulesAt(y,Y0,inf){const k=y+'|'+Y0+'|'+inf;let o=_RC.get(k);if(o)return
 const ficaR=(w,r)=>w>0?w*.0145+.062*Math.min(w,r.wb)+.009*Math.max(0,w-200000/r.d):0;
 function irmaaR(magi,r){let i=0;for(let k=0;k<IRM.length;k++)if(magi>IRM[k][0]*r.sI)i=k;const b=IRM[i];return((b[2]-PARTB)+b[3])*12}
 function yearFlow(x,C){
-  const preA=Math.max(0,x.pre-x.rmd-C),bf=x.brk>0?Math.min(1,x.bas/x.brk):1,cashA=Math.max(0,x.cash-x.cashMin),efA=x.down?x.ef:0;
-  const alloc=T=>{let need=x.S+x.med+x.K+x.fi+T-(x.w+x.ss+x.rmd);const a={cashU:0,efU:0,X:0,W:0,Rw:0,sh:0,sur:0};
+  const rP=x.rmdP==null?x.rmd:x.rmdP,preA=Math.max(0,x.pre-rP-C),bf=x.brk>0?Math.min(1,x.bas/x.brk):1,cashA=Math.max(0,x.cash-x.cashMin),efA=x.down?x.ef:0,epA=x.down?Math.max(0,(x.efp||0)-(x.rmd-rP)):0;
+  const alloc=T=>{let need=x.S+x.med+x.K+x.fi+T-(x.w+x.ss+x.rmd);const a={cashU:0,efU:0,epU:0,X:0,W:0,Rw:0,sh:0,sur:0};
     if(need<=0){a.sur=-need;return a}
-    let t=Math.min(need,cashA);a.cashU=t;need-=t;t=Math.min(need,efA);a.efU=t;need-=t;t=Math.min(need,x.brk);a.X=t;need-=t;
+    let t=Math.min(need,cashA);a.cashU=t;need-=t;t=Math.min(need,efA);a.efU=t;need-=t;t=Math.min(need,epA);a.epU=t;need-=t;t=Math.min(need,x.brk);a.X=t;need-=t;
     t=Math.min(need,preA);a.W=t;need-=t;t=Math.min(need,x.roth);a.Rw=t;need-=t;a.sh=need;return a};
-  const tx=a=>taxCore({wages:x.w,ira:x.rmd+C+a.W,int:x.intr,qdiv:x.div,ltcg:a.X*(1-bf),ss:x.ss,o65:x.age>=65},x.r);
+  const tx=a=>taxCore({wages:x.w,ira:x.rmd+C+a.W+a.epU,int:x.intr,qdiv:x.div,ltcg:a.X*(1-bf),ss:x.ss,o65:x.age>=65},x.r);
   let T=tx(alloc(0)).tax,a,res,ok=false;
   for(let n=0;n<60;n++){a=alloc(T);res=tx(a);if(Math.abs(res.tax-T)<.01){T=res.tax;ok=true;break}T=res.tax}
   if(!ok){let lo=0,hi=Math.max(1e4,2*T);while(tx(alloc(hi)).tax>hi)hi*=2;for(let n=0;n<80;n++){const m=(lo+hi)/2;tx(alloc(m)).tax>m?lo=m:hi=m}T=hi;a=alloc(T);res=tx(a)}
   else{a=alloc(T);res=tx(a)}
-  const src=x.w+x.ss+x.rmd+a.cashU+a.efU+a.X+a.W+a.Rw+a.sh,use=x.S+x.med+x.K+x.fi+T+a.sur;
+  const src=x.w+x.ss+x.rmd+a.cashU+a.efU+a.epU+a.X+a.W+a.Rw+a.sh,use=x.S+x.med+x.K+x.fi+T+a.sur;
   return{...a,T,res,bf,imb:src-use}}
 /* Conversion for a year under a policy. The planner adds a first/last conversion year window and an optional AGI cap from age 63 (IRMAA). */
-function convFor(x,pol,k){const mx=Math.max(0,x.pre-x.rmd);if(!pol||pol.k==='none'||mx<=0||x.age>x.cmax||x.y<x.c0||x.y>x.c1)return 0;
+function convFor(x,pol,k){const mx=Math.max(0,x.pre-(x.rmdP==null?x.rmd:x.rmdP));if(!pol||pol.k==='none'||mx<=0||x.age>x.cmax||x.y<x.c0||x.y>x.c1)return 0;
   if(pol.k==='sched')return Math.min(mx,pol.a[k]||0);
   if(pol.k==='fixed')return Math.min(mx,k===0?pol.v0:pol.v);
   let ok;const top=p=>x.r.ord.find(b=>Math.round(b[0]*100)==p)[2];
@@ -219,34 +219,56 @@ function convFor(x,pol,k){const mx=Math.max(0,x.pre-x.rmd);if(!pol||pol.k==='non
   const cp=x.agicap>0&&x.age>=63?x.agicap:0;if(cp){const o=ok;ok=C=>o(C)&&yearFlow(x,C).res.tot<cp}
   if(hiC<=0||!ok(0))return 0;if(ok(hiC))return hiC;let lo=0,hi=hiC;for(let n=0;n<22;n++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}return lo}
 /* Run the years from the start year on. opt: S (after-tax spending, today's $), pol, g and gb (real growth: 403(b)/Roth and brokerage), end (age), stop, rec */
-function runYears(P,opt){let{pre,roth,brk,bas,cash,ef}=P.st;const agi=[P.agiM1,P.agi0],rows=[],g=opt.g,gb=opt.gb!=null?opt.gb:opt.g;let short=false,shortAge=0,tax=0,irm=0,imb=0,a95=null,dep=0,rmd75=null;
+function runYears(P,opt){let{pre,roth,brk,bas,cash,ef}=P.st,efp=P.st.efp||0;const agi=[P.agiM1,P.agi0],rows=[];let short=false,shortAge=0,tax=0,irm=0,imb=0,a95=null,dep=0,rmd75=null;
   for(let k=0;;k++){const y=P.Y1+k,age=y-P.by;if(age>opt.end)break;
     const r=rulesAt(y,P.Y0,P.inf),d=r.d,wk=y<=P.lw&&P.WK[y]?P.WK[y]:[0,0],w=wk[0]/d,K=wk[1]/d;
-    const ss=P.ssA&&age>=P.ssA?P.ssY*(age===P.ssA?1/12:1):0,rmdA=age>=75?pre/(DIV[Math.min(age,100)]):0;
+    const ss=P.ssA&&age>=P.ssA?P.ssY*(age===P.ssA?1/12:1):0,rmdA=age>=75?(pre+efp)/(DIV[Math.min(age,100)]):0,rmdP=pre+efp>0?rmdA*pre/(pre+efp):0;
     const mo=age<65?0:age===65?2:12,irmY=mo?irmaaR(agi[k],r)*mo/12:0,med=mo?PARTB*mo+irmY:0;
-    const x={S:opt.S,med,K,fi:ficaR(w,r),w,ss,rmd:rmdA,pre,roth,brk,bas,cash,cashMin:P.cashMin,ef,down:false,div:brk*P.yld,intr:ef*P.efR,age,y,r,cmax:P.cmax,c0:P.c0,c1:P.c1,agicap:P.agicap};
+    const down=k===0?!!opt.down0:(opt.ret?opt.ret(k-1)<-.05:false),g=opt.ret?opt.ret(k):opt.g,gb=opt.ret?opt.ret(k):(opt.gb!=null?opt.gb:opt.g);
+    const x={S:opt.S,med,K,fi:ficaR(w,r),w,ss,rmd:rmdA,rmdP,pre,roth,brk,bas,cash,cashMin:P.cashMin,ef,efp,down,div:brk*P.yld,intr:ef*P.efR,age,y,r,cmax:P.cmax,c0:P.c0,c1:P.c1,agicap:P.agicap};
     const C=convFor(x,opt.pol,k),f=yearFlow(x,C);
     tax+=f.T;irm+=irmY;imb=Math.max(imb,Math.abs(f.imb));if(age===75)rmd75=rmdA;
     if(f.sh>1&&!short){short=true;shortAge=age}
-    if(opt.rec)rows.push({y,age,w,K,ss,tss:f.res.tss,fi:x.fi,rmd:rmdA,C,X:f.X,W:f.W,Rw:f.Rw,cashU:f.cashU,efU:f.efU,sh:f.sh,T:f.T,med,irm:irmY,agi:f.res.tot,ordT:f.res.ordT,pre,roth,brk,cash,ef,div:x.div,intr:x.intr,ltcg:f.X*(1-f.bf),imb:f.imb,r});
+    if(opt.rec)rows.push({y,age,w,K,ss,tss:f.res.tss,fi:x.fi,rmd:rmdA,C,X:f.X,W:f.W,Rw:f.Rw,cashU:f.cashU,efU:f.efU+f.epU,sh:f.sh,T:f.T,med,irm:irmY,agi:f.res.tot,ordT:f.res.ordT,pre,roth,brk,cash,ef,div:x.div,intr:x.intr,ltcg:f.X*(1-f.bf),imb:f.imb,r});
     if(short&&opt.stop)break;
     bas=Math.max(0,bas-f.X*f.bf)+f.sur+x.div;
-    pre=Math.max(0,pre-rmdA-C-f.W)*(1+g);roth=Math.max(0,roth+K+C-f.Rw)*(1+g);brk=Math.max(0,brk-f.X+f.sur)*(1+gb);if(brk<1){brk=0;bas=0}
+    pre=Math.max(0,pre-rmdP-C-f.W)*(1+g);efp=Math.max(0,efp-(rmdA-rmdP)-f.epU)*(1+P.efR)/(1+P.inf);roth=Math.max(0,roth+K+C-f.Rw)*(1+g);brk=Math.max(0,brk-f.X+f.sur)*(1+gb);if(brk<1){brk=0;bas=0}
     bas=bas/(1+P.inf);cash=Math.max(0,cash-f.cashU)/(1+P.inf);ef=Math.max(0,ef-f.efU)*(1+P.efR)/(1+P.inf);
-    if(opt.rec)Object.assign(rows[rows.length-1],{preE:pre,rothE:roth,brkE:brk,cashE:cash,efE:ef});
+    if(opt.rec)Object.assign(rows[rows.length-1],{preE:pre,rothE:roth,brkE:brk,cashE:cash,efE:ef+efp});
     if(!dep&&brk<1&&P.st.brk>0)dep=y;agi.push(f.res.tot);
-    if(age===95)a95=pre+roth+brk+cash+ef}
+    if(age===95)a95=pre+roth+brk+cash+ef+efp}
   return{rows,short,shortAge,tax,irm,imb,a95,dep,rmd75}}
+const HIST=[[1871,0.1391,0.0346],[1872,0.0874,0.0151],[1873,0.0203,0.1125],[1874,0.1254,0.164],[1875,0.1176,0.1515],[1876,-0.1488,0.0474],[1877,0.1694,0.2476],[1878,0.2959,0.173],[1879,0.2384,-0.1239],[1880,0.3435,0.1287],[1881,-0.0718,-0.0348],[1882,0.0558,0.0551],[1883,0.023,0.1224],[1884,-0.0232,0.1636],[1885,0.3461,0.0847],[1886,0.1194,0.0223],[1887,-0.0514,-0.0226],[1888,0.082,0.1036],[1889,0.1241,0.0886],[1890,-0.0844,-0.0058],[1891,0.2651,0.1043],[1892,-0.015,-0.0492],[1893,-0.0635,0.2009],[1894,0.0797,0.1003],[1895,0.0354,0.0102],[1896,0.0625,0.0822],[1897,0.1694,0.0082],[1898,0.2743,0.0373],[1899,-0.1128,-0.1211],[1900,0.2393,0.0609],[1901,0.1659,0.0002],[1902,-0.0121,-0.0672],[1903,-0.1328,0.0724],[1904,0.2914,0.0049],[1905,0.2131,0.0386],[1906,-0.0362,-0.0274],[1907,-0.2252,0.0442],[1908,0.3506,0.0142],[1909,0.0492,-0.0731],[1910,0.0363,0.1089],[1911,0.0465,0.0489],[1912,-0.0015,-0.0609],[1913,-0.0664,0.0446],[1914,-0.0641,0.0255],[1915,0.2743,0.026],[1916,-0.0379,-0.0869],[1917,-0.3192,-0.1495],[1918,0.0018,-0.1084],[1919,0.0227,-0.1352],[1920,-0.1262,0.0576],[1921,0.2376,0.2466],[1922,0.299,0.0448],[1923,0.0241,0.035],[1924,0.2712,0.0556],[1925,0.2165,0.0169],[1926,0.1411,0.0872],[1927,0.3875,0.0461],[1928,0.4935,0.0247],[1929,-0.0943,0.0598],[1930,-0.169,0.1067],[1931,-0.3803,0.1205],[1932,0.0402,0.1808],[1933,0.531,0.024],[1934,-0.1071,0.0261],[1935,0.5271,0.0239],[1936,0.2989,0.0023],[1937,-0.3256,0.029],[1938,0.1895,0.0565],[1939,0.038,0.0432],[1940,-0.1017,0.0286],[1941,-0.1834,-0.121],[1942,0.1297,-0.0489],[1943,0.2007,-0.0055],[1944,0.17,0.0104],[1945,0.363,0.0154],[1946,-0.2553,-0.139],[1947,-0.0689,-0.0862],[1948,0.082,0.0219],[1949,0.2011,0.044],[1950,0.2451,-0.0717],[1951,0.1683,-0.0252],[1952,0.1426,0.0112],[1953,0.0188,0.0444],[1954,0.4793,0.0221],[1955,0.2846,-0.0003],[1956,0.0378,-0.0423],[1957,-0.0909,0.0261],[1958,0.3844,-0.0515],[1959,0.0655,-0.0203],[1960,0.0476,0.0944],[1961,0.183,0.0138],[1962,-0.0386,0.0456],[1963,0.1927,-0.0032],[1964,0.1489,0.0302],[1965,0.0952,-0.0076],[1966,-0.0953,0.0132],[1967,0.1204,-0.0546],[1968,0.0597,-0.0223],[1969,-0.1387,-0.1052],[1970,0.0214,0.1228],[1971,0.1039,0.0479],[1972,0.1372,-0.0106],[1973,-0.2346,-0.0584],[1974,-0.2939,-0.0721],[1975,0.3044,-0.0069],[1976,0.0573,0.0565],[1977,-0.1482,-0.0404],[1978,0.064,-0.0744],[1979,0.0286,-0.1255],[1980,0.1273,-0.0917],[1981,-0.1438,-0.0517],[1982,0.2548,0.3301],[1983,0.1554,-0.0025],[1984,0.0426,0.0939],[1985,0.2168,0.1975],[1986,0.2952,0.2112],[1987,-0.0617,-0.0637],[1988,0.127,0.0143],[1989,0.1693,0.0888],[1990,-0.0613,0.0313],[1991,0.2861,0.1207],[1992,0.0434,0.0641],[1993,0.0896,0.0968],[1994,-0.016,-0.0958],[1995,0.3174,0.1924],[1996,0.2362,-0.0346],[1997,0.2594,0.1204],[1998,0.2935,0.0961],[1999,0.125,-0.1055],[2000,-0.0862,0.1303],[2001,-0.1445,0.0481],[2002,-0.2215,0.0954],[2003,0.2615,0.0136],[2004,0.03,0.0065],[2005,0.0592,-0.0118],[2006,0.1109,-0.001],[2007,-0.0547,0.0782],[2008,-0.3565,0.1342],[2009,0.2984,-0.0898],[2010,0.1452,0.0463],[2011,0.0047,0.1173],[2012,0.144,0.0085],[2013,0.2365,-0.0701],[2014,0.1358,0.11],[2015,-0.0475,-0.0118],[2016,0.1816,-0.0305],[2017,0.2246,-0.0082],[2018,-0.062,0.0],[2019,0.2504,0.0787],[2020,0.1624,0.0608],[2021,0.1371,-0.1118],[2022,-0.1731,-0.1701]];
+let zc={n:0,z:null};
+function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B79F5|0;let x=Math.imul(t^t>>>15,1|t);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296};
+  const z=[];for(let i=0;i<2000*n;i+=1){const u=r()||1e-9,w=r();z.push(Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w))}zc={n,z};return z}
+/* Market futures, the same as the wizard's: real returns of a stock/bond mix over every historical start year, or 500 simulated futures */
+function paths(M,yrs){if(M.meth==='bt'){const w=M.mix/100,RET=HIST.map(r=>w*r[1]+(1-w)*r[2]),N=M.wrap?HIST.length:HIST.length-yrs+1;
+    if(N<1)return{err:'The plan runs longer than the history available. Lower the plan-to age or use simulated futures.'};
+    return{N,get:(n,k)=>RET[(n+k)%RET.length],src:`${N} historical start years (${HIST[0][0]}–${HIST[N-1][0]}), each followed for ${yrs} years`}}
+  const m=M.mean/100,sd=M.vol/100,z=zs(yrs),N=500,xx=(1+Math.sqrt(1+4*sd*sd/((1+m)*(1+m))))/2,sg=Math.sqrt(Math.log(xx)),mu=Math.log(1+m);
+  return{N,get:(n,k)=>Math.exp(mu+sg*z[n*yrs+k])/(1+M.inf)-1,src:`${N} simulated futures (${M.mean}% return, ${M.vol}% volatility)`}}
+/* After-tax guardrails: on each future, the most I could spend each year (today's $) without running short through my plan-to age */
+function guardrailAT(M,P,pol){const yrs=M.end-M.age+1;if(yrs<1)return{err:'The plan-to age must be above my age.'};
+  const pth=paths(M,yrs);if(pth.err)return pth;const caps=[];
+  for(let n=0;n<pth.N;n++){const ret=k=>pth.get(n,k),ok=S=>!runYears(P,{S,pol,ret,end:M.end,stop:true,down0:M.down}).short;
+    let lo=0,hi=200000;if(!ok(0)){caps.push(0);continue}while(ok(hi)&&hi<8e6){lo=hi;hi*=1.7}for(let q=0;q<16;q++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m}caps.push(lo)}
+  caps.sort((a,b)=>b-a);const N=caps.length,prob=S=>caps.filter(c=>c>=S-.5).length/N,at=p=>caps[Math.max(0,Math.min(N-1,Math.ceil(p*N)-1))];
+  return{prob,at,src:pth.src,N}}
+function histTax(M,P,pol,S){const yrs=M.end-M.age+1,pth=paths(M,yrs);if(pth.err)return null;const v=[];
+  for(let n=0;n<pth.N;n++){const r=runYears(P,{S,pol,ret:k=>pth.get(n,k),end:M.end,down0:M.down});v.push(r.tax+r.irm)}v.sort((a,b)=>a-b);return v[Math.floor((v.length-1)/2)]}
 /* Highest yearly after-tax spending (today's $) that never runs short through 100 and keeps the age-95 cushion */
 function susSpend(P,pol,G,cush){const feas=S=>{const o=runYears(P,{S,pol,g:G.g,gb:G.gb,end:100,stop:true});return!o.short&&(o.a95==null||o.a95>=cush)};
   if(!feas(0))return 0;let lo=0,hi=150000;while(feas(hi)&&hi<5e6){lo=hi;hi*=1.6}for(let n=0;n<18;n++){const m=(lo+hi)/2;feas(m)?lo=m:hi=m}return lo}
 
 const brOf=x=>{if(x.ordT<=0)return'—';const o=x.r.ord.find(([r,lo,hi])=>x.ordT>=lo&&x.ordT<hi)||x.r.ord[x.r.ord.length-1];return Math.round(o[0]*100)+'%'};
-const REL={auto:['cmax','autosafe','agicap'],low:['tval','agicap'],brk:['tval','cmax','agicap'],eff:['tval','cmax','agicap'],level:['tval','rtgt','cmax','agicap'],full:['byage','cmax']};
+const GRD=['meth','mix','wrap','mean','vol','end','tgt','down0'];
+const REL={autog:['cmax','agicap',...GRD],amt:['tval','cmax','agicap'],fixed:['tval','fixn','cmax'],none:[],auto:['cmax','autosafe','agicap'],low:['tval','agicap'],brk:['tval','cmax','agicap'],eff:['tval','cmax','agicap'],level:['tval','rtgt','cmax','agicap'],full:['byage','cmax']};
 function syncInputs(){const t=document.getElementById('ttype').value,on=REL[t]||[];
-  for(const id of ['cmax','autosafe','byage','tval','rtgt','agicap']){const e=document.getElementById(id);if(e&&e.parentElement)e.parentElement.style.display=on.includes(id)?'':'none'}
+  for(const id of ['cmax','autosafe','byage','tval','rtgt','agicap','fixn',...GRD]){const e=document.getElementById(id);if(e&&e.parentElement)e.parentElement.style.display=on.includes(id)?'':'none'}
   const lv=document.getElementById('living');if(lv&&lv.parentElement)lv.parentElement.style.display=document.getElementById('planat').value=='max'?'none':'';
-  const l=document.querySelector('label[for=tval]');if(l)l.textContent=t=='eff'?'Effective tax rate cap %':'Bracket ceiling % (top of this bracket)'}
+  const l=document.querySelector('label[for=tval]');if(l)l.textContent=t=='eff'?'Effective tax rate cap %':t=='amt'?'Federal tax cap per year ($, start-year dollars)':t=='fixed'?'Amount to convert in the start year ($)':'Bracket ceiling % (top of this bracket)';
+  if(t==='autog'){const m=document.getElementById('meth').value;for(const id of ['mean','vol']){const e=document.getElementById(id);if(e&&e.parentElement)e.parentElement.style.display=m==='sim'?'':'none'}const w=document.getElementById('wrap');if(w&&w.parentElement)w.parentElement.style.display=m==='bt'?'':'none'}}
 function run(){syncInputs();
   saveWork();
   const v=id=>+document.getElementById(id).value||0;
@@ -256,21 +278,40 @@ function run(){syncInputs();
   const inf=v('infl')/100,cmax=Math.min(100,Math.max(60,v('cmax')||74)),tt=document.getElementById('ttype').value,tv=v('tval'),cush=v('cushion'),planMax=document.getElementById('planat').value=='max';
   const G={g:(1+v('g')/100)/(1+inf)-1,gb:(1+v('gb')/100)/(1+inf)-1},G2={g:(1+v('g')/100+.02)/(1+inf)-1,gb:(1+v('gb')/100+.02)/(1+inf)-1};
   const ssA=+v('ssclaim')||70,brk=v('brk'),efr=document.getElementById('efr').value===''?.03:v('efr')/100;
-  const base={Y0:start,Y1:start,by,inf,lw:v('lw'),WK,ssA,ssY:SSTBL[ssA]*12,cmax,cashMin:Math.min(v('cash'),v('cashmin')),yld:brk>0?v('div')/brk:0,efR:efr,
+  let WZ=null;try{WZ=JSON.parse(document.getElementById('wz').value||'null')}catch(e){WZ=null}
+  const base0={Y0:start,Y1:start,by,inf,lw:v('lw'),WK,ssA,ssY:SSTBL[ssA]*12,cmax,cashMin:Math.min(v('cash'),v('cashmin')),yld:brk>0?v('div')/brk:0,efR:efr,
     st:{pre:v('p403')+v('p457')+v('pira'),roth:v('r403')+v('r457')+v('rira'),brk,bas:Math.min(v('bas'),brk),cash:v('cash'),ef:v('ef')},agiM1:undefined,agi0:undefined,c0:v('firstc'),c1:v('lastc'),agicap:v('agicap')};
+  // Opened from the wizard: start where its long-range check starts (January next year, after this year's plan), in this year's dollars
+  const base=WZ?{...base0,...WZ,alt:undefined,c0:WZ.Y1,c1:by+cmax,agicap:base0.agicap}:base0,ALT=WZ&&WZ.alt||{};
+  // a strategy's own starting point (from the wizard, when this year's conversion differs)
+  const PF=c=>{const a=c&&ALT[c.k+':'+c.v];return a?{...base,st:a.st,agi0:a.agi0}:base};
   const NONE={k:'none'},sus=(P,pol,g=G)=>susSpend(P,pol,g,cush),go=(P,pol,S,g=G)=>runYears(P,{S,pol,g:g.g,gb:g.gb,end:100,rec:true});
   const rates=[10,12,22,24,32,35,37],brkV=rates.filter(r=>r<=tv+.01).pop()||10;
   const lim22=x=>{const t22=x.r.ord.find(b=>Math.round(b[0]*100)==22)[2],f=ira=>taxCore({wages:x.w,ira,int:x.intr,qdiv:x.div,ltcg:x.ltcg,ss:x.ss,o65:x.age>=65},x.r).ordT<=t22;
     if(!f(0))return 0;let lo=0,hi=5e6;for(let n=0;n<40;n++){const m=(lo+hi)/2;f(m)?lo=m:hi=m}return lo};
   const over=rows=>rows.find(x=>x.age>=75&&x.rmd>lim22(x)+1);
   const zS=sus(base,NONE),living0=planMax?zS:v('living');
-  let P=base,pol,Lnote='',headline='',sumLabel='',sumVal='';
-  if(tt=='auto'){
+  let P=ALT.plan?{...base,st:ALT.plan.st,agi0:ALT.plan.agi0}:base,pol,Lnote='',headline='',sumLabel='',sumVal='',GA=null;
+  const M={meth:document.getElementById('meth').value,mix:v('mix')||95,wrap:document.getElementById('wrap').value==='1',mean:v('mean'),vol:v('vol'),inf,end:v('end')||93,age:base.Y1-by,down:document.getElementById('down0').value==='1'},tg=(v('tgt')||85)/100;
+  if(tt=='autog'){
     const cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(x=>({k:'eff',v:x/100})),[12,22,24].map(x=>({k:'brk',v:x})));
-    cands.forEach(c=>{c.S=c.k==='none'?zS:sus(base,c);const S=planMax?c.S:living0,o=go(base,c,S);c.tax=o.tax+o.irm;c.safe=!over(o.rows)&&!over(go(base,c,S,G2).rows)});
+    cands.forEach(c=>{c.P=PF(c);c.S=c.k==='none'?zS:sus(c.P,c);const o=go(c.P,c,c.S);c.tax=o.tax+o.irm;c.sp={k:'sched',a:o.rows.map(x=>x.C)};c.G=guardrailAT(M,c.P,c.sp);c.score=c.G.err?0:c.G.at(tg)});
+    if(cands[0].G.err){document.getElementById('warn').textContent=cands[0].G.err;document.getElementById('sum').innerHTML='';document.getElementById('tbl').innerHTML='';return}
+    const best=Math.max(...cands.map(c=>c.score)),ties=cands.filter(c=>c.score>=best-Math.max(50,best*.002));
+    ties.forEach(c=>{const h=histTax(M,c.P,c.sp,c.score);c.htax=h==null?c.tax:h});const pick=ties.sort((a,b)=>a.htax-b.htax)[0],zc0=cands[0];pol=pick;P=pick.P;GA={pick,zc0,src:cands[0].G.src};
+    const tgp=Math.round(tg*100),an=/^(8|11|18)\d?$/.test(String(tgp))?'an':'a';
+    headline=(pick.k==='none'?'Auto with guardrails found that not converting supports the most spending at my target chance.':pick.k==='eff'?`Auto with guardrails picked conversions up to ${/^(8|11|18)\d?$/.test(String(Math.round(pick.v*100)))?'an':'a'} ${Math.round(pick.v*100)}% effective rate each year, through age ${cmax}.`:`Auto with guardrails picked filling the ${pick.v}% bracket each year, through age ${cmax}.`)+
+      ` At ${an} ${tgp}% chance of lasting to ${M.end}, it supports ${fmt(pick.score)} a year of after-tax spending (${start} dollars) across ${GA.src}${pick.score>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zc0.score)}`}.${ties.length>1?` Among the ${ties.length} strategies that close, it has the lowest typical lifetime federal tax and IRMAA across those futures (${fmt(pick.htax)}).`:''}`;
+    sumLabel='Auto with guardrails picked';sumVal=pick.k==='none'?'No conversions':pick.k==='eff'?`Up to a ${Math.round(pick.v*100)}% effective rate`:`Top of the ${pick.v}% bracket`;pol={...pick}}
+  else if(tt=='none'){pol={k:'none'};headline='No conversions.';sumLabel='Conversions';sumVal='None'}
+  else if(tt=='amt'){pol={k:'amt',v:tv};headline=`Conversions fill each year until the year's federal tax reaches ${fmt(tv)} (${start} dollars).`;sumLabel='Conversions fill each year up to';sumVal=fmt(tv)+' of federal tax'}
+  else if(tt=='fixed'){const L1=document.getElementById('fixn').value===''?tv:v('fixn')/(1+inf);pol={k:'fixed',v0:tv,v:L1};headline=`Converts ${fmt(tv)} in ${start}${Math.abs(L1-tv)>1?` and ${fmt(L1)} a year after that (${start} dollars)`:' and the same each year after that'}, through age ${cmax}.`;sumLabel='Set amount';sumVal=fmt(tv)+(Math.abs(L1-tv)>1?' then '+fmt(L1):'')+' a year'}
+  else if(tt=='auto'){
+    const cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(x=>({k:'eff',v:x/100})),[12,22,24].map(x=>({k:'brk',v:x})));
+    cands.forEach(c=>{c.P=PF(c);c.S=c.k==='none'?zS:sus(c.P,c);const S=planMax?c.S:living0,o=go(c.P,c,S);c.tax=o.tax+o.irm;c.safe=!over(o.rows)&&!over(go(c.P,c,S,G2).rows)});
     const guard=document.getElementById('autosafe').value!='no',pool=guard&&cands.some(c=>c.safe)?cands.filter(c=>c.safe):cands,best=Math.max(...pool.map(c=>c.S)),
       pick=pool.filter(c=>c.S>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0];
-    pol=pick;
+    pol=pick;P=pick.P;
     const safeNote=!guard?' The RMD safety check is off, so this maximizes spending and may leave large RMDs.':!pick.safe?' No tested plan kept RMDs inside the 22%-bracket limit with growth +2 points, so this is the best among all of them.':' It keeps RMDs inside the 22%-bracket limit, even with growth +2 points.';
     headline=(pick.k==='none'?'Auto found that not converting gives the highest sustainable after-tax spending.':pick.k==='eff'?`Auto picked conversions up to a ${Math.round(pick.v*100)}% effective tax rate each year, through age ${cmax}.`:`Auto picked filling the ${pick.v}% bracket each year, through age ${cmax}.`)+
       ` It supports ${fmt(pick.S)} a year of after-tax spending (${start} dollars)${pick.S>=best-.5?`, the most of the ${pool.length} strategies ${guard&&pool.length<cands.length?'that pass the RMD check':'tested'}`:`, within 0.2% of the best of the ${pool.length} strategies ${guard&&pool.length<cands.length?'that pass the RMD check':'tested'} (${fmt(best)})`}, and among strategies that close it has the lowest lifetime federal tax plus IRMAA.`+safeNote;
@@ -297,7 +338,7 @@ function run(){syncInputs();
   const cf={ira:'pira','457':'p457','403':'p403'}[document.getElementById('corder').value]||'';
   const take=(bal,keys,amt,first)=>{const out={};const ord=keys.filter(k=>bal[k]>.5).sort((x,y)=>bal[x]-bal[y]);const i=ord.indexOf(first);if(i>0)ord.unshift(ord.splice(i,1)[0]);
     for(const k of ord){if(amt<=.005)break;const x=Math.min(amt,bal[k]);bal[k]-=x;out[k]=x;amt-=x}return out};
-  const splitAcc=rows=>{const b={};PK.concat(RK).forEach(k=>b[k]=v(k));const gone={};
+  const splitAcc=rows=>{const b={};PK.concat(RK).forEach(k=>b[k]=v(k));if(WZ){const sp=PK.reduce((t,k)=>t+v(k),0),sr=RK.reduce((t,k)=>t+v(k),0);PK.forEach(k=>b[k]=sp>0?b[k]*base.st.pre/sp:0);RK.forEach(k=>b[k]=sr>0?b[k]*base.st.roth/sr:0)}const gone={};
     rows.forEach(x=>{const tp=PK.reduce((s,k)=>s+b[k],0);if(tp>0)PK.forEach(k=>b[k]-=x.rmd*b[k]/tp);
       x.cv=take(b,PK,x.C,cf);for(const k in x.cv)b[TO[k]]+=x.cv[k];take(b,PK,x.W,cf);b.r403+=x.K/2;b.r457+=x.K/2;take(b,RK,x.Rw,'');
       PK.concat(RK).forEach(k=>{b[k]*=1+G.g;if(b[k]<1)b[k]=0;if(!gone[k]&&v(k)>0&&b[k]<1)gone[k]=x.y});x.acc={...b}});return gone};
@@ -314,7 +355,7 @@ function run(){syncInputs();
   const maxNote=planMax?' Planned at maximum sustainable after-tax spending: '+fmt(living)+' a year (no-conversion column: '+fmt(zliving)+'), drawing down to your age-95 cushion.':'';
   const row=(l,a,b)=>`<tr${/<b[ >]|<strong[ >]/i.test(l)?' class="emphasis"':''}><td>${l}</td><td>${a}</td><td>${b}</td></tr>`;
   const endA=x=>x?x.preE+x.rothE+x.brkE+x.cashE+x.efE:0,lA=A[A.length-1],lZ=Z[Z.length-1],dep=o=>o.dep||'after '+Y1;
-  document.getElementById('hdr').textContent=`Born Nov ${by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${start} dollars · Spending is after tax; Medicare premiums and IRMAA are paid on top`;
+  document.getElementById('hdr').textContent=`Born Nov ${by} · Single · Florida · Federal tax only · RMDs start at 75 (${Y75}) · All dollar amounts in ${base.Y0} dollars${WZ?` · Starts in January ${base.Y1} from the wizard's projection`:''} · Spending is after tax; Medicare premiums and IRMAA are paid on top`;
   document.getElementById('ttl').textContent=`Year by year (${start} dollars)`;
   let sum='<tr><th></th><th>Strategy</th><th>No conversions</th></tr>'+
       row(sumLabel,sumVal,'—')+
@@ -336,17 +377,18 @@ function run(){syncInputs();
       row('Stress, growth +2 pts: highest bracket, ages 75–100',bf(SA),bf(SZ))+
       row('Peak effective rate, ages 75–100',(pk(A)*100).toFixed(1)+'%',(pk(Z)*100).toFixed(1)+'%')+
       row('Brokerage runs out',dep(Ao),dep(Zo))+
-      row('<b>Sustainable annual after-tax spending</b>',fmt(susA),fmt(zS))+
+      (GA?row(`<b>Spending with ${/^(8|11|18)\d?$/.test(String(Math.round(tg*100)))?'an':'a'} ${Math.round(tg*100)}% chance of lasting to ${M.end}</b> (market futures)`,fmt(GA.pick.score),fmt(GA.zc0.score)):'')+
+      row('<b>Sustainable annual after-tax spending</b>'+(GA?' (steady growth)':''),fmt(susA),fmt(zS))+
       row('Accounts emptied (this strategy)',PK.concat(RK).filter(k=>goneA[k]).sort((a,b)=>goneA[a]-goneA[b]).map(k=>NM[k]+' '+goneA[k]).join('<br>')||'none','—')+
       row('Ending portfolio, '+Y1+' (pre-tax + Roth + brokerage + cash)',fmt(endA(lA)),fmt(endA(lZ)));
   document.getElementById('sum').innerHTML=sum;
   const yrs=A.filter(x=>x.C>0),convNote=(yrs.length?' Converting '+yrs[0].y+'–'+yrs[yrs.length-1].y+' ('+yrs.length+' years).':' No conversion room in the window.')+Lnote;
-  document.getElementById('warn').textContent=headline+convNote+stressNote+maxNote+(Ao.short?' Warning: assets run short under this scenario (age '+Ao.shortAge+').':'');
+  document.getElementById('warn').textContent=(WZ?`Opened from the wizard: starts in January ${base.Y1} with the balances the wizard projects after this year's (${base.Y0}) plan, so results match its long-range check. Changing any entry here starts over from today's balances in ${start}. `:'')+headline+convNote+stressNote+maxNote+(Ao.short?' Warning: assets run short under this scenario (age '+Ao.shortAge+').':'');
   window.CHECK={imb:Math.max(Ao.imb,Zo.imb),living,susA,zS,pol};
   document.getElementById('tbl').innerHTML='<tr>'+['Year','Age','Wages','SS','SS net of IRMAA','Taxable SS','Taxable inc.','Brkt','Eff. rate','Conversion','Converted from','Total tax','Medicare (incl. IRMAA)','IRMAA part','Cash used','Brokerage sold','Pre-tax start','RMD','Other pre-tax withdrawals','Roth paid out','Pre-tax end','Brokerage end','Roth end','Cash end'].concat(ACT.map(k=>NM[k]+' end'),['Total assets','FICA']).map(h=>`<th>${h}</th>`).join('')+
     '</tr>'+A.map((x,i)=>`<tr class="${x.C>0?'conv':''} ${x.rmd>0?'rmd':''}"><td>${x.y}</td><td>${x.age}</td><td>${fmt(x.w)}</td><td>${fmt(x.ss)}</td><td>${fmt(Math.max(0,x.ss-x.irm))}</td><td>${fmt(x.tss)}</td><td>${fmt(x.ordT)}</td><td>${brOf(x)}</td><td>${(x.agi>0?x.T/x.agi*100:0).toFixed(1)}%</td><td>${fmt(x.C)}</td><td><span style="white-space:nowrap">${Object.entries(x.cv).map(([k,a])=>NM[k]+' '+fmt(a)).join('<br>')||'—'}</span></td><td>${fmt(x.T)}</td><td>${fmt(x.med)}</td><td>${fmt(x.irm)}</td><td>${fmt(x.cashU+x.efU)}</td><td>${fmt(x.X)}</td><td>${fmt(x.pre)}</td><td>${fmt(x.rmd)}</td><td>${fmt(x.W)}</td><td>${fmt(x.Rw)}</td><td>${fmt(x.preE)}</td><td>${fmt(x.brkE)}</td><td>${fmt(x.rothE)}</td><td>${fmt(x.cashE+x.efE)}</td>${ACT.map(k=>`<td>${fmt(x.acc[k])}</td>`).join('')}<td>${fmt(endA(x))}</td><td>${fmt(x.fi)}</td></tr>`.replace(/<td>/g,(_,j)=>'<td style="background-color:'+((i%2)?'var(--year-stripe)':'var(--card)')+'">')).join('');
 }
-let tm;document.addEventListener('input',e=>{if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?(e.target.value=='low'?12:24):20}clearTimeout(tm);tm=setTimeout(run,450);dirty(1)});
+let tm;document.addEventListener('input',e=>{if(e.isTrusted&&e.target.id!=='wz'&&document.getElementById('wz').value){document.getElementById('wz').value=''}if(e.target.id=='start'||e.target.id=='lw')renderWork();if(e.target.id=='ttype'){const t=document.getElementById('tval'),b=e.target.value!='eff';t.step=b?1:.5;t.value=b?(e.target.value=='low'?12:24):20}clearTimeout(tm);tm=setTimeout(run,450);dirty(1)});
 const fields=()=>[...document.querySelectorAll('#inputs input,#inputs select,#work input,#strategy input,#strategy select')];
 const sb=()=>document.getElementById('savebtn'),sm=()=>document.getElementById('savemsg');
 function dirty(d){if(sb()){sb().textContent=d?'Save to link ●':'Saved ✓';if(d)sm().textContent=''}}
@@ -362,7 +404,7 @@ function saveURL(){try{const q=new URLSearchParams();fields().forEach(e=>{if(e.v
 function loadURL(){const q=new URLSearchParams(location.hash.slice(1));if(![...q.keys()].length)return;
   fields().forEach(e=>{if(e.tagName=='INPUT')e.value=e.id=='cmax'?'74':''});Object.keys(WK).forEach(k=>delete WK[k]);
   const set=id=>{const e=document.getElementById(id);if(e&&q.has(id))e.value=q.get(id)};
-  [...IN.map(a=>a[0]),'ssclaim','ttype','planat','cmax','autosafe','byage','tval','rtgt','agicap','cushion'].forEach(set);
+  [...IN.map(a=>a[0]),'ssclaim','ttype','planat','cmax','autosafe','byage','tval','rtgt','agicap','cushion','corder','meth','mix','wrap','mean','vol','end','tgt','down0','fixn'].forEach(set);document.getElementById('wz').value=q.get('wz')||'';
   // links saved before the accounts were split: one 403(b) box, one Roth box, basis as a percent
   const put=(id,x)=>{const e=document.getElementById(id);if(e&&!q.has(id))e.value=x};
   if(q.has('t403'))put('p403',q.get('t403'));if(q.has('roth'))put('r403',q.get('roth'));
