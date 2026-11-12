@@ -914,7 +914,7 @@ function render(R){
   ${ssTxt||R.mixNote?`<p class="note">${ssTxt?'The planner uses its own built-in Social Security amounts. ':''}${R.mixNote||''}</p>`:''}`;
 
   return`<div class="plan">
-  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My to-do list for the rest of ${I.yr} and ${I.yr+1}</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<div class="note" style="margin-top:8px"><b>How to cover it');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
+  <div class="card span"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>My to-do list</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<div class="note" style="margin-top:8px"><b>How to cover it');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
     const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<details class="fold"><summary>[^<]*<\/summary><div class="foldin">/,'').replace(/<\/div><\/details>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
     return `<li><div>${x}${D&&D[1]?`<details class="deep"><summary>${D[0]}</summary><div class="deepin">${D[1]}</div></details>`:''}</div></li>`}).join('')}</ol></div>
   <div class="card span"><h2>Cross-checking in my apps</h2>${links}</div>
