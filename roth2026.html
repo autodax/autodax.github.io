@@ -298,12 +298,12 @@ function run(){syncInputs();
   const SETS=v('setsp'),SET=(tt=='auto'||tt=='autog')&&SETS>0;let setNote='';
   if(SET){
     const cands=[{k:'none'}].concat([10,12,14,15,16,17,18,19,20,22,24].map(x=>({k:'eff',v:x/100})),[12,22,24,32].map(x=>({k:'brk',v:x}))),hist=tt=='autog';
-    const yrs=M.end-M.age+1,pth=hist?paths(M,yrs):null,med=a=>{a.sort((x,y)=>x-y);return a[Math.floor((a.length-1)/2)]};
+    const yrs=M.end-M.age+1,pth=hist?paths(M,yrs):null,med=a=>{a.sort((x,y)=>x-y);return a[Math.round((a.length-1)/2)]};
     cands.forEach(c=>{c.P=PF(c);
       if(hist&&!pth.err){const vv=[],rt=[];let ok=0;for(let n=0;n<pth.N;n++){const o=runYears(c.P,{S:SETS,pol:c,ret:k=>pth.get(n,k),end:M.end,down0:M.down});vv.push(afterTax(o));rt.push(o.short?0:o.fin.roth);if(!o.short)ok++}c.val=med(vv);c.roth=med(rt);c.mr=null;c.ok=ok/pth.N}
       else{const o=runYears(c.P,{S:SETS,pol:c,g:G.g,gb:G.gb,end:M.end});c.val=afterTax(o);c.roth=o.short?0:o.fin.roth;c.mr=o.mr;c.ok=o.short?0:1}});
     const pick=cands.slice().sort((a,b)=>b.val-a.val||b.roth-a.roth)[0],zc0=cands[0];pol={...pick,S:SETS};P=pick.P;
-    headline=`I chose to spend ${fmt(SETS)} a year, so ${hist?'Auto with guardrails':'Auto'} looked for the strategy that leaves the most after tax at ${M.end} at that spending${hist&&!pth.err?`, typically, across ${pth.src}`:' with steady growth'}. `+
+    headline=`I chose to spend ${fmt(SETS)} a year, so ${hist?'Auto with guardrails':'Auto'} looked for the strategy that leaves the most after tax at ${M.end} at that spending${hist&&!pth.err?` in a typical future (the middle one), across ${pth.src}`:' with steady growth'}. `+
       (pick.k==='none'?'Not converting does best.':pick.k==='eff'?`It picked conversions up to ${/^(8|11|18)\d?$/.test(String(Math.round(pick.v*100)))?'an':'a'} ${Math.round(pick.v*100)}% effective rate each year, through age ${cmax}.`:`It picked filling the ${pick.v}% bracket each year, through age ${cmax}.`)+
       ` That leaves about ${fmt(pick.val)} after tax, ${fmt(pick.roth)} of it in the Roth${pick.k==='none'?'':`, compared with ${fmt(zc0.val)} (${fmt(zc0.roth)} in the Roth) without converting`}. Money still in pre-tax accounts counts after tax at my own bracket in my last year${pick.mr!=null?` (${Math.round(pick.mr*100)}%)`:''}.`+(pick.ok<tg?` Note: ${fmt(SETS)} lasts to ${M.end} in only ${Math.round(pick.ok*100)}% of those futures.`:'');
     sumLabel=(hist?'Auto with guardrails':'Auto')+' picked (at my chosen spending)';sumVal=pick.k==='none'?'No conversions':pick.k==='eff'?`Up to a ${Math.round(pick.v*100)}% effective rate`:`Top of the ${pick.v}% bracket`;
