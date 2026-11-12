@@ -597,7 +597,7 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
       :Lv>=5e6?`The ${fmt(I.rtgt)} ceiling can't be reached while staying inside the ${I.tbrk}% bracket${at}, so this converts the most the bracket allows each year.`
       :`Even conversions of about ${fmt(Lv)} a year (today's dollars, never above the ${I.tbrk}% bracket) bring the age-75 RMD down to ${fmt(I.rtgt)}${at}.`;
     pol=polL(Lv);C0=thisC(pol)}
-  else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:I.camtN/(1+I.inf),v:I.camtN/(1+I.inf)}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
+  else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:Math.round(I.camtN/(1+I.inf)),v:Math.round(I.camtN/(1+I.inf))}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
   const P=C0>0?prep(I,C0):zP;if(living==null)living=pol.k==='none'?zS:susSpend(P,pol,gR,cush,I.down);
   // With an amount I chose, every projection runs at that spending
   if(I.bmode==='set'&&I.setsp>0)living=I.setsp;
