@@ -1086,22 +1086,37 @@ function load(o){if(!o)return;if(o._wk){try{const w=JSON.parse(o._wk);Object.key
   fields().forEach(e=>{if(e.id in o&&!/^w\d{4}[ab]$/.test(e.id)&&!/^ss\d\d$/.test(e.id))e.value=o[e.id]});
   // Links saved before the account list: rebuild it from the old totals (and, before the pre-tax emergency fund existed, clear it)
   if(!('acct' in o)){$('acct').value='';if(!('efp' in o))$('efp').value=''}accInit();renderWork()}
-function fromHash(){const h=location.hash.slice(1);if(!h||!h.includes('='))return null;const q=new URLSearchParams(h),o={};q.forEach((v,k)=>o[k]=v);return o}
-function saveLink(){const s=state();delete s._wk;const qs=new URLSearchParams(s).toString();
+// Links: the entries are packed as #z=<compressed data>.<check value>. The check value catches a link that was cut off or altered.
+// Older links (#yr=2026&by=...) still open.
+const b64u={to:u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')},
+  from:t=>{const s=atob(t.replace(/-/g,'+').replace(/_/g,'/'));const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}};
+const chk=t=>{let h=0x811c9dc5;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)};
+const pipe=async(u,st)=>new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(st)).arrayBuffer());
+async function packState(o){const j=JSON.stringify(o);
+  if(typeof CompressionStream==='undefined')return new URLSearchParams(o).toString();
+  return 'z='+b64u.to(await pipe(new TextEncoder().encode(j),new CompressionStream('deflate-raw')))+'.'+chk(j)}
+async function fromHash(){const h=location.hash.slice(1);if(!h||!h.includes('='))return null;
+  if(h.startsWith('z=')){try{const [d,c]=h.slice(2).split('.');const j=new TextDecoder().decode(await pipe(b64u.from(d),new DecompressionStream('deflate-raw')));
+      if(chk(j)!==c)throw 0;return JSON.parse(j)}catch(e){linkDamaged();return null}}
+  const q=new URLSearchParams(h),o={};q.forEach((v,k)=>o[k]=v);return o}
+function linkDamaged(){const d=document.createElement('div');d.style.cssText='margin:10px auto;max-width:900px;padding:10px 14px;border:2px solid var(--owe);border-radius:8px;background:var(--card,#fff)';
+  d.innerHTML='<b>This link is damaged</b> (it may have been cut off or changed when it was copied), so I didn\'t load it. The wizard shows the entries last saved in this browser instead. To fix the link, open the plan on a device where it works and choose <b>Save</b> again.';
+  document.body.prepend(d)}
+async function saveLink(){const s=state();delete s._wk;const qs=await packState(s);
   try{history.replaceState(null,'','#'+qs)}catch(e){}const u=location.href,i=$('savelink');i.value=u;
   const done=ok=>{$('savemsg').textContent=ok?'Saved. The link is copied; bookmark it to reopen this plan.':'Saved. Copy the address from the address bar.'};
   try{navigator.clipboard.writeText(u).then(()=>done(true),()=>{try{i.select();done(document.execCommand('copy'))}catch(e){done(false)}})}catch(e){done(false)}}
 
 rebuildSS();
-let initial=fromHash();if(!initial){try{initial=JSON.parse(localStorage.getItem('rpwState')||'null')}catch(e){}}
-load(initial);if(!ACC.length)accInit();renderWork();sync();
+(async()=>{let initial=await fromHash();if(!initial){try{initial=JSON.parse(localStorage.getItem('rpwState')||'null')}catch(e){}}
+load(initial);if(!ACC.length)accInit();renderWork();sync()})();
 document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#work'))saveWork();if(e.target.id==='yr'||e.target.id==='lw')renderWork();if(/^ss\d\d$/.test(e.target.id))rebuildSS();sync();save();$('out').dataset.done=''});
 document.addEventListener('change',()=>{sync();save()});
 document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>show(+b.dataset.s)));
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>show(+b.dataset.go)));
 $('savebtn').addEventListener('click',saveLink);
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='saveplan')savePlan()});
-async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchParams(st).toString(),yr=val('yr');
+async function savePlan(){const st=state();delete st._wk;const qs=await packState(st),yr=val('yr');
   const base=location.hostname==='autodax.github.io'?location.origin+location.pathname:'https://autodax.github.io/wizard2027.html';
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let ins='';document.querySelectorAll('section.step[data-s]').forEach(sec=>{if(+sec.dataset.s>4)return;const h=sec.querySelector('h2');const t=h?[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim():'';let rows='';
@@ -1119,7 +1134,7 @@ async function savePlan(){const st=state();delete st._wk;const qs=new URLSearchP
   let dlc=null;try{dlc=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){dlc=null}
   if(dlc){try{await dlc.save({filename:fn,data:html});msg(`Saved as ${fn}.`)}catch(e){msg(e&&e.code==='declined'?'Not saved.':e&&e.code==='rate_limited'?'A save is already waiting for an answer. Try again in a moment.':'Saving a file isn\'t available here. The GitHub copy (autodax.github.io) can save it.')}return}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);msg(`Saved as ${fn} in my downloads.`)}catch(e){msg('This browser blocked the download.')}}
-addEventListener('hashchange',()=>{const o=fromHash();if(o){load(o);sync();if(cur===5)plan()}});
+addEventListener('hashchange',async()=>{const o=await fromHash();if(o){load(o);sync();if(cur===5)plan()}});
 show(1);
 
 /* FRED S&P 500 chart: sized to fit the page, loaded once the box is visible and open */
