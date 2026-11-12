@@ -339,10 +339,13 @@ function run(){syncInputs();
     const te=L=>{const o=runYears(P,{S:living0,pol:{k:'fixed',v0:L,v:L},g:G.g,gb:G.gb,end:Math.min(100,byA),rec:true}),r=o.rows.find(x=>x.y==lastY);return r?r.preE:0};
     let lo=0,hi=5e6;for(let n=0;n<34;n++){const m=(lo+hi)/2;te(m)>1?lo=m:hi=m}const Lv=Math.ceil(hi/500)*500;pol={k:'fixed',v0:Lv,v:Lv};
     headline=`Level conversions that empty the pre-tax accounts by age ${byA} (${lastY}). No bracket limit: taxes are whatever that produces.`;sumLabel='Convert fully by age '+byA+': level amount';sumVal=fmt(Lv)+'/yr ('+start+' $), no bracket limit'}
-  else if(tt=='level'){const rt=v('rtgt'),rm=L=>runYears(base,{S:living0,pol:{k:'level',v:L,cap:brkV},g:G.g,gb:G.gb,end:76}).rmd75||0;let Lv;
-    if(rm(0)<=rt){Lv=0;Lnote=' The RMD ceiling is already met without conversions.'}
-    else if(rm(5e6)>rt){Lv=5e6;Lnote=' The ceiling can\'t be reached inside the bracket and window, so this converts the most allowed each year.'}
-    else{let lo=0,hi=5e6;for(let n=0;n<26;n++){const m=(lo+hi)/2;rm(m)>rt?lo=m:hi=m}Lv=Math.ceil(hi/500)*500}
+  else if(tt=='level'){
+    // The age-75 RMD depends on spending before then, so size at the spending the projection uses (repeat until they agree).
+    const rt=v('rtgt'),polL=L=>({k:'level',v:L,cap:brkV}),rm=(L,S)=>runYears(P,{S,pol:polL(L),g:G.g,gb:G.gb,end:76}).rmd75||0;
+    const solve=S=>{if(rm(0,S)<=rt)return 0;if(rm(5e6,S)>rt)return 5e6;let lo=0,hi=5e6;for(let n=0;n<26;n++){const m=(lo+hi)/2;rm(m,S)>rt?lo=m:hi=m}return Math.ceil(hi/500)*500};
+    let S=SETS>0?SETS:living0,Lv=solve(S);
+    if(!(SETS>0)&&planMax)for(let n=0;n<8;n++){const S2=sus(P,polL(Lv));if(Math.abs(S2-S)<50)break;S=S2;Lv=solve(S)}
+    if(Lv===0)Lnote=' The RMD ceiling is already met without conversions.';else if(Lv>=5e6)Lnote=' The ceiling can\'t be reached inside the bracket and window, so this converts the most allowed each year.';
     pol={k:'level',v:Lv,cap:brkV};headline=`Level conversions, sized to keep the age-75 RMD at or below ${fmt(rt)} (${start} $) without going above the top of the ${brkV}% bracket.`;sumLabel='Even conversions: level amount';sumVal=Lv>=5e6?'Most allowed each year':fmt(Lv)+'/yr ('+start+' $), capped at the top of the '+brkV+'% bracket'}
   const susA=SET?sus(P,pol):pol.k==='none'?zS:(pol.S!=null?pol.S:sus(P,pol)),living=SETS>0?SETS:planMax?susA:living0,zliving=planMax?zS:living0;
   const Ao=go(P,pol,living),Zo=go(base,NONE,zliving),A=Ao.rows,Z=Zo.rows;

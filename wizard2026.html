@@ -579,11 +579,23 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
     const best=Math.max(...cands.map(c=>c.S)),pick=cands.filter(c=>c.S>=best-Math.max(50,best*.002)).sort((a,b)=>a.tax-b.tax)[0];pol=pick;C0=pick.C0;living=pick.S;
     note=(pick.k==='none'?'The <i>Auto</i> model found that not converting gives the highest sustainable after-tax spending.':pick.k==='eff'?`The <i>Auto</i> model picked conversions up to ${/^(8|11|18)\d?$/.test(String(Math.round(pick.v*100)))?'an':'a'} ${Math.round(pick.v*100)}% effective rate each year through age ${I.cmax}.`:`The <i>Auto</i> model picked filling the ${pick.v}% bracket each year through age ${I.cmax}.`)+
       ` It supports ${fmt(pick.S)} a year of after-tax spending in today's dollars${pick.S>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zS)}`}. Among strategies that close, it has the lowest lifetime federal tax and IRMAA.`}
-  else if(I.model==='level'){const rm=L=>{const p={k:'level',v:L,cap:I.tbrk},c=thisC(p);return runYears(c>0?prep(I,c):zP,{S:zS,pol:p,g:gR,end:76,down0:I.down}).rmd75||0};
-    let Lv;if(rm(0)<=I.rtgt){Lv=0;note='My age-75 RMD is already under the ceiling without conversions.'}
-    else if(rm(5e6)>I.rtgt){Lv=5e6;note=`The ceiling can't be reached while staying inside the ${I.tbrk}% bracket, so this converts the most allowed each year.`}
-    else{let lo=0,hi=5e6;for(let n=0;n<26;n++){const m=(lo+hi)/2;rm(m)>I.rtgt?lo=m:hi=m}Lv=Math.ceil(hi/500)*500;note=`Even conversions of about ${fmt(Lv)} a year (today's dollars) bring the age-75 RMD to ${fmt(I.rtgt)}.`}
-    pol={k:'level',v:Lv,cap:I.tbrk};C0=thisC(pol)}
+  else if(I.model==='level'){
+    // The age-75 RMD depends on how much I spend before then, so size the conversions at the same spending the projection uses:
+    // my chosen amount, or else the sustainable spending of the strategy itself (found by repeating until the two agree).
+    const fixS=I.bmode==='set'&&I.setsp>0,polL=L=>({k:'level',v:L,cap:I.tbrk});
+    // Each search runs from next January's balances after this year's conversion; this year's conversion itself follows the
+    // even amount, so repeat until the starting point, the even amount and the spending all agree.
+    const startOf=L=>{const c=thisC(polL(L));return c>0?prep(I,c):zP};
+    const rm=(L,S,P0)=>runYears(P0,{S,pol:polL(L),g:gR,end:76,down0:I.down}).rmd75||0;
+    const solve=(S,P0)=>{if(rm(0,S,P0)<=I.rtgt)return 0;if(rm(5e6,S,P0)>I.rtgt)return 5e6;let lo=0,hi=5e6;for(let n=0;n<26;n++){const m=(lo+hi)/2;rm(m,S,P0)>I.rtgt?lo=m:hi=m}return Math.ceil(hi/500)*500};
+    let S=fixS?I.setsp:zS,Lv=0;
+    for(let n=0;n<8;n++){const P0=startOf(Lv),L2=solve(S,P0),S2=fixS?S:susSpend(P0,polL(L2),gR,cush,I.down);
+      if(L2===Lv&&Math.abs(S2-S)<50)break;Lv=L2;S=S2}
+    const at=fixS?` when I spend ${fmt(I.setsp)} a year`:` at the spending this plan supports (${fmt(S)} a year)`;
+    note=Lv===0?`My age-75 RMD is already under the ${fmt(I.rtgt)} ceiling without conversions${at}.`
+      :Lv>=5e6?`The ${fmt(I.rtgt)} ceiling can't be reached while staying inside the ${I.tbrk}% bracket${at}, so this converts the most the bracket allows each year.`
+      :`Even conversions of about ${fmt(Lv)} a year (today's dollars, never above the ${I.tbrk}% bracket) bring the age-75 RMD down to ${fmt(I.rtgt)}${at}.`;
+    pol=polL(Lv);C0=thisC(pol)}
   else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:I.camtN/(1+I.inf),v:I.camtN/(1+I.inf)}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
   const P=C0>0?prep(I,C0):zP;if(living==null)living=pol.k==='none'?zS:susSpend(P,pol,gR,cush,I.down);
   // With an amount I chose, every projection runs at that spending
