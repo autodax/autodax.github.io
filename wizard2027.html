@@ -1047,7 +1047,7 @@ function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e
   const t=ssTable(),a=+val('ssa');if($('x-ssa'))$('x-ssa').textContent=a?`Benefits start in November ${num('by')+a}, the month I turn ${a}, so the wizard counts one month in that first year. ${a===70?'Claiming at 70 gives the largest benefit for life, and it works like an inflation-protected annuity.':'Claiming before 70 gives a smaller benefit for life.'} Amounts come from my statement below.`:'';}
 
 function sync(){explain();
-  {const y=num('yr'),b=$('yrwarn');if(b){if(y&&y!==FILEYEAR){const st=state();delete st._wk;b.hidden=false;b.innerHTML=`<b>This wizard uses ${FILEYEAR} tax rules, but the plan year is ${y}.</b> ${y<FILEYEAR?`For a ${y} plan, <a href="wizard${y}.html#${new URLSearchParams(st)}">open wizard${y}.html</a> with these same entries.`:`For a ${y} plan, <a href="wizard${y}.html#${new URLSearchParams(st)}">open wizard${y}.html</a> with these same entries. If it doesn't open, the ${y} version isn't out yet; it comes once the ${y} tax figures are published.`}`}else{b.hidden=true;b.innerHTML=''}}}const m=val('model'),tt=val('ttype'),me=val('meth');
+  {const y=num('yr'),b=$('yrwarn');if(b){if(y&&y!==FILEYEAR){const st=state();delete st._wk;b.hidden=false;b.innerHTML=`<b>This wizard uses ${FILEYEAR} tax rules, but the plan year is ${y}.</b> ${y<FILEYEAR?`<div style="margin:8px 0"><button type="button" class="btn" id="cfwd">Carry forward to ${FILEYEAR}</button></div>This turns my ${y} plan into a ${FILEYEAR} plan: it keeps my accounts, wages, Social Security and settings, fills in last year's tax from the ${y} plan, and clears this year's numbers for me to enter. Or, to look at the ${y} plan as it was, <a href="wizard${y}.html#${new URLSearchParams(st)}">open wizard${y}.html</a> with these same entries.`:`For a ${y} plan, <a href="wizard${y}.html#${new URLSearchParams(st)}">open wizard${y}.html</a> with these same entries. If it doesn't open, the ${y} version isn't out yet; it comes once the ${y} tax figures are published.`}`}else{b.hidden=true;b.innerHTML=''}}}const m=val('model'),tt=val('ttype'),me=val('meth');
   const bm=val('bmode')==='set';const VIS={setsp:bm,tgt:!bm,upP:!bm,corder:m!=='none',camt:m==='fixed',camtN:m==='fixed',ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
   for(const id in VIS){const e=$(id);if(e&&e.parentElement)e.parentElement.hidden=!VIS[id]}
   $('tbrkLbl').textContent=m==='level'?'Bracket I won\'t go above':'Bracket I fill to';
@@ -1102,6 +1102,22 @@ document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest
   if(x.classList.contains('ax')){const i=+x.closest('.accrow').dataset.i;ACC.splice(i,1)}
   else{const g=x.closest('.acclist').dataset.g;ACC.push({g,n:'',t:ACCT_T[g]?ACCT_T[g][0][0]:'',b:0,e:false})}
   const box=x.closest('.acclist'),add=x.classList.contains('accadd');accRender();accSync(true);if(add&&box){const rows=box.querySelectorAll('.accrow');const l=rows[rows.length-1];if(l)l.querySelector('.an').focus()}});
+/* Carry an older plan forward to this file's year: keep accounts, wages, Social Security and settings;
+   last year's tax and AGI come from the old plan's estimate for its own year; this year's numbers are cleared. */
+function carryForward(){const y0=num('yr');let tax='',agi='';
+  try{const R=compute();if(!R.err&&R.S){tax=Math.round(R.S.t.tax);agi=Math.round(R.S.t.tot)}}catch(e){}
+  const agiOld=val('lagi'),one=y0===FILEYEAR-1;
+  $('yr').value=FILEYEAR;$('ltax').value=one?tax:'';$('lagi').value=one?agi:'';$('agi2').value=one?agiOld:'';
+  ['pdate','ytdwh','perwh','wwh','ltg','stg','int','oth','lsp','bwd','thp','mkt0','mkt1'].forEach(k=>{if($(k))$(k).value=''});
+  if($('down'))$('down').value='no';
+  Object.keys(WK).forEach(k=>{if(+k<FILEYEAR)delete WK[k]});renderWork();sync();save();
+  const n=document.createElement('div');n.className='yrwarn';n.id='cfnote';
+  n.innerHTML=`<b>Carried forward from my ${y0} plan.</b> ${one&&tax?`Last year's tax (${fmt(tax)}) and AGI (${fmt(agi)}) on step 2 are the ${y0} plan's estimates; replace them with the figures from my ${y0} return when I have it. `:''}Update, in order:<ol style="margin:6px 0 0;padding-left:1.4em">
+    <li>Step 1: account balances, cost basis and dividends, and whether the market is down.</li>
+    <li>Step 2: latest paystub and withholding so far, gains and interest, any spring Roth conversion (under conversions already done), and this year's spending. Check the wages and Roth contributions by year.</li>
+    <li>Steps 3–4: settings are kept; change any I want.</li></ol>`;
+  const w=$('yrwarn');w.parentNode.insertBefore(n,w);show(1);window.scrollTo(0,0)}
+document.addEventListener('click',e=>{if(e.target.id==='cfwd')carryForward()});
 function state(){saveWork();const o={};fields().forEach(e=>{o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
 function save(){try{localStorage.setItem('rpwState',JSON.stringify(state()))}catch(e){}}
 function load(o){if(!o)return;if(o._wk){try{const w=JSON.parse(o._wk);Object.keys(WK).forEach(k=>delete WK[k]);Object.assign(WK,w)}catch(e){}}
