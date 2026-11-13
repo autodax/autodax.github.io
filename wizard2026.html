@@ -253,7 +253,7 @@ p{max-width:72ch}
     <div><label for="ltg">Long-term gains, full year</label><input id="ltg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held over a year that I've sold or will sell this year (<span class="y" data-o="0"></span>), including brokerage sales for spending. My brokerage's realized gain/loss or tax page shows the year-to-date total. Don't include the brokerage sale that refills the Roth after a conversion; the wizard adds that itself. If I leave this blank, the wizard estimates it from this year's (<span class="y" data-o="0"></span>) brokerage withdrawals at my cost basis.</div></div>
     <div><label for="stg">Short-term gains, full year</label><input id="stg" type="number" inputmode="decimal" step="100" value=""><div class="help">Gains on investments held a year or less. Taxed like wages. Usually zero.</div></div>
     <div><label for="int">Interest income, full year</label><input id="int" type="number" inputmode="decimal" step="100" value="" placeholder="estimate"><div class="help" id="intHint"></div></div>
-    <div><label for="oth">Pre-tax withdrawals already taken this year (<span class="y" data-o="0"></span>)</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year (<span class="y" data-o="0"></span>), including any conversions already done. Leave out the conversion the wizard is working out for me on step 3.</div></div>
+    <div><label for="oth">Pre-tax withdrawals and Roth conversions already done this year (<span class="y" data-o="0"></span>)</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year (<span class="y" data-o="0"></span>), including a spring Roth conversion. The wizard then works out only the top-up conversion still to do by December 31.</div></div>
   </div>
   <div class="group">This year (<span class="y" data-o="0"></span>) and next year (<span class="y" data-o="1"></span>)</div>
   <div class="grid">
@@ -310,7 +310,7 @@ p{max-width:72ch}
     <div class="full"><label for="pay">How I'll pay tax for the <span class="y" data-o="0"></span> tax year</label><select id="pay">
       <option value="roll">I'll withhold from the conversion, then refill the Roth from brokerage (60-day rollover)</option>
       <option value="wh">I'll withhold from the conversion, with no refill</option>
-      <option value="qtr">I'll make quarterly estimated payments</option></select><div class="explain" id="x-pay"></div></div>
+      <option value="qtr" selected>I'll make quarterly estimated payments</option></select><div class="explain" id="x-pay"></div></div>
   </div>
   <div class="btns"><button class="btn ghost" type="button" data-go="2">Back</button><button class="btn" type="button" data-go="4">Next: returns</button></div>
 </section>
@@ -764,7 +764,7 @@ function render(R){
   if(R.C>0){
     const AC=convSort(I.accRows.map(a=>({...a})),I.corder);
     let left=R.C;const SPL=[];for(const a of AC){if(left<=0)break;const x=Math.min(left,a.b);SPL.push({n:a.n,x,all:x>=a.b-1});left-=x}
-    let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax to Roth${SPL.length===1?`, from the <b>${SPL[0].n}</b>${SPL[0].all?' (empties it)':''}`:''}.</div><ul>`;
+    let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax to Roth${SPL.length===1?`, from the <b>${SPL[0].n}</b>${SPL[0].all?' (empties it)':''}`:''}.${I.oth>0?` This is the top-up, on top of the ${fmt(I.oth)} of pre-tax withdrawals and conversions already done this year (step 2).`:''}</div><ul>`;
     if(SPL.length>1)li+=`<li>From: ${SPL.map(p=>`${p.n} <b class="amt">${fmt(p.x)}</b>${p.all?' (empties it)':''}`).join('; ')}. Split the withholding in proportion, or take it all from the largest piece.</li>`;
     if(I.pay==='roll'){li+=`<li>Ask the custodian of ${SPL.length>1?'each of those accounts':'the '+(SPL[0]?SPL[0].n:'pre-tax account')} for the conversion with federal tax withheld (often easiest by phone with their retirement team)${Math.min(S.P,R.Wh)>=1?", and tell them I'll replace the withheld amount with a 60-day rollover":''}.</li>
       <li>Have them withhold <b class="amt">${fmt(R.Wh)}</b> federal tax: all of ${I.yr}'s tax still owed after paycheck withholding, including tax on capital gains.</li>
@@ -804,7 +804,9 @@ function render(R){
     if(R.unfunded>1)li+=`<li class="warn">${fmt(R.unfunded)} can't be funded from my accounts.</li>`;
     const how=setM?`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> I set it on step 4 under <b>Next year's budget → An amount I choose</b> (${fmt(I.setsp)} a year in today's dollars, plus inflation${G.mode==='setcut'?`, then cut by the guardrails because that amount fell below my ${pctS(I.lo)} chance`:''}).${G.mode==='setcut'?'':' It is <b>not</b> the most I could spend.'} For the most I can spend safely${G.mode==='setcut'?' at my target chance':''}, choose <b>Set by the guardrails</b> there instead and leave this year's spending blank on step 2: the budget becomes the most that lasts to ${I.end} in ${pctS(I.tg)} of the market histories tested, about <b>${fmt(G.Wtg)}</b> in ${I.yr+1}.</p>`
       :`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> the guardrails on step 4 (<b>Next year's budget → Set by the guardrails</b>), starting from ${I.lspBlank?`the most that lasts at my ${pctS(I.tg)} target, since this year's spending is blank on step 2`:`this year's spending on step 2`}. To spend a fixed amount of my choosing instead, pick <b>An amount I choose</b> there.</p>`;
-    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> (${NC.why}), done in Oct–Dec ${Y} with no tax withheld. Its tax is in the next item. When I run the ${Y} wizard next fall, it will work out the exact amount from my actual ${Y} income.</div>`
+    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
+      <li><b>Spring (March–April ${Y}):</b> convert about <b class="amt">${fmt(sp)}</b>, three-quarters of the estimate. Converting early gives it more time to grow in the Roth; if the market drops sharply at any point in the year, that's a good time to convert.</li>
+      <li><b>Fall (October–November ${Y}):</b> run the ${Y} wizard, entering the spring conversion on step 2 under pre-tax withdrawals and Roth conversions already done. It works out the top-up from my actual ${Y} income, about ${fmt(NC.C-sp)} now, to convert by December 31. Waiting for the top-up avoids converting too much, since a conversion can't be undone.</li></ul>Its tax is in the next item.</div>`})()
       :`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`)}
     todo.push(li+how)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='next'});
