@@ -246,8 +246,8 @@ p{max-width:none}
     <div><label for="by">Birth year (November birthday)</label><input id="by" type="number" inputmode="numeric" step="1" value=""><div class="help">Sets my age for the standard deduction, Medicare, Social Security and RMDs (which start at 75).</div></div>
     <div><label for="lw">Last working year</label><input id="lw" type="number" inputmode="numeric" step="1" value=""><div class="help">The last calendar year I'll earn a salary. Changing this year adds or removes the wage rows below.</div></div>
   </div>
-  <div class="group">Wages and Roth contributions by year</div>
-  <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Future years are estimates in that year's dollars.</p>
+  <div class="group">Wages and Roth contributions by year (today's dollars)</div>
+  <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Enter every year in today's dollars; the wizard adds inflation (<span class="infv"></span>% a year, set on step 4) for future years.</p>
   <div id="work"></div>
   <div class="group" id="tyHead">This year's other income</div>
   <div class="grid">
@@ -264,7 +264,7 @@ p{max-width:none}
   <div class="grid">
     <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value=""><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Medicare premiums, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this amount. If I leave this blank, the wizard sets next year's budget to the amount that has my target chance (step 4) of lasting.</div></div>
     <div><label for="bwd">Brokerage withdrawals this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="bwd" type="number" inputmode="decimal" step="500" value="" placeholder="calculated"><div class="help" id="bwdHint"></div></div>
-    <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>)</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. Take-home pay covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
+    <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>), in today's $</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. Take-home pay covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
     <div><label for="npay">Paychecks next year (<span class="y" data-o="1"></span>)</label><input id="npay" type="number" inputmode="decimal" step="0.5" value="" placeholder="26"><div class="help">How many paydays I'll have next year. 26 if I'm paid every two weeks all year (the wizard uses 26 if I leave this blank); about 19.5 on a nine-month appointment with no summer pay; fewer in the year I stop working. The plan uses this number to spread extra withholding over my paychecks.</div></div>
     <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. The wizard uses last year's tax for the safe harbor: the minimum I must pay during the year, through withholding or estimated payments, to avoid an underpayment penalty.</div></div>
     <div><label for="lagi">AGI last year (<span class="y" data-o="-1"></span> tax year)</label><input id="lagi" type="number" inputmode="decimal" step="1000" value=""><div class="help">Form 1040 line 11. If last year's AGI was over $150,000, safe harbor is 110% of last year's (<span class="y" data-o="-1"></span>) tax instead of 100%.</div></div>
@@ -305,7 +305,7 @@ p{max-width:none}
     <div data-show="target brk level"><label for="tbrk" id="tbrkLbl">Bracket I fill to</label><select id="tbrk"><option value="12">12% bracket</option><option value="22" selected>22% bracket</option><option value="24">24% bracket</option><option value="32">32% bracket</option></select><div class="explain" id="x-tbrk"></div></div>
     <div data-show="target amt"><label for="tamt">Total federal tax for the year ($)</label><input id="tamt" type="number" inputmode="decimal" step="500" value="40000"><div class="help">Converts until the year's federal income tax, on everything, reaches this amount.</div></div>
     <div data-show="fixed"><label for="camt">Conversion this year (<span class="y" data-o="0"></span>), $</label><input id="camt" type="number" inputmode="decimal" step="500" value=""><div class="help">The amount to move from pre-tax to Roth before December 31. The plan works out the tax on this conversion.</div></div>
-    <div data-show="fixed"><label for="camtN">Conversion next year (<span class="y" data-o="1"></span>), $</label><input id="camtN" type="number" inputmode="decimal" step="500" value="" placeholder="same"><div class="help">The wizard uses this for next year's tax estimate on the plan. If I leave this blank, the wizard assumes the same amount as this year.</div></div>
+    <div data-show="fixed"><label for="camtN">Conversion next year (<span class="y" data-o="1"></span>), in today's $</label><input id="camtN" type="number" inputmode="decimal" step="500" value="" placeholder="same"><div class="help">The wizard uses this for next year's tax estimate on the plan, adding inflation (<span class="infv"></span>% a year, set on step 4). If I leave this blank, the wizard assumes the same amount as this year.</div></div>
     <div data-show="level"><label for="rtgt">Age-75 RMD ceiling (today's $)</label><input id="rtgt" type="number" inputmode="decimal" step="5000" value="40000"><div class="help">The largest first required distribution I'm comfortable with, in today's dollars.</div></div>
     <div data-show="x" class="full"><label for="corder">Convert from first</label><select id="corder"><option value="small">Smallest account first (fewer accounts sooner)</option><option value="ira">Traditional IRA first</option><option value="457">457(b) first</option><option value="403">403(b) first</option><option value="custom">My own order (set below)</option></select><div class="explain" id="x-corder"></div></div>
     <div data-show="x"><label for="cmax">Last conversion age</label><input id="cmax" type="number" inputmode="numeric" step="1" value="74"><div class="help">Required distributions start at 75 for my birth year, and RMDs can't be converted, so 74 is the usual last year.</div></div>
@@ -377,6 +377,8 @@ $('mix').innerHTML=[100,95,90,85,80,70,60,50,40,30,20].map(p=>`<option value="${
 /* ---------- Wages by year ---------- */
 const WK={};
 function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y=+e.dataset.y;(WK[y]=WK[y]||[0,0])[+e.dataset.k]=+e.value||0})}
+/* Wages and Roth contributions are entered in today's dollars; wkN(y) gives year y's amounts with inflation (step 4) added */
+function wkN(y){const a=WK[y];if(!a)return null;const f=Math.pow(1+(num('inf')||0)/100,Math.max(0,y-num('yr')));return [a[0]*f,a[1]*f]}
 function renderWork(){saveWork();const s=num('yr'),l=Math.min(num('lw'),s+30);let h='';
   if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);
     h+=`<div class="wyear"><div class="wy">${y}${y===s?' <span>(this year)</span>':y===s+1?' <span>(next year)</span>':''}</div><div class="wf"><div><label for="w${y}a">Wages (before Roth)</label><input id="w${y}a" type="number" inputmode="decimal" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">Roth contribution</label><input id="w${y}b" type="number" inputmode="decimal" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div></div></div>`}
@@ -597,7 +599,7 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
       :Lv>=5e6?`The ${fmt(I.rtgt)} ceiling can't be reached while staying inside the ${I.tbrk}% bracket${at}, so this converts the most the bracket allows each year.`
       :`Even conversions of about ${fmt(Lv)} a year (today's dollars, never above the ${I.tbrk}% bracket) bring the age-75 RMD down to ${fmt(I.rtgt)}${at}.`;
     pol=polL(Lv);C0=thisC(pol)}
-  else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:Math.round(I.camtN/(1+I.inf)),v:Math.round(I.camtN/(1+I.inf))}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
+  else{pol=I.model==='none'?{k:'none'}:I.model==='fixed'?{k:'fixed',v0:Math.round(I.camtN),v:Math.round(I.camtN)}:I.ttype==='eff'?{k:'eff',v:I.teff/100}:I.ttype==='brk'?{k:'brk',v:I.tbrk}:{k:'amt',v:I.tamt};C0=I.model==='none'?0:(R.C||0)}
   const P=C0>0?prep(I,C0):zP;if(living==null)living=pol.k==='none'?zS:susSpend(P,pol,gR,cush,I.down);
   // With an amount I chose, every projection runs at that spending
   if(I.bmode==='set'&&I.setsp>0)living=I.setsp;
@@ -619,16 +621,16 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
 function inputs(){saveWork();
   const yr=num('yr'),by=num('by'),age=yr-by,t=ssTable(),ssA=+val('ssa')||0,ssM=t[ssA]||0;
   const pre=num('p403')+num('p457')+num('pira'),roth=num('r403')+num('r457')+num('rira'),brk=num('brk'),bas=Math.min(num('bas'),brk),ef=num('ef'),efp=num('efp'),cash=num('cash'),cashMin=num('cashMin');
-  const wage=y=>y<=num('lw')&&WK[y]?WK[y][0]:0,M=mv();
+  const wage=y=>y<=num('lw')&&WK[y]?wkN(y)[0]:0,M=mv();
   const rmd=age>=75&&DIV[age]?(pre+efp)/DIV[age]:0,rmdP=pre+efp>0?rmd*pre/(pre+efp):0;
   const ssThis=ssA&&age>=ssA?ssM*12*(age==ssA?1/12:1):0;
   const inf=num('inf')/100,g=isBlank('g')?M.mean/100:num('g')/100;
   const _r={yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,efp,cash,cashMin,down:mkt().auto?mkt().down:val('down')==='yes',div:num('div'),
     wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),int:isBlank('int')?num('ef')*.03:num('int'),intEst:isBlank('int'),stg:num('stg'),oth:num('oth'),rmd,rmdP,ssThis,
-    NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?WK[yr+1][1]:0,inf):num('thp'),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
+    NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?wkN(yr+1)[1]:0,inf):num('thp')*(1+inf),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
     model:val('model'),corder:val('corder'),acc:{p403:num('p403'),p457:num('p457'),pira:num('pira')},accRows:ACC.filter(a=>a.g==='pre'&&!a.e&&+a.b>0).map(a=>({n:a.n||({403:'403(b)',457:'457(b)',ira:'Traditional IRA'})[a.t],c:a.t,b:+a.b,o:a.o})),camt:num('camt'),camtN:isBlank('camtN')?num('camt'):num('camtN'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:'qtr',
     meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,bmode:val('bmode'),setsp:num('setsp'),g,cush:num('cush'),
-    WK:JSON.parse(JSON.stringify(WK)),lw:num('lw'),T:ssTable()};
+    WK:Object.fromEntries(Object.keys(WK).map(y=>[y,wkN(+y)])),lw:num('lw'),T:ssTable()};
   _r.ltg=_r.ltgTyped?num('ltg'):_r.NOW.gains;return _r}
 
 /* ---------- This year's scenario for a given conversion ---------- */
@@ -712,7 +714,7 @@ function compute(){const I=inputs();
    const sc=C=>{let g2=0,t;for(let k=0;k<40;k++){t=tx(C,gN+g2);const P=I.pay==='roll'?Math.min(brkLeft,Math.max(0,Math.min(C,t.tax-wh))):I.pay==='qtr'?Math.min(brkLeft,Math.max(0,t.tax-wh)):0,ng=P*(1-I.bp);if(Math.abs(ng-g2)<.5)break;g2=ng}return{t,g2}};
    const preN=Math.max(0,I.pre-R.C-I.rmd-rmdN-R.viaConv),canN=ageN<=I.cmax&&preN>0;let Cn=0,why='';
    if(!canN)why=preN>0?`I'll be past my last conversion age (${I.cmax}).`:'No pre-tax money left to convert.';
-   else if(I.model==='fixed'){Cn=Math.floor(Math.min(I.camtN,preN)/100)*100;why=Cn>0?'the amount I set on step 3':'no amount set for next year'}
+   else if(I.model==='fixed'){Cn=Math.floor(Math.min(I.camtN*(1+I.inf),preN)/100)*100;why=Cn>0?'the amount I set on step 3':'no amount set for next year'}
    else if(I.model==='none')why=`I chose no conversion this year (${I.yr}), so none is assumed for next year (${I.yr+1})`;
    else if(I.model==='target'){const lim=I.ttype==='eff'?I.teff/100:I.ttype==='brk'?(R.NR?R.NR.ord:ORD).find(b=>Math.round(b[0]*100)==I.tbrk)[2]:I.tamt,ok=x=>I.ttype==='eff'?x.t.eff<=lim+1e-9:I.ttype==='brk'?x.t.ordT<=lim:x.t.tax<=lim;
      if(ok(sc(0))){let lo=0,hi=preN;if(ok(sc(hi)))lo=hi;else for(let i=0;i<40;i++){const m=(lo+hi)/2;ok(sc(m))?lo=m:hi=m}Cn=Math.floor(lo/100)*100}
@@ -784,7 +786,7 @@ function render(R){
     todo.push(li)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='est'});
   // Spending
-  if(!G.err){const W=G.W,m=W/12;const setM=G.mode==='set'||G.mode==='setcut',pctS=x=>Math.round(x*100)+'%';let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>${setM?'<b>Amount I chose on step 4.</b>':'<b>Set by the guardrails.</b>'} Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December. This amount doesn't include federal tax${medTxt?' or Medicare premiums':''}. Tax on wages comes out of my paychecks. The rest of ${I.yr+1}'s tax, including tax on the gains from the brokerage sales below and on any Roth conversion, is paid separately, as described under “Planning ${I.yr+1}'s tax now” below.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
+  if(!G.err){const W=G.W,m=W/12;const setM=G.mode==='set'||G.mode==='setcut',pctS=x=>Math.round(x*100)+'%';let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>${setM?'<b>Amount I chose on step 4.</b>':'<b>Set by the guardrails.</b>'} Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December (${fmt(W/(1+I.inf))} in today's dollars, plus ${(I.inf*100).toFixed(1)}% inflation). This amount doesn't include federal tax${medTxt?' or Medicare premiums':''}. Tax on wages comes out of my paychecks. The rest of ${I.yr+1}'s tax, including tax on the gains from the brokerage sales below and on any Roth conversion, is paid separately, as described under “Planning ${I.yr+1}'s tax now” below.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
     R.src.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
     if(R.src.some(s=>s[0]==='Brokerage'))li+=`<li>Set up the automatic monthly transfer from brokerage to checking.</li>`;
     if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting it (plus its tax, withheld) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
@@ -868,8 +870,8 @@ function render(R){
     const lad=[...(setM?[]:[{W:G.Wraise,p:I.up,l:'Guardrail that triggers a raise'}]),{W:G.Wtg,p:I.tg,l:'My target chance'},{W:G.Wcut,p:I.lo,l:'Guardrail that triggers a cut'}];
     const hit=lad.find(r=>Math.abs(r.W-G.W)<1);if(hit)hit.me=1;else lad.push({W:G.W,p:G.P1,l:'',me:1});lad.sort((a,b)=>a.W-b.W);
     spend+=fold('How the guardrails set this budget',`<p>Each spending level is tested against ${G.src}, run year by year with my accounts, income, taxes${medTxt?', Roth conversions and Medicare':' and Roth conversions'}. The more I spend, the lower the chance my money lasts to ${I.end}:</p>
-      <div class="scroll"><table style="max-width:560px"><tr><th></th><th>Spending in ${N}</th><th>Chance it lasts</th></tr>${lad.map(r=>`<tr${r.me?' style="font-weight:700"':''}><td style="font-family:var(--serif)">${r.me?'My budget'+(r.l?', at the '+r.l.charAt(0).toLowerCase()+r.l.slice(1):''):r.l}</td><td>${fmt(r.W)}</td><td>${pct(r.p)}</td></tr>`).join('')}</table></div>
-      <p>${setM?`I chose the amount, so the budget is never raised. If the chance that my amount lasts falls below ${lo}, the budget is cut. Otherwise the budget only rises with inflation, so the budget stays steady`:`If the chance at this year's spending is above ${up}, the budget is raised; below ${lo}, the budget is cut. In between, the budget only rises with inflation, so the budget stays steady`} through ordinary ups and downs. These amounts are in ${N} dollars, worked out from my balances today. The long-range check further down uses today's dollars, so the long-range check's amounts look about ${(I.inf*100).toFixed(1)}% lower.</p>`);
+      <div class="scroll"><table style="max-width:560px"><tr><th></th><th>Spending a year (today's dollars)</th><th>Chance it lasts</th></tr>${lad.map(r=>`<tr${r.me?' style="font-weight:700"':''}><td style="font-family:var(--serif)">${r.me?'My budget'+(r.l?', at the '+r.l.charAt(0).toLowerCase()+r.l.slice(1):''):r.l}</td><td>${fmt(r.W/(1+I.inf))}</td><td>${pct(r.p)}</td></tr>`).join('')}</table></div>
+      <p>${setM?`I chose the amount, so the budget is never raised. If the chance that my amount lasts falls below ${lo}, the budget is cut. Otherwise the budget only rises with inflation, so the budget stays steady`:`If the chance at this year's spending is above ${up}, the budget is raised; below ${lo}, the budget is cut. In between, the budget only rises with inflation, so the budget stays steady`} through ordinary ups and downs. These amounts are in today's dollars, worked out from my balances today; in ${N} each is ${(I.inf*100).toFixed(1)}% higher with inflation.</p>`);
 }
 
   // Conversion card
@@ -946,7 +948,7 @@ function render(R){
   for(let y=I.yr;y<=I.lw;y++)if(I.WK[y]){rp['w'+y+'a']=I.WK[y][0]||'';rp['w'+y+'b']=I.WK[y][1]||''}
   // The planner runs the same method I picked here, with the same market futures for Auto with guardrails
   const tt=I.model==='target'?I.ttype:I.model;
-  Object.assign(rp,{ssclaim:I.ssA||70,ttype:tt,cmax:I.cmax,autosafe:'no',tval:tt==='level'||tt==='brk'?I.tbrk:tt==='eff'?I.teff:tt==='amt'?Math.round(I.tamt):tt==='fixed'?Math.round(I.camtN/(1+I.inf)):'',fixn:'',rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush,
+  Object.assign(rp,{ssclaim:I.ssA||70,ttype:tt,cmax:I.cmax,autosafe:'no',tval:tt==='level'||tt==='brk'?I.tbrk:tt==='eff'?I.teff:tt==='amt'?Math.round(I.tamt):tt==='fixed'?Math.round(I.camtN):'',fixn:'',rtgt:I.rtgt,agicap:0,planat:'max',cushion:I.cush,
     meth:I.meth==='bt'?'bt':'sim',mix:I.mix,wrap:I.wrap?1:0,mean:I.M.mean,vol:I.M.vol,end:I.end,tgt:Math.round(I.tg*100),down0:I.down?1:0,setsp:I.bmode==='set'&&I.setsp>0?Math.round(I.setsp):'',
     // where the long-range check starts: January next year, after this year's plan (same state the wizard projects)
     wz:(()=>{const r=x=>Math.round(x*100)/100,S=P=>{const st={};for(const k in P.st)st[k]=r(P.st[k]);return{st,agi0:r(P.agi0)}},P0=prep(I,0),alt={};
@@ -1029,7 +1031,7 @@ function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e
   {const e=$('x-corder');if(e&&typeof ACC!=='undefined'){const co=val('corder'),TN={403:'403(b)',457:'457(b)',ira:'Traditional IRA'},L=convList(co),E=ACC.filter(a=>a.g==='pre'&&a.e&&+a.b>0);
     const arr=(a,k)=>co!=='custom'?'':`<span class="ordbtn"><button type="button" data-i="${a.i}" data-d="-1" aria-label="Move up"${k===0?' disabled':''}>↑</button><button type="button" data-i="${a.i}" data-d="1" aria-label="Move down"${k===L.length-1?' disabled':''}>↓</button></span>`;
     if(L.length)e.innerHTML=escA(OPT.corder[co]||'')+`<ol class="ordlist">${L.map((a,k)=>`<li><span>${escA(a.n)}${a.n.toLowerCase().includes(TN[a.c].toLowerCase())?'':' · '+TN[a.c]} · ${fmt(a.b)}</span>${arr(a,k)}</li>`).join('')}</ol>`+(E.length?`<div style="margin-top:4px">Never converted (emergency fund): ${E.map(a=>escA(a.n||'pre-tax')).join(', ')}.</div>`:'')}}
-  document.querySelectorAll('.y').forEach(e=>{e.textContent=yy?String(yy+ +e.dataset.o):''});
+  document.querySelectorAll('.y').forEach(e=>{e.textContent=yy?String(yy+ +e.dataset.o):''});document.querySelectorAll('.infv').forEach(e=>{e.textContent=val('inf')||'0'});
   {const m=$('model');if(m){m.options[0].text=`My tax target for this year (${yy})`;m.querySelector('option[value=none]').text=`No conversion this year (${yy})`}}
   const t=ssTable(),a=+val('ssa');if($('x-ssa'))$('x-ssa').textContent=a?`Benefits start in November ${num('by')+a}, the month I turn ${a}, so the wizard counts one month in that first year. ${a===70?'Claiming at 70 gives the largest benefit for life, and the benefit works like an inflation-protected annuity.':'Claiming before 70 gives a smaller benefit for life.'} Amounts come from my statement below.`:'';}
 
@@ -1042,7 +1044,7 @@ function sync(){explain();cfApply();
   const brk=num('brk');$('basHint').textContent=brk>0?`${Math.round(Math.min(num('bas'),brk)/brk*100)}% of the balance`:'';
   const M=mv();$('mvNote').textContent=`Expected return ${M.mean}% a year, volatility ${M.vol}% (${M.lbl}).`+(me==='bt'?' The backtest replays actual years instead of using these averages.':'');
   $('gHint').textContent=`If I leave this blank, the wizard uses ${M.mean}%, the average from my return model. A lower figure, such as 5.5–6%, gives a more conservative read.`;$('g').placeholder=M.mean;
-  {const y=num('yr')+1,w=y<=num('lw')&&WK[y]?WK[y]:[0,0],e=thpEst(w[0],w[1],num('inf')/100);$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`If I leave this blank, the wizard estimates ${fmt(e)}: ${y} wages ${fmt(w[0])} − Roth ${fmt(w[1])} − federal withholding − FICA (Social Security and Medicare tax). Type my own figure if I know it.`:`No wages in ${y}.`}
+  {const y=num('yr')+1,f=1+(num('inf')||0)/100,w=y<=num('lw')&&WK[y]?wkN(y):[0,0],e=thpEst(w[0],w[1],num('inf')/100)/f;$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`If I leave this blank, the wizard estimates ${fmt(e)} in today's dollars: ${y} wages ${fmt(w[0]/f)} − Roth ${fmt(w[1]/f)} − federal withholding − FICA (Social Security and Medicare tax). Type my own figure, in today's dollars, if I know it.`:`No wages in ${y}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,H=wwhCalc(y,w),dl=H.left?H.left.map(([m,d])=>MO[m]+' '+d).join(', '):'';
    $('wwhHint').textContent=H.src==='typed'?'Using the total I typed. Clear it to calculate from my paystub instead.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`If I fill in the three paystub boxes, this total is calculated from those boxes. Otherwise the wizard uses an estimate from my wages: ${fmt(H.v)}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,ssA=+val('ssa')||0,age=y-num('by'),t=ssTable(),ss=ssA&&age>=ssA?(t[ssA]||0)*12*(age==ssA?1/12:1):0,pre=num('p403')+num('p457')+num('pira'),rmd=age>=75&&DIV[age]?pre/DIV[age]:0,b=num('brk'),N=nowCalc(y,w,wwhCalc(y,w).v,ss,rmd,b,b>0?Math.min(num('bas'),b)/b:1,num('inf')/100);
@@ -1097,6 +1099,8 @@ function carryForward(){const y0=num('yr');let tax='',agi='';
   $('yr').value=FILEYEAR;$('ltax').value=one?tax:'';$('lagi').value=one?agi:'';$('agi2').value=one?agiOld:'';
   ['pdate','ytdwh','perwh','wwh','ltg','stg','int','oth','lsp','bwd','thp','npay','mkt0','mkt1'].forEach(k=>{if($(k))$(k).value=''});
   if($('down'))$('down').value='no';
+  // last year's future wages were in last year's dollars; restate them in this year's dollars
+  saveWork();{const f=Math.pow(1+(num('inf')||0)/100,FILEYEAR-y0);Object.keys(WK).forEach(k=>{if(+k>=FILEYEAR)WK[k]=WK[k].map(v=>Math.round(v*f))})}
   Object.keys(WK).forEach(k=>{if(+k<FILEYEAR)delete WK[k]});renderWork();
   // what to update: outlined until I change it (or press Enter to keep it); grey numbers are last year's, and Enter uses one
   // (interest, take-home pay and brokerage withdrawals keep their own estimates as grey hints)
