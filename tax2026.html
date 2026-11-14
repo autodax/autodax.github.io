@@ -815,6 +815,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
         </table>
         <div class="summary-line" style="margin-top:7px;"><span id="srcEmployerLbl">Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only</small></span><span class="v" id="srcEmployer">$0</span></div>
         <div class="summary-line"><span>Still owed after wage withholding<br><small style="font-size:0.66rem;">Negative = over-withheld</small></span><span class="v" id="srcStillOwed">$0</span></div>
+        <div class="summary-line"><span>Pay in quarterly estimated payments<br><small style="font-size:0.66rem;">One quarter each on Apr 15, Jun 15, Sep 15, 2026 and Jan 15, 2027. Income tax only; IRMAA is paid with Medicare.</small></span><span class="v" id="srcQtr">$0</span></div>
         <details class="foot-note" style="margin-top:6px;">
           <summary>How this is calculated</summary>
           <p>This splits the same taxes shown elsewhere on the page, so the rows add up to the total. Ordinary tax is layered through the brackets from the bottom: wages first, then taxable Social Security, interest and ordinary dividends, short-term gains, and the IRA withdrawal / Roth conversion last, so it carries the highest ordinary bracket rate. The standard deduction is applied to the lowest layers first. Qualified dividends and long-term gains are taxed at 0/15/20% on top of ordinary taxable income, and the 3.8% NIIT is shared across dividends and gains in proportion to each. The employer estimate is tax on wages alone with the standard deduction; your actual withholding depends on your W-4, pay frequency, and bonuses.</p>
@@ -1216,6 +1217,7 @@ function calculate(){
   document.getElementById('srcEmployer').textContent = fmt(withheld);
   document.getElementById('srcStillOwed').textContent = fmt(totalTaxWithIrmaa - withheld);
   lastStillOwed = totalTaxWithIrmaa - withheld;
+  { const q = Math.max(0, baseTax - withheld) / 4; document.getElementById('srcQtr').textContent = q > 0 ? fmt(Math.ceil(q)) + ' each' : 'None needed'; }
 
   document.getElementById('totalTax').textContent = fmt(baseTax);
   document.getElementById('incOrdinary').className = 'part' + (ordinaryTax > 0 ? '' : ' inactive');
