@@ -301,7 +301,7 @@ table,.big,.tile .v,.accsum,.wy,.inp td:last-child,input,select{font-family:var(
       <option value="auto">Auto: the most sustainable after-tax spending</option>
       <option value="autog">Auto with guardrails: the most after-tax spending at my target chance</option>
       <option value="level">Even out: keep the age-75 RMD under a ceiling</option>
-      <option value="none">No conversion this year</option></select><div class="help">This choice sets this year's (<span class="y" data-o="0"></span>) conversion, the only one I act on now. The plan's long-range projections assume the same method every year after that, through my last conversion age. Each fall I run that year's wizard again, and the wizard works out that year's conversion from my actual numbers.</div><div class="explain" id="x-model"></div>
+      <option value="none">No conversion this year</option></select><div class="explain" id="x-model"></div>
       <details class="fold"><summary>Which model should I use?</summary><div class="foldin"><ul>
         <li><b><i>Auto with guardrails</i> (my default).</b> Tests 15 strategies against market history (or the simulated futures) and keeps the one that supports the most spending at my target chance; near-ties go to the lowest typical lifetime tax and IRMAA. The most realistic choice.</li>
         <li><b><i>Auto</i>.</b> The same 15 strategies, judged with one steady growth rate. Faster and easier to follow year by year, but Auto ignores bad market stretches.</li>
@@ -1042,7 +1042,7 @@ function convList(co){const TN={403:'403(b)',457:'457(b)',ira:'Traditional IRA'}
 document.addEventListener('click',ev=>{const t=ev.target.closest('.ordbtn button');if(!t)return;
   const L=convList('custom'),k=L.findIndex(a=>a.i===+t.dataset.i),j=k+ +t.dataset.d;if(k<0||j<0||j>=L.length)return;
   [L[k],L[j]]=[L[j],L[k]];L.forEach((a,n)=>ACC[a.i].o=n+1);accSync(true)});
-function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e)e.textContent=(OPT[k][val(k)]||'').replace(/\{Y(-?\d)\}/g,(m,o)=>yy+ +o)}
+function explain(){const yy=num('yr');for(const k in OPT){const e=$('x-'+k);if(e)e.textContent=(OPT[k][val(k)]||'').replace(/\{Y(-?\d)\}/g,(m,o)=>yy+ +o)+(k==='model'?` This choice sets this year's (${yy}) conversion, the only one I act on now; the long-range projections assume the same method every later year through my last conversion age. Each fall I run that year's wizard again, and the wizard works out that year's conversion from my actual numbers.`:'')}
   // the conversion order with the accounts entered on Step 1
   {const e=$('x-corder');if(e&&typeof ACC!=='undefined'){const co=val('corder'),TN={403:'403(b)',457:'457(b)',ira:'Traditional IRA'},L=convList(co),E=ACC.filter(a=>a.g==='pre'&&a.e&&+a.b>0);
     const arr=(a,k)=>co!=='custom'?'':`<span class="ordbtn"><button type="button" data-i="${a.i}" data-d="-1" aria-label="Move up"${k===0?' disabled':''}>↑</button><button type="button" data-i="${a.i}" data-d="1" aria-label="Move down"${k===L.length-1?' disabled':''}>↓</button></span>`;
