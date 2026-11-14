@@ -1159,7 +1159,7 @@ async function nextYear(){const Y=FILEYEAR+1,m=$('nextmsg');
   if(location.protocol.startsWith('http')){try{const r=await fetch(`wizard${Y}.html`,{method:'HEAD',cache:'no-store'});if(!r.ok)throw 0}catch(e){m.textContent=`The ${Y} wizard isn't out yet. It comes once the IRS publishes the ${Y} tax figures, usually in October or November ${FILEYEAR}.`;return}}
   const st=state();delete st._wk;try{localStorage.setItem('rpwCarry','1')}catch(e){}location.href=`wizard${Y}.html#`+await packState(st)}
 document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#nextbtn'))nextYear()});
-document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const t=[...document.querySelectorAll('#brief .brief li')].map(li=>'• '+li.innerText).join('\n'),m=$('copymsg');
+document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const t=[...document.querySelectorAll('#brief .brief li')].map(li=>li.innerText).join('\n'),m=$('copymsg');
   try{await navigator.clipboard.writeText(t);m.textContent='Copied.'}catch(err){const r=document.createRange();r.selectNodeContents(document.querySelector('#brief .brief'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);m.textContent='Selected; press Copy.'}});
 function state(){saveWork();const o={};fields().forEach(e=>{o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
 function save(){try{localStorage.setItem('rpwState',JSON.stringify(state()))}catch(e){}}
