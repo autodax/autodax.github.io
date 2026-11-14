@@ -1197,7 +1197,7 @@ document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='calbri
   const tx=x=>String(x).replace(/\\/g,'\\\\').replace(/[,;]/g,c=>'\\'+c).replace(/\n/g,'\\n'),fold=l=>l.length<=74?l:l.match(/.{1,73}/g).join('\r\n ');
   const nd=d=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+1);return x.toISOString().slice(0,10).replace(/-/g,'')};
   const ev=C.map(([d,t],i)=>['BEGIN:VEVENT',`UID:rpw-${num('yr')}-${i}-${d}@autodax.github.io`,`DTSTAMP:${stamp}`,`DTSTART;VALUE=DATE:${d.replace(/-/g,'')}`,`DTEND;VALUE=DATE:${nd(d)}`,
-    `SUMMARY:${tx(t)}`,`DESCRIPTION:${tx('From my '+num('yr')+' retirement plan: '+u)}`,`URL:${u}`,'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${tx(t)}`,'TRIGGER:-P2DT15H','END:VALARM','END:VEVENT'].map(fold).join('\r\n'));
+    `SUMMARY:${tx(t+' –Wizard')}`,`DESCRIPTION:${tx('From my '+num('yr')+' retirement plan: '+u)}`,`URL:${u}`,'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${tx(t)}`,'TRIGGER:-P2DT15H','END:VALARM','END:VEVENT'].map(fold).join('\r\n'));
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//autodax//Retirement Planning Wizard//EN','CALSCALE:GREGORIAN',...ev,'END:VCALENDAR'].join('\r\n')+'\r\n';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download=`retirement-actions-${num('yr')}.ics`;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);m.textContent=`${C.length} events ready to add to Calendar.`});
