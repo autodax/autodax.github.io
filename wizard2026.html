@@ -1199,7 +1199,7 @@ document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='calbri
   const ev=C.map(([d,t],i)=>['BEGIN:VEVENT',`UID:rpw-${num('yr')}-${i}-${d}@autodax.github.io`,`DTSTAMP:${stamp}`,`DTSTART;VALUE=DATE:${d.replace(/-/g,'')}`,`DTEND;VALUE=DATE:${nd(d)}`,
     `SUMMARY:${tx(t+' –Wizard')}`,`DESCRIPTION:${tx('From my '+num('yr')+' retirement plan: '+u)}`,`URL:${u}`,'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${tx(t)}`,'TRIGGER:-P2DT15H','END:VALARM','END:VEVENT'].map(fold).join('\r\n'));
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//autodax//Retirement Planning Wizard//EN','CALSCALE:GREGORIAN',...ev,'END:VCALENDAR'].join('\r\n')+'\r\n';
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download=`retirement-actions-${num('yr')}.ics`;document.body.appendChild(a);a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'}));a.download=`retirement-actions-${num('yr')}.ics`;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);m.textContent=`${C.length} events ready to add to Calendar.`});
 document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const lis=[...document.querySelectorAll('#brief .brief li')],t=lis.map(li=>li.innerText).join('\n'),m=$('copymsg');
   // Rich text with only bold (no fonts or colors), one paragraph per action, so a notes app keeps the bold and adds its own bullets
