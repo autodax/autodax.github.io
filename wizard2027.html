@@ -765,7 +765,7 @@ function render(R){
     let left=R.C;const SPL=[];for(const a of AC){if(left<=0)break;const x=Math.min(left,a.b);SPL.push({n:a.n,x,all:x>=a.b-1});left-=x}
     let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax to Roth${SPL.length===1?`, from the <b>${SPL[0].n}</b>${SPL[0].all?' (empties it)':''}`:''}.${I.oth>0?` This is the top-up, on top of the ${fmt(I.oth)} of pre-tax withdrawals and conversions already done this year (step 2).`:''}</div><ul>`;
     if(SPL.length>1)li+=`<li>From: ${SPL.map(p=>`${p.n} <b class="amt">${fmt(p.x)}</b>${p.all?' (empties it)':''}`).join('; ')}.</li>`;
-    li+=`<li>Convert with no tax withheld. Its tax is included in the next item, paid with quarterly estimated payments or extra paycheck withholding.</li>`;
+    li+=`<li>Convert with no tax withheld. The tax on this Roth conversion is included in the next item (${I.yr}'s tax), paid with quarterly estimated payments or extra paycheck withholding.</li>`;
     if(R.more&&(R.more.yes||R.more.down))li+=`<li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li>`;
     todo.push(li+'</ul>');
   }else{
@@ -796,7 +796,7 @@ function render(R){
       :`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> the guardrails on step 4 (<b>Next year's budget → Set by the guardrails</b>), starting from ${I.lspBlank?`the most that lasts at my ${pctS(I.tg)} target, since this year's spending is blank on step 2`:`this year's spending on step 2`}. To spend a fixed amount of my choosing instead, pick <b>An amount I choose</b> there.</p>`;
     {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
       <li><b>Spring (March–April ${Y}):</b> convert about <b class="amt">${fmt(sp)}</b>, three-quarters of the estimate. Converting early gives it more time to grow in the Roth; if the market drops sharply at any point in the year, that's a good time to convert.</li>
-      <li><b>Fall (October–November ${Y}):</b> run the ${Y} wizard, entering the spring conversion on step 2 under pre-tax withdrawals and Roth conversions already done. It works out the top-up from my actual ${Y} income, about ${fmt(NC.C-sp)} now, to convert by December 31. Waiting for the top-up avoids converting too much, since a conversion can't be undone.</li></ul>Its tax is in the next item.</div>`})()
+      <li><b>Fall (October–November ${Y}):</b> run the ${Y} wizard, entering the spring conversion on step 2 under pre-tax withdrawals and Roth conversions already done. It works out the top-up from my actual ${Y} income, about ${fmt(NC.C-sp)} now, to convert by December 31. Waiting for the top-up avoids converting too much, since a conversion can't be undone.</li></ul>The tax on this ${Y} Roth conversion is included in the next item (${Y}'s tax).</div>`})()
       :`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`)}
     todo.push(li+how)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='next'});
