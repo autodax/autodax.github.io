@@ -246,8 +246,8 @@ p{max-width:none}
     <div><label for="by">Birth year (November birthday)</label><input id="by" type="number" inputmode="numeric" step="1" value=""><div class="help">Sets my age for the standard deduction, Medicare, Social Security and RMDs (which start at 75).</div></div>
     <div><label for="lw">Last working year</label><input id="lw" type="number" inputmode="numeric" step="1" value=""><div class="help">The last calendar year I'll earn a salary. Changing this year adds or removes the wage rows below.</div></div>
   </div>
-  <div class="group">Wages and Roth contributions by year (today's dollars)</div>
-  <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Enter every year in today's dollars; the wizard adds inflation (<span class="infv"></span>% a year, set on step 4) for future years.</p>
+  <div class="group">Wages and Roth contributions by year (each year's own dollars)</div>
+  <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Enter each year in that year's own dollars, what I expect to be paid then, since raises and Roth contribution limits are set that way. Unlike the wizard's other future amounts, these are not in today's dollars.</p>
   <div id="work"></div>
   <div class="group" id="tyHead">This year's other income</div>
   <div class="grid">
@@ -377,8 +377,8 @@ $('mix').innerHTML=[100,95,90,85,80,70,60,50,40,30,20].map(p=>`<option value="${
 /* ---------- Wages by year ---------- */
 const WK={};
 function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y=+e.dataset.y;(WK[y]=WK[y]||[0,0])[+e.dataset.k]=+e.value||0})}
-/* Wages and Roth contributions are entered in today's dollars; wkN(y) gives year y's amounts with inflation (step 4) added */
-function wkN(y){const a=WK[y];if(!a)return null;const f=Math.pow(1+(num('inf')||0)/100,Math.max(0,y-num('yr')));return [a[0]*f,a[1]*f]}
+/* Wages and Roth contributions are entered in each year's own dollars (raises and contribution limits are set that way) */
+function wkN(y){const a=WK[y];return a?[a[0],a[1]]:null}
 function renderWork(){saveWork();const s=num('yr'),l=Math.min(num('lw'),s+30);let h='';
   if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);
     h+=`<div class="wyear"><div class="wy">${y}${y===s?' <span>(this year)</span>':y===s+1?' <span>(next year)</span>':''}</div><div class="wf"><div><label for="w${y}a">Wages (before Roth)</label><input id="w${y}a" type="number" inputmode="decimal" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">Roth contribution</label><input id="w${y}b" type="number" inputmode="decimal" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div></div></div>`}
@@ -1098,8 +1098,6 @@ function carryForward(){const y0=num('yr');let tax='',agi='';
   $('yr').value=FILEYEAR;$('ltax').value=one?tax:'';$('lagi').value=one?agi:'';$('agi2').value=one?agiOld:'';
   ['pdate','ytdwh','perwh','wwh','ltg','stg','int','oth','lsp','bwd','thp','npay','mkt0','mkt1'].forEach(k=>{if($(k))$(k).value=''});
   if($('down'))$('down').value='no';
-  // last year's future wages were in last year's dollars; restate them in this year's dollars
-  saveWork();{const f=Math.pow(1+(num('inf')||0)/100,FILEYEAR-y0);Object.keys(WK).forEach(k=>{if(+k>=FILEYEAR)WK[k]=WK[k].map(v=>Math.round(v*f))})}
   Object.keys(WK).forEach(k=>{if(+k<FILEYEAR)delete WK[k]});renderWork();
   // what to update: outlined until I change it (or press Enter to keep it); grey numbers are last year's, and Enter uses one
   // (interest, take-home pay and brokerage withdrawals keep their own estimates as grey hints)
