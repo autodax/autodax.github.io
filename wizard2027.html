@@ -196,12 +196,7 @@ table,.big,.tile .v,.accsum,.wy,.inp td:last-child,input,select{font-family:var(
     <button class="icon" id="themebtn" type="button" aria-label="Switch light or dark" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
   </div>
 </header>
-<div class="intro" id="introBox" style="margin-top:8px">
-    <p><b>When to do this:</b> once a year, in October or November. Running the wizard then leaves time to finish a Roth conversion before December 31 and to set up next year's (<span class="y" data-o="1"></span>) transactions.</p>
-    <p><b>What I'll get:</b></p><ul style="margin:4px 0 0;padding-left:1.2em"><li><b>This year (<span class="y" data-o="0"></span>):</b> my spending and which accounts pay for it, with the monthly brokerage transfer through December; how much to convert to Roth by December 31 and from which account; and the <span class="y" data-o="0"></span> tax, including whether I need estimated payments.</li><li><b>Next year (<span class="y" data-o="1"></span>):</b> how much to pay myself, January–December, and which accounts pay for it; how much to convert to Roth, in a spring part and a fall top-up; and the <span class="y" data-o="1"></span> tax, with how to pay it through extra paycheck withholding or quarterly estimated payments.</li><li><b>Longer term:</b> a check of my conversion strategy across many market futures, with lifetime tax, IRMAA, RMDs and what's left after tax.</li></ul>
-    <p><b>What I'll need:</b> current balances for every account, my brokerage cost basis, my latest paystub, and last year's (<span class="y" data-o="-1"></span>) federal tax return.</p>
-  <p>The wizard covers federal tax only, for a single filer, under today's tax law.</p>
-  </div>
+
 <p class="sub" style="margin:0"><span id="savemsg"></span></p>
 <div class="yrwarn" id="yrwarn" hidden></div>
 <input id="savelink" type="text" readonly aria-hidden="true" tabindex="-1" style="position:absolute;left:-9999px;width:1px">
@@ -213,6 +208,12 @@ table,.big,.tile .v,.accsum,.wy,.inp td:last-child,input,select{font-family:var(
   <button type="button" data-s="4"><span class="n">4</span><span class="t" data-long="Returns &amp; spending rules" data-short="Returns">Returns &amp; spending rules</span></button>
   <button type="button" data-s="5"><span class="n">5</span><span class="t" data-long="My plan" data-short="Plan">My plan</span></button>
 </nav>
+<div class="intro" id="introBox" style="margin:0 0 12px">
+    <p><b>When to do this:</b> once a year, in October or November. Running the wizard then leaves time to finish a Roth conversion before December 31 and to set up next year's (<span class="y" data-o="1"></span>) transactions.</p>
+    <p><b>What I'll get:</b></p><ul style="margin:4px 0 0;padding-left:1.2em"><li><b>This year (<span class="y" data-o="0"></span>):</b> my spending and which accounts pay for it, with the monthly brokerage transfer through December; how much to convert to Roth by December 31 and from which account; and the <span class="y" data-o="0"></span> tax, including whether I need estimated payments.</li><li><b>Next year (<span class="y" data-o="1"></span>):</b> how much to pay myself, January–December, and which accounts pay for it; how much to convert to Roth, in a spring part and a fall top-up; and the <span class="y" data-o="1"></span> tax, with how to pay it through extra paycheck withholding or quarterly estimated payments.</li><li><b>Longer term:</b> a check of my conversion strategy across many market futures, with lifetime tax, IRMAA, RMDs and what's left after tax.</li></ul>
+    <p><b>What I'll need:</b> current balances for every account, my brokerage cost basis, my latest paystub, and last year's (<span class="y" data-o="-1"></span>) federal tax return.</p>
+  <p>The wizard covers federal tax only, for a single filer, under today's tax law.</p>
+  </div>
 
 <form id="wiz" autocomplete="off" onsubmit="return false">
 <section class="step card" data-s="1">
