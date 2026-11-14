@@ -180,13 +180,15 @@ nav.steps button{padding-top:5px;padding-bottom:7px}
 .ty{padding-top:2px;padding-bottom:4px}
 .btn{padding-top:7px;padding-bottom:11px}
 @media (max-width:640px){.btn{padding-top:4px;padding-bottom:8px}}
+@supports (text-box:trim-both cap alphabetic){nav.steps button,.small,.ty,.btn{text-box:trim-both cap alphabetic}nav.steps button{padding-top:9px;padding-bottom:9px}.small{padding-top:8px;padding-bottom:8px}.ty{padding-top:6px;padding-bottom:6px}.btn{padding-top:11px;padding-bottom:11px}}
+@supports (text-box:trim-both cap alphabetic){@media (max-width:640px){.btn{padding-top:8px;padding-bottom:8px}}}
 /* Numbers in Literata: even-height digits of equal width, so columns line up */
 table,.big,.tile .v,.accsum,.wy,.inp td:last-child,input,select{font-family:var(--serif)!important;font-variant-numeric:lining-nums tabular-nums}
 .amt,nav.steps button .n,.todo>li::before{font-variant-numeric:lining-nums tabular-nums}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}@media (max-width:600px){body{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}}
 /* Compact input boxes and tighter spacing on every screen, same text size */
-input:not([type=checkbox]):not([type=radio]),select{height:1.95em;padding:0 7px 3px;border-radius:6px;line-height:1.25}select{padding-right:24px;background-position:right 7px center}.accrow .ax{width:1.95em;height:1.95em;min-height:0;min-width:0;padding:0;font-size:1rem}.grid{gap:6px 10px}label{margin-bottom:2px}.help{margin-top:2px}</style>
+input:not([type=checkbox]):not([type=radio]),select{height:2.15em;padding:0 7px 3px;border-radius:6px;line-height:1.3}select{padding-right:24px;background-position:right 7px center}.accrow .ax{width:2.15em;height:2.15em;min-height:0;min-width:0;padding:0;font-size:1rem}.grid{gap:6px 10px}label{margin-bottom:2px}.help{margin-top:2px}</style>
 </head>
 <body>
 
