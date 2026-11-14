@@ -823,7 +823,7 @@ function render(R){
     const how=setM?`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> I set it on Step 4 under <b>Next year's budget → An amount I choose</b> (${fmt(I.setspN)} for ${I.yr+1}${G.mode==='setcut'?`, then cut by the guardrails because that amount fell below my ${pctS(I.lo)} chance`:''}).${G.mode==='setcut'?'':' This amount is <b>not</b> the most I could spend.'} For the most I can spend safely${G.mode==='setcut'?' at my target chance':''}, choose <b>Set by the guardrails</b> there instead and leave this year's spending blank on Step 2: the budget becomes the most that lasts to ${I.end} in ${pctS(I.tg)} of the market histories tested, about <b>${fmt(G.Wtg)}</b> in ${I.yr+1}.</p>`
       :`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> the guardrails on Step 4 (<b>Next year's budget → Set by the guardrails</b>), starting from ${I.lspBlank?`the most that lasts at my ${pctS(I.tg)} target, since this year's spending is blank on Step 2`:`this year's spending on Step 2`}. To spend a fixed amount of my choosing instead, pick <b>An amount I choose</b> there.</p>`;
     if(rk>0)li+=`<li><b>Roth contributions from pay:</b> set payroll to contribute <b class="amt">${fmt(rper)}</b> to the Roth 403(b) and <b class="amt">${fmt(rper)}</b> to the Roth 457(b) per paycheck. That's ${fmt(rk)} in ${I.yr+1} (Step 2), half to each plan, over ${I.npay} paychecks.</li>`;
-    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;act(`Mar–Apr ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`Oct–Nov ${Y}`,`Run the ${Y} wizard (with the spring conversion entered on Step 2) and convert the top-up, about ${fmt(NC.C-sp)} now, by Dec 31.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
+    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;act(`Mar–Apr ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`Oct–Nov ${Y}`,`Run the ${Y} <a class="wzlink" href="#">wizard</a> (with the spring conversion entered on Step 2) and convert the top-up, about ${fmt(NC.C-sp)} now, by Dec 31.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
       <li><b>Spring (March–April ${Y}):</b> convert about <b class="amt">${fmt(sp)}</b>, three-quarters of the total, so it has longer to grow in the Roth. A sharp market drop earlier in the year is a good time too.</li>
       <li><b>Fall (October–November ${Y}):</b> with the spring conversion entered on Step 2, the ${Y} wizard works out the top-up (about ${fmt(NC.C-sp)} now) from my actual ${Y} income; convert it by December 31. Waiting avoids converting too much, since a conversion can't be undone.</li></ul>The tax on this conversion is in the next item.</div>`})()
       :`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`)}
@@ -988,7 +988,7 @@ function render(R){
   ${ssTxt||R.mixNote?`<p class="note">${ssTxt?'The Roth Conversion Planner uses its own built-in Social Security amounts. ':''}${R.mixNote||''}</p>`:''}`;
 
   return`<div class="plan">
-  ${(()=>{if(!ACT.some(x=>/wizard/.test(x[1])))act(`Oct–Nov ${I.yr+1}`,`Run the ${I.yr+1} wizard.`);
+  ${(()=>{if(!ACT.some(x=>/wizard/.test(x[1])))act(`Oct–Nov ${I.yr+1}`,`Run the ${I.yr+1} <a class="wzlink" href="#">wizard</a>.`);
     return `<div class="card span" id="brief"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>Actions in brief</h2><ul class="brief">${ACT.map(([w,t])=>`<li><b>${w}:</b> ${t}</li>`).join('')}</ul>
     <div class="btns" style="justify-content:flex-start;margin-top:8px"><button class="btn ghost" type="button" id="copybrief">Copy this list</button><span class="note" id="copymsg" style="margin:0 0 0 8px;align-self:center"></span></div><p class="note">The details for each action are in the to-do list below.</p></div>`})()}
   <div class="card span"><h2>My to-do list</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<div class="note" style="margin-top:8px"><b>How to cover it');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
@@ -1030,7 +1030,9 @@ function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dat
   if(!(num('by')>1900)){$('out').innerHTML='<div class="card"><p class="warn">Enter my birth year on Step 2 to see my plan.</p></div>';$('out').dataset.done='';lastKey='';return}
   $('out').dataset.done='';$('out').innerHTML='<div class="working">Working out my plan…</div>';
   setTimeout(()=>{let h;try{h=render(compute())}catch(e){h=`<div class="card"><p class="warn">Something in the inputs couldn't be calculated (${e.message}). Check the steps above.</p></div>`}
-    $('out').innerHTML=h;$('out').dataset.done='1'},30)}
+    $('out').innerHTML=h;$('out').dataset.done='1';
+    // the word "wizard" in Actions in brief links to this plan with all its entries
+    (async()=>{const st=state();delete st._wk;const u=location.href.split('#')[0]+'#'+await packState(st);document.querySelectorAll('#brief a.wzlink').forEach(a=>a.href=u)})()},30)}
 
 const OPT={
  down:{no:'Normal year: spending comes from take-home pay first, then cash, then brokerage.',
@@ -1165,7 +1167,7 @@ async function nextYear(){const Y=FILEYEAR+1,m=$('nextmsg');
 document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#nextbtn'))nextYear()});
 document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const lis=[...document.querySelectorAll('#brief .brief li')],t=lis.map(li=>li.innerText).join('\n'),m=$('copymsg');
   // Rich text with only bold (no fonts or colors), one paragraph per action, so a notes app keeps the bold and adds its own bullets
-  const esc=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'),h='<meta charset="utf-8">'+lis.map(li=>{const b=li.querySelector('b'),w=b?b.innerText:'',rest=li.innerText.slice(w.length);return `<p>${w?`<b>${esc(w)}</b>`:''}${esc(rest)}</p>`}).join('');
+  const esc=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'),h='<meta charset="utf-8">'+lis.map(li=>'<p>'+[...li.childNodes].map(n=>n.nodeType===3?esc(n.nodeValue):n.nodeName==='B'?`<b>${esc(n.textContent)}</b>`:n.nodeName==='A'?`<a href="${esc(n.href).replace(/"/g,'&quot;')}">${esc(n.textContent)}</a>`:esc(n.textContent)).join('')+'</p>').join('');
   try{if(window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([h],{type:'text/html'}),'text/plain':new Blob([t],{type:'text/plain'})})]);m.textContent='Copied.'}else throw 0}
   catch(err0){try{await navigator.clipboard.writeText(t);m.textContent='Copied (plain text).'}catch(err){const r=document.createRange();r.selectNodeContents(document.querySelector('#brief .brief'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);m.textContent='Selected; press Copy.'}}});
 function state(){saveWork();const o={};fields().forEach(e=>{o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
