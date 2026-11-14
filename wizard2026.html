@@ -418,7 +418,11 @@ function wwhCalc(yr,wage){
     return{v:num('ytdwh')+num('perwh')*left.length,src:'paystub',left,ytd:num('ytdwh'),per:num('perwh'),warn:p[0]!==yr?`The paystub is dated ${p[0]}, not ${yr}.`:d<new Date(yr,9,1)?'Paydays before October aren\'t listed, so they aren\'t counted.':''}}
   return{v:employerEst(wage),src:'est'}}
 const ficaOf=(w,inf,r)=>w*.0145+.062*Math.min(w,r?r.wb:184500*(1+inf))+.009*Math.max(0,w-2e5);
-const thpEst=(w,k,inf)=>{const r=nextRules();return w>0?Math.max(0,w-k-employerEst(w,r||CUR)-ficaOf(w,inf,r)):0};
+// Paychecks next year (step 2; 26 if blank). Payroll withholds each check as if that pay came every two weeks all year,
+// so fewer, larger checks (a nine-month appointment) are withheld at a higher rate than the yearly tax.
+const npayOf=()=>num('npay')>0?num('npay'):26;
+const payrollWH=(w,n,r=CUR)=>n>=26||!(w>0)?employerEst(w,r):employerEst(w/n*26,r)/26*n;
+const thpEst=(w,k,inf,n=26)=>{const r=nextRules();return w>0?Math.max(0,w-k-payrollWH(w,n,r||CUR)-ficaOf(w,inf,r)):0};
 function nowCalc(yr,w,wh,ss,rmd,brk,bp,inf){const k=yr<=num('lw')&&WK[yr]?WK[yr][1]:0,fica=w>0?ficaOf(w,0):0,thp=Math.max(0,w-k-wh-fica),spend=num('lsp'),oth=num('oth');
   const calc=Math.min(brk,Math.max(0,spend-thp-ss-rmd-oth)),typed=!isBlank('bwd'),bwd=typed?num('bwd'):calc;
   return{spend,thp,w,k,wh,fica,ss,rmd,oth,calc,typed,bwd,gains:bwd*(1-bp),other:Math.max(0,spend-thp-ss-rmd-oth-bwd)}}
@@ -626,7 +630,7 @@ function inputs(){saveWork();
   const inf=num('inf')/100,g=isBlank('g')?M.mean/100:num('g')/100;
   const _r={yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,efp,cash,cashMin,down:mkt().auto?mkt().down:val('down')==='yes',div:num('div'),
     wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),int:isBlank('int')?num('ef')*.03:num('int'),intEst:isBlank('int'),stg:num('stg'),oth:num('oth'),rmd,rmdP,ssThis,
-    NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?wkN(yr+1)[1]:0,inf):num('thp')*(1+inf),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
+    NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?wkN(yr+1)[1]:0,inf,npayOf()):num('thp')*(1+inf),npay:npayOf(),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
     model:val('model'),corder:val('corder'),acc:{p403:num('p403'),p457:num('p457'),pira:num('pira')},accRows:ACC.filter(a=>a.g==='pre'&&!a.e&&+a.b>0).map(a=>({n:a.n||({403:'403(b)',457:'457(b)',ira:'Traditional IRA'})[a.t],c:a.t,b:+a.b,o:a.o})),camt:num('camt'),camtN:isBlank('camtN')?num('camt'):num('camtN'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:'qtr',
     meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,bmode:val('bmode'),setsp:num('setsp'),g,cush:num('cush'),
     WK:Object.fromEntries(Object.keys(WK).map(y=>[y,wkN(+y)])),lw:num('lw'),T:ssTable()};
@@ -683,7 +687,7 @@ function compute(){const I=inputs();
   R.req=R.prior==null?.9*S.t.tax:Math.min(.9*S.t.tax,R.prior);
   R.safe=R.pays>=R.req-1||S.t.tax-R.pays<1000;
   R.qEach=Math.max(0,R.req-I.wwh)/4;
-  R.nextReq=(S.t.tot>150000?1.1:1)*S.t.tax;R.NR=nextRules();R.nextWH=employerEst(I.wageNext,R.NR||CUR);R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
+  R.nextReq=(S.t.tot>150000?1.1:1)*S.t.tax;R.NR=nextRules();R.nextWH=payrollWH(I.wageNext,I.npay,R.NR||CUR);R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
   // Medicare in the budget year (Jan–Dec next year): Part B from the month I turn 65; IRMAA uses AGI from two years before that year (= last year's AGI)
   {const ageN=I.yr+1-I.by,mo=ageN<65?0:ageN==65?2:12,f=1+I.inf,ir=irmaaFor(I.lagi),ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*f*(ageN==I.ssA?1/12:1):0;
    R.med={ageN,mo,partB:202.90*mo*f,irm:ir.annual*mo/12*f,tier:ir.tier,ssN,noAgi:!I.lagi};R.med.total=R.med.partB+R.med.irm}
@@ -786,9 +790,13 @@ function render(R){
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='est'});
   // Spending
   if(!G.err){const W=G.W,m=W/12;const setM=G.mode==='set'||G.mode==='setcut',pctS=x=>Math.round(x*100)+'%';let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>${setM?'<b>Amount I chose on step 4.</b>':'<b>Set by the guardrails.</b>'} Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December (${fmt(W/(1+I.inf))} in today's dollars, plus ${(I.inf*100).toFixed(1)}% inflation). This amount doesn't include federal tax${medTxt?' or Medicare premiums':''}. Tax on wages comes out of my paychecks. The rest of ${I.yr+1}'s tax, including tax on the gains from the brokerage sales below and on any Roth conversion, is paid separately, as described under “Planning ${I.yr+1}'s tax now” below.${I.thp+R.med.ssN>0?` ${I.thp>0&&R.med.ssN>0?'Take-home pay and Social Security cover':I.thp>0?'Take-home pay covers':'Social Security covers'} about ${fmt(Math.min(W+R.med.total,I.thp+R.med.ssN))}, so draw <b class="amt">${fmt(R.draw)}</b> from my accounts, about <b class="amt">${fmt(R.draw/12)}</b> a month.`:` That is about <b class="amt">${fmt(m)}</b> a month.`}</div><ul>`;
-    R.src.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
-    if(R.src.some(s=>s[0]==='Brokerage'))li+=`<li>Set up the automatic monthly transfer from brokerage to checking.</li>`;
-    if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting it (plus its tax, withheld) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
+    const nine=I.npay<26&&R.src.some(s=>s[0]==='Take-home pay'),pm=Math.round(I.npay/26*12);
+    R.src.forEach(([k,x])=>{li+=k==='Take-home pay'&&nine?`<li>${k}: ${fmt(x)} (about ${fmt(x/pm)} a month in the ${pm} months with paychecks, ${fmt(x/I.npay)} a paycheck)</li>`:`<li>${k}: ${fmt(x)} (${fmt(x/12)}/mo)</li>`});
+    if(nine)li+=`<li>Paychecks run from about the September 18 paycheck through the May 14 paycheck. No paychecks come in from mid-May until mid-September, so in those summer months my accounts cover all of my spending.</li>`;
+    if(R.src.some(s=>s[0]==='Brokerage')){if(nine){const tk=(R.src.find(s=>s[0]==='Take-home pay')||[0,0])[1],need=(W+R.med.total-R.med.ssN)/12,sum=Math.max(0,need),pay=Math.max(0,need-tk/pm);
+        li+=`<li>Set up the automatic monthly transfer from my accounts to checking: about <b class="amt">${fmt(pay)}</b> a month in the ${pm} months with paychecks, and about <b class="amt">${fmt(sum)}</b> a month in the ${12-pm} summer months without them.</li>`}
+      else li+=`<li>Set up the automatic monthly transfer from brokerage to checking.</li>`}
+    if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting that amount (and paying its tax with estimated payments) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
     {const M=R.med,Y=I.yr+1;if(M.mo>0){const parts=`${fmt(M.partB)} Part B${M.irm>0?` + ${fmt(M.irm)} IRMAA surcharge`:''}`;
       li+=M.ssN>=M.total?`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}) is deducted from my Social Security, so deposits will be about ${fmt(M.ssN-M.total)} instead of ${fmt(M.ssN)}. Medicare is paid on top of my spending budget.</li>`
         :`<li>Medicare: ${fmt(M.total)} for ${Y} (${parts}${M.mo<12?`, ${M.mo} months starting November`:''}) is paid on top of my spending budget, by bill or automatic payment${M.ssN>0?' until Social Security starts':''}. My Social Security doesn't start until ${I.by+I.ssA}.</li>`;
@@ -1043,7 +1051,7 @@ function sync(){explain();cfApply();
   const brk=num('brk');$('basHint').textContent=brk>0?`${Math.round(Math.min(num('bas'),brk)/brk*100)}% of the balance`:'';
   const M=mv();$('mvNote').textContent=`Expected return ${M.mean}% a year, volatility ${M.vol}% (${M.lbl}).`+(me==='bt'?' The backtest replays actual years instead of using these averages.':'');
   $('gHint').textContent=`If I leave this blank, the wizard uses ${M.mean}%, the average from my return model. A lower figure, such as 5.5–6%, gives a more conservative read.`;$('g').placeholder=M.mean;
-  {const y=num('yr')+1,f=1+(num('inf')||0)/100,w=y<=num('lw')&&WK[y]?wkN(y):[0,0],e=thpEst(w[0],w[1],num('inf')/100)/f;$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`If I leave this blank, the wizard estimates ${fmt(e)} in today's dollars: ${y} wages ${fmt(w[0]/f)} − Roth ${fmt(w[1]/f)} − federal withholding − FICA (Social Security and Medicare tax). Type my own figure, in today's dollars, if I know it.`:`No wages in ${y}.`}
+  {const y=num('yr')+1,f=1+(num('inf')||0)/100,w=y<=num('lw')&&WK[y]?wkN(y):[0,0],e=thpEst(w[0],w[1],num('inf')/100,npayOf())/f;$('thp').placeholder=e?Math.round(e):'0';$('thpHint').textContent=w[0]?`If I leave this blank, the wizard estimates ${fmt(e)} in today's dollars: ${y} wages ${fmt(w[0]/f)} − Roth ${fmt(w[1]/f)} − federal withholding − FICA (Social Security and Medicare tax). Type my own figure, in today's dollars, if I know it.`:`No wages in ${y}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,H=wwhCalc(y,w),dl=H.left?H.left.map(([m,d])=>MO[m]+' '+d).join(', '):'';
    $('wwhHint').textContent=H.src==='typed'?'Using the total I typed. Clear it to calculate from my paystub instead.':H.src==='paystub'?`Full year: ${fmt(H.v)} = ${fmt(H.ytd)} so far + ${H.left.length} paycheck${H.left.length===1?'':'s'} left × ${fmt(H.per)}${dl?` (${dl})`:''}. ${H.warn}`:`If I fill in the three paystub boxes, this total is calculated from those boxes. Otherwise the wizard uses an estimate from my wages: ${fmt(H.v)}.`}
   {const y=num('yr'),w=y<=num('lw')&&WK[y]?WK[y][0]:0,ssA=+val('ssa')||0,age=y-num('by'),t=ssTable(),ss=ssA&&age>=ssA?(t[ssA]||0)*12*(age==ssA?1/12:1):0,pre=num('p403')+num('p457')+num('pira'),rmd=age>=75&&DIV[age]?pre/DIV[age]:0,b=num('brk'),N=nowCalc(y,w,wwhCalc(y,w).v,ss,rmd,b,b>0?Math.min(num('bas'),b)/b:1,num('inf')/100);
