@@ -1214,5 +1214,15 @@ show(1);
   new ResizeObserver(load).observe(w);box.addEventListener('toggle',load)})();
 </script>
 
+<script>
+/* Typographic apostrophes: show every straight apostrophe in the page's text as a curly one (’), including text the wizard writes later. */
+(function(){const skip=/^(SCRIPT|STYLE|TEXTAREA|INPUT)$/;
+  const fix=root=>{if(root.nodeType===3){if(root.nodeValue.includes("'")&&!skip.test(root.parentNode&&root.parentNode.nodeName))root.nodeValue=root.nodeValue.replace(/'/g,'\u2019');return}
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>skip.test(n.parentNode.nodeName)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});let n;
+    while((n=w.nextNode()))if(n.nodeValue.includes("'"))n.nodeValue=n.nodeValue.replace(/'/g,'\u2019')};
+  fix(document.body);
+  new MutationObserver(ms=>ms.forEach(m=>{if(m.type==='characterData')fix(m.target);else m.addedNodes.forEach(fix)})).observe(document.body,{childList:true,subtree:true,characterData:true});
+})();
+</script>
 </body>
 </html>
