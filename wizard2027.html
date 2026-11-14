@@ -1214,7 +1214,10 @@ async function savePlan(){const st=state();delete st._wk;const qs=await packStat
   let dlc=null;try{dlc=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){dlc=null}
   if(dlc){try{await dlc.save({filename:fn,data:html});msg(`Saved as ${fn}.`)}catch(e){msg(e&&e.code==='declined'?'Not saved.':e&&e.code==='rate_limited'?'A save is already waiting for an answer. Try again in a moment.':'Saving a file isn\'t available here. The GitHub copy (autodax.github.io) can save it.')}return}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);msg(`Saved as ${fn} in my downloads.`)}catch(e){msg('This browser blocked the download.')}}
-addEventListener('hashchange',async()=>{const o=await fromHash();if(o){load(o);sync();if(cur===5)plan()}});
+// A link opened over an earlier plan replaces it completely: entries the link doesn't carry go back to their starting values.
+function resetEntries(){fields().forEach(e=>{if(e.tagName==='SELECT'){const d=[...e.options].find(x=>x.defaultSelected)||e.options[0];if(d)e.value=d.value}else e.value=e.defaultValue});
+  Object.keys(WK).forEach(k=>delete WK[k]);ACC.length=0}
+addEventListener('hashchange',async()=>{const o=await fromHash();if(o){resetEntries();load(o);if(!ACC.length)accInit();renderWork();sync();if(cur===5)plan()}});
 show(1);
 
 /* FRED S&P 500 chart: sized to fit the page, loaded once the box is visible and open */
