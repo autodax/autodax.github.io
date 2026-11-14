@@ -21,7 +21,7 @@ applyTheme();setInterval(applyTheme,60000);
 <style>
 /* Layout: one column of step cards under a sticky step bar; the plan step widens to two columns on desktop. Palette and type follow the Roth Conversion Planner. */
 :root{--bg:#FAF6EE;--card:#FFFDF8;--line:#E4DCC9;--ink:#1F2A24;--soft:#5B6B60;--green:#2E4034;--band:#EFE7D3;--owe:#8C3B2E;--ok:#2F6B45;--brown:#E3D2B6;--brown-line:#C4A97F;--brown-ink:#4A3622;--on-green:#FFFDF8;
---serif:Literata,Georgia,'Times New Roman',serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+--serif:Literata,Georgia,'Times New Roman',serif;--mono:Literata,Georgia,serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1A1715;--card:#221F1B;--line:#36312A;--ink:#D9D0C0;--soft:#9A9285;--green:#B89E6A;--band:#2B2620;--owe:#C48A78;--ok:#9DB98A;--brown:#3A3128;--brown-line:#6E5F46;--brown-ink:#D8C7A4;--on-green:#1E1A14;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#1A1715;--card:#221F1B;--line:#36312A;--ink:#D9D0C0;--soft:#9A9285;--green:#B89E6A;--band:#2B2620;--owe:#C48A78;--ok:#9DB98A;--brown:#3A3128;--brown-line:#6E5F46;--brown-ink:#D8C7A4;--on-green:#1E1A14;color-scheme:dark}
 #fredWrap iframe{transition:filter .2s}
@@ -180,7 +180,7 @@ nav.steps button{padding-top:5px;padding-bottom:7px}
 .btn{padding-top:7px;padding-bottom:11px}
 @media (max-width:640px){.btn{padding-top:4px;padding-bottom:8px}}
 /* Numbers in Literata: even-height digits of equal width, so columns line up */
-table,.big,.tile .v,.accsum,.wy,.inp td:last-child{font-family:var(--serif)!important;font-variant-numeric:lining-nums tabular-nums}
+table,.big,.tile .v,.accsum,.wy,.inp td:last-child,input,select{font-family:var(--serif)!important;font-variant-numeric:lining-nums tabular-nums}
 .amt,nav.steps button .n,.todo>li::before{font-variant-numeric:lining-nums tabular-nums}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}@media (max-width:600px){body{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}}</style>
