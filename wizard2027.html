@@ -767,7 +767,7 @@ function render(R){
   // Link to the tax estimator for next year's figures (next year's file when it exists)
   const taxNext=()=>{const p=R.NC.tp,ny=I.yr+1,file=FILEYEAR===2026?'tax2027.html':`tax${FILEYEAR}.html`,o={wages:Math.round(p.wages),wrate:Math.ceil(p.wh+(I.pay==='wh'?Math.min(R.NC.total,R.NC.C):0)),wtype:'amt',ira:Math.round(p.ira),ssa:Math.round(p.ssa),ndiv:Math.round(p.ndiv),qdiv:Math.round(p.qdiv),stcg:0,ltcgPlan:Math.round(p.ltcgPlan),ltcg:Math.ceil(p.ltcg),magi2yr:p.o65?Math.round(I.lagi||0):0,age:p.o65?'over65':'under65',solveBasis:I.bp*100,bracketSel:I.tbrk,rateSel:Math.min(22,Math.max(15,Math.round(I.teff)))};
     return{url:'https://autodax.github.io/'+file+'#'+Object.entries(o).filter(([k,v])=>v!==''&&v!=null&&!Number.isNaN(v)).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&'),yr:file.slice(3,7),ny}};
-  let todo=[];const KIND=[];const ACT=[];const act=(w,t)=>ACT.push([w,t]);
+  let todo=[];const KIND=[];const ACT=[];const act=(w,t)=>ACT.push([w,t]);const CAL=[];window._CAL=CAL;const cal=(d,t)=>{if(new Date(d+'T23:59:59')>=today)CAL.push([d,t])};
   {const N=I.NOW;if(!I.lspBlank){const m=Math.max(0,11-today.getMonth()),rows=[['Take-home pay',N.thp],['Social Security',N.ss],['Required minimum distribution',N.rmd],['Other pre-tax withdrawals',N.oth],['Brokerage',N.bwd]].filter(x=>x[1]>0);
     let li=`<span class="when">Jan–Dec ${I.yr}</span><div>This year's (${I.yr}) spending: about <b class="amt">${fmt(N.spend)}</b>, paid from:</div><ul>`;
     rows.forEach(([k,x])=>{li+=`<li>${k}: ${fmt(x)}${k==='Take-home pay'&&N.w?` (${fmt(N.w)} wages − ${fmt(N.k)} Roth − ${fmt(N.wh)} federal tax − ${fmt(N.fica)} FICA, Social Security and Medicare tax)`:''}${k==='Brokerage'?`${N.typed?' (as entered)':' (what\'s left after the other sources)'}, about ${fmt(N.bwd/12)} a month`:''}</li>`});
@@ -784,6 +784,7 @@ function render(R){
     let left=R.C;const SPL=[];for(const a of AC){if(left<=0)break;const x=Math.min(left,a.b);SPL.push({n:a.n,x,all:x>=a.b-1});left-=x}
     let li=`<span class="when">By Dec 31, ${I.yr}</span><div>Convert <b class="amt">${fmt(R.C)}</b> from pre-tax to Roth${SPL.length===1?`, from the <b>${SPL[0].n}</b>${SPL[0].all?' (empties it)':''}`:''}.${I.oth>0?` This is the top-up, on top of the ${fmt(I.oth)} of pre-tax withdrawals and conversions already done this year (Step 2).`:''}</div><ul>`;
     if(SPL.length>1)li+=`<li>From: ${SPL.map(p=>`${p.n} <b class="amt">${fmt(p.x)}</b>${p.all?' (empties it)':''}`).join('; ')}.</li>`;
+    cal(`${I.yr}-12-01`,`Roth conversion: convert ${fmt(R.C)} by Dec 31 (no tax withheld)`);
     act(`By Dec 31, ${I.yr}`,`Convert ${fmt(R.C)} to Roth from ${SPL.map(p=>SPL.length>1?`${p.n} (${fmt(p.x)})`:p.n).join(', ')}, with no tax withheld.`);
     li+=`<li>Convert with no tax withheld. The tax on this Roth conversion is included in the next item (${I.yr}'s tax), paid with quarterly estimated payments or extra paycheck withholding.</li>`;
     if(R.more&&(R.more.yes||R.more.down))li+=`<li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li>`;
@@ -800,7 +801,8 @@ function render(R){
     if(I.pay==='qtr'&&R.qEach<1){li+=`<div><b>No estimated payments needed.</b> Paycheck withholding of ${fmt(R.pays)} already covers the ${fmt(R.req)} safe-harbor amount${R.prior==null?' (90% of this year\'s ('+I.yr+') tax; enter last year\'s ('+(I.yr-1)+') tax on Step 2 to check 110% of it)':''}, so there's no underpayment penalty.${S.owed>=1?` The rest of ${I.yr}'s tax, about ${fmt(S.owed)}, is due when I file in April ${I.yr+1}.`:''}</div>`}
     else if(I.pay==='qtr'){li+=`<div>Pay estimated tax of <b class="amt">${fmt(R.qEach)}</b> each quarter (${R.prior==null?'90% of this year\'s ('+I.yr+') tax':'safe harbor'} minus paycheck withholding). Or have the same ${fmt(R.qEach*4)} added to my paycheck withholding instead (W-4 Step 4(c)), which counts as paid evenly through the year.</div><ul>`+yrs.map(([y,m,d])=>`<li>${MONTHS[m]} ${d}, ${y}${dt(y,m,d)?' <b>(past)</b>':''}</li>`).join('')+'</ul>';
       if(yrs.some(([y,m,d])=>dt(y,m,d)))li+=`<p class="note">For a missed quarter, pay that quarter's amount as soon as I can; the penalty is only interest on the late part. Extra paycheck withholding before December 31 also makes up missed quarters, since withholding counts as paid evenly through the year.</p>`}
-    if(I.pay==='qtr'&&R.qEach>=1)yrs.filter(([y,m,d])=>!dt(y,m,d)).forEach(([y,m,d])=>act(`${MONTHS[m]} ${d}, ${y}`,`Pay ${fmt(R.qEach)} estimated tax for ${I.yr}.`));
+    if(I.pay==='qtr'&&R.qEach>=1)yrs.filter(([y,m,d])=>!dt(y,m,d)).forEach(([y,m,d])=>{act(`${MONTHS[m]} ${d}, ${y}`,`Pay ${fmt(R.qEach)} estimated tax for ${I.yr}.`);cal(`${y}-${String(m+1).padStart(2,'0')}-${d}`,`Pay ${fmt(R.qEach)} estimated tax for ${I.yr}`)});
+    if(S.owed>=1&&!(I.pay==='qtr'&&R.qEach>=1))cal(`${I.yr+1}-04-15`,`Pay the rest of ${I.yr}'s tax, about ${fmt(S.owed)}, with my return`);
     if(S.owed>=1&&!(I.pay==='qtr'&&R.qEach>=1))act(`By Apr 15, ${I.yr+1}`,`Pay the rest of ${I.yr}'s tax, about ${fmt(S.owed)}, with my return.`);
     todo.push(li)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='est'});
@@ -809,6 +811,7 @@ function render(R){
     const nine=I.npay<26&&R.src.some(s=>s[0]==='Take-home pay'),pm=Math.round(I.npay/26*12);
     // Roth contributions from pay next year (Step 2), split evenly between the Roth 403(b) and the Roth 457(b)
     const rk=(I.yr+1<=I.lw&&wkN(I.yr+1))?wkN(I.yr+1)[1]:0,rper=Math.ceil(rk/2/I.npay);
+    if(rk>0)cal(`${I.yr}-12-01`,`Set payroll Roth contributions for ${I.yr+1}: ${fmt(rper)} to the 403(b) and ${fmt(rper)} to the 457(b) per paycheck`);
     if(rk>0)act(`Before Jan ${I.yr+1}`,`Set payroll to contribute ${fmt(rper)} to the Roth 403(b) and ${fmt(rper)} to the Roth 457(b) per paycheck.`);
     R.src.forEach(([k,x])=>{li+=k==='Take-home pay'&&nine?`<li>${k}: ${fmt(x)}, in ${I.npay} paychecks of about ${fmt(x/I.npay)} from about September 4 through May 14. No paychecks come in from mid-May to early September.</li>`:`<li>${k}: ${fmt(x)}${nine?'':` (${fmt(x/12)}/mo)`}</li>`});
     if(R.src.some(s=>s[0]==='Brokerage')){if(nine){const tk=(R.src.find(s=>s[0]==='Take-home pay')||[0,0])[1],need=(W+R.med.total-R.med.ssN)/12,sum=Math.max(0,need),pay=Math.max(0,need-tk/pm);
@@ -824,7 +827,7 @@ function render(R){
     const how=setM?`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> I set it on Step 4 under <b>Next year's budget → An amount I choose</b> (${fmt(I.setspN)} for ${I.yr+1}${G.mode==='setcut'?`, then cut by the guardrails because that amount fell below my ${pctS(I.lo)} chance`:''}).${G.mode==='setcut'?'':' This amount is <b>not</b> the most I could spend.'} For the most I can spend safely${G.mode==='setcut'?' at my target chance':''}, choose <b>Set by the guardrails</b> there instead and leave this year's spending blank on Step 2: the budget becomes the most that lasts to ${I.end} in ${pctS(I.tg)} of the market histories tested, about <b>${fmt(G.Wtg)}</b> in ${I.yr+1}.</p>`
       :`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> the guardrails on Step 4 (<b>Next year's budget → Set by the guardrails</b>), starting from ${I.lspBlank?`the most that lasts at my ${pctS(I.tg)} target, since this year's spending is blank on Step 2`:`this year's spending on Step 2`}. To spend a fixed amount of my choosing instead, pick <b>An amount I choose</b> there.</p>`;
     if(rk>0)li+=`<li><b>Roth contributions from pay:</b> set payroll to contribute <b class="amt">${fmt(rper)}</b> to the Roth 403(b) and <b class="amt">${fmt(rper)}</b> to the Roth 457(b) per paycheck. That's ${fmt(rk)} in ${I.yr+1} (Step 2), half to each plan, over ${I.npay} paychecks.</li>`;
-    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;act(`Mar–Apr ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`Oct–Nov ${Y}`,`Run the ${Y} <a class="wzlink" href="#">wizard</a> (with the spring conversion entered on Step 2) and convert the top-up, about ${fmt(NC.C-sp)} now, by Dec 31.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
+    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;cal(`${Y}-03-15`,`Spring Roth conversion: convert about ${fmt(sp)} (no tax withheld)`);cal(`${Y}-10-15`,`Run the ${Y} retirement wizard; convert the Roth top-up (about ${fmt(NC.C-sp)}) by Dec 31`);act(`Mar–Apr ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`Oct–Nov ${Y}`,`Run the ${Y} <a class="wzlink" href="#">wizard</a> (with the spring conversion entered on Step 2) and convert the top-up, about ${fmt(NC.C-sp)} now, by Dec 31.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
       <li><b>Spring (March–April ${Y}):</b> convert about <b class="amt">${fmt(sp)}</b>, three-quarters of the total, so it has longer to grow in the Roth. A sharp market drop earlier in the year is a good time too.</li>
       <li><b>Fall (October–November ${Y}):</b> with the spring conversion entered on Step 2, the ${Y} wizard works out the top-up (about ${fmt(NC.C-sp)} now) from my actual ${Y} income; convert it by December 31. Waiting avoids converting too much, since a conversion can't be undone.</li></ul>The tax on this conversion is in the next item.</div>`})()
       :`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`)}
@@ -845,6 +848,7 @@ function render(R){
     else{
     li+=`<div class="note" style="margin-top:8px"><b>How to cover it:</b></div><ul>`;
     // My custodian won't withhold tax from a conversion, so the choices are paychecks or quarterly payments.
+    [[Y,'04-15'],[Y,'06-15'],[Y,'09-15'],[Y+1,'01-15']].forEach(([y,md])=>cal(`${y}-${md}`,`Pay ${fmt(Math.ceil(tot/4))} estimated tax for ${Y}`));
     act(`${Y} estimated tax`,`Pay ${fmt(Math.ceil(tot/4))} on Apr 15, Jun 15 and Sep 15, ${Y} and Jan 15, ${Y+1}${minX>0&&minX<tot?` (at least ${fmt(Math.ceil(minX/4))} each to avoid a penalty)`:''}.`);
     {const ph=S.t.tot>150000?'110':'100',mn=Math.min(minX,tot);
     li+=`<li><b>A. Quarterly estimated payments</b>, paid from brokerage. Pay <b class="amt">${fmt(Math.ceil(tot/4))}</b> on each of Apr 15, Jun 15 and Sep 15, ${Y} and Jan 15, ${Y+1}: a quarter of the ${fmt(tot)} left after paycheck withholding, so nothing is due in April ${Y+1}.
@@ -871,6 +875,7 @@ function render(R){
     li+=`<p class="note">2026 tiers for a single filer (Medicare hasn't published 2027's yet); the tiers rise with inflation, and one dollar over a line triggers the whole tier.</p>`;
     todo.push(li)}
   if(I.age>=74&&I.age<75)todo.push(`<span class="when">Next year (${I.yr+1})</span><div><b>RMDs start next year (${I.yr+1}).</b> I turn 75, so conversions should stop after this year (${I.yr}).</div>`);
+  if(I.rmd>0)cal(`${I.yr}-12-01`,`Take my RMD of ${fmt(I.rmd)} by Dec 31`);
   if(I.rmd>0)act(`By Dec 31, ${I.yr}`,`Take my RMD of ${fmt(I.rmd)} from pre-tax accounts.`);
   if(I.rmd>0)todo.push(`<span class="when">By Dec 31, ${I.yr}</span><div>Take my RMD of <b class="amt">${fmt(I.rmd)}</b> from pre-tax accounts. It can't be converted.</div>`);
 
@@ -989,9 +994,10 @@ function render(R){
   ${ssTxt||R.mixNote?`<p class="note">${ssTxt?'The Roth Conversion Planner uses its own built-in Social Security amounts. ':''}${R.mixNote||''}</p>`:''}`;
 
   return`<div class="plan">
-  ${(()=>{if(!ACT.some(x=>/wizard/.test(x[1])))act(`Oct–Nov ${I.yr+1}`,`Run the ${I.yr+1} <a class="wzlink" href="#">wizard</a>.`);
+  ${(()=>{if(!ACT.some(x=>/wizard/.test(x[1])))cal(`${I.yr+1}-10-15`,`Run the ${I.yr+1} retirement wizard`);
+    if(!ACT.some(x=>/wizard/.test(x[1])))act(`Oct–Nov ${I.yr+1}`,`Run the ${I.yr+1} <a class="wzlink" href="#">wizard</a>.`);
     return `<div class="card span" id="brief"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>Actions in brief</h2><ul class="brief">${ACT.map(([w,t])=>`<li><b>${w}:</b> ${t}</li>`).join('')}</ul>
-    <div class="btns" style="justify-content:flex-start;margin-top:8px"><button class="btn ghost" type="button" id="copybrief">Copy this list</button><span class="note" id="copymsg" style="margin:0 0 0 8px;align-self:center"></span></div><p class="note">The details for each action are in the to-do list below.</p></div>`})()}
+    <div class="btns" style="justify-content:flex-start;margin-top:8px"><button class="btn ghost" type="button" id="copybrief">Copy this list</button>${CAL.length?`<button class="btn ghost" type="button" id="calbrief">Add to my calendar</button>`:''}<span class="note" id="copymsg" style="margin:0 0 0 8px;align-self:center"></span></div><p class="note">The details for each action are in the to-do list below.</p></div>`})()}
   <div class="card span"><h2>My to-do list</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<div class="note" style="margin-top:8px"><b>How to cover it');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
     const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<div class="sub"><h4>[^<]*<\/h4>/,'').replace(/<\/div>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
     return `<li><div>${x}${D&&D[1]?`<details class="deep"><summary>${D[0]}</summary><div class="deepin">${D[1]}</div></details>`:''}</div></li>`}).join('')}</ol></div>
@@ -1166,6 +1172,16 @@ async function nextYear(){const Y=FILEYEAR+1,m=$('nextmsg');
   if(location.protocol.startsWith('http')){try{const r=await fetch(`wizard${Y}.html`,{method:'HEAD',cache:'no-store'});if(!r.ok)throw 0}catch(e){m.textContent=`The ${Y} wizard isn't out yet. It comes once the IRS publishes the ${Y} tax figures, usually in October or November ${FILEYEAR}.`;return}}
   const st=state();delete st._wk;try{localStorage.setItem('rpwCarry','1')}catch(e){}location.href=`wizard${Y}.html#`+await packState(st)}
 document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#nextbtn'))nextYear()});
+// Calendar file (.ics): one all-day event per dated action, with a reminder three days before at 9 am, and a link back to this plan
+document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='calbrief'))return;const C=window._CAL||[],m=$('copymsg');if(!C.length)return;
+  const st=state();delete st._wk;const u=location.href.split('#')[0]+'#'+await packState(st),stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const tx=x=>String(x).replace(/\\/g,'\\\\').replace(/[,;]/g,c=>'\\'+c).replace(/\n/g,'\\n'),fold=l=>l.length<=74?l:l.match(/.{1,73}/g).join('\r\n ');
+  const nd=d=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+1);return x.toISOString().slice(0,10).replace(/-/g,'')};
+  const ev=C.map(([d,t],i)=>['BEGIN:VEVENT',`UID:rpw-${num('yr')}-${i}-${d}@autodax.github.io`,`DTSTAMP:${stamp}`,`DTSTART;VALUE=DATE:${d.replace(/-/g,'')}`,`DTEND;VALUE=DATE:${nd(d)}`,
+    `SUMMARY:${tx(t)}`,`DESCRIPTION:${tx('From my '+num('yr')+' retirement plan: '+u)}`,`URL:${u}`,'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${tx(t)}`,'TRIGGER:-P2DT15H','END:VALARM','END:VEVENT'].map(fold).join('\r\n'));
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//autodax//Retirement Planning Wizard//EN','CALSCALE:GREGORIAN',...ev,'END:VCALENDAR'].join('\r\n')+'\r\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download=`retirement-actions-${num('yr')}.ics`;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);m.textContent=`${C.length} events ready to add to Calendar.`});
 document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const lis=[...document.querySelectorAll('#brief .brief li')],t=lis.map(li=>li.innerText).join('\n'),m=$('copymsg');
   // Rich text with only bold (no fonts or colors), one paragraph per action, so a notes app keeps the bold and adds its own bullets
   const esc=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'),h='<meta charset="utf-8">'+lis.map(li=>'<p>'+[...li.childNodes].map(n=>n.nodeType===3?esc(n.nodeValue):n.nodeName==='B'?`<b>${esc(n.textContent)}</b>`:n.nodeName==='A'?`<a href="${esc(n.href).replace(/"/g,'&quot;')}">${esc(n.textContent)}</a>`:esc(n.textContent)).join('')+'</p>').join('');
