@@ -832,7 +832,7 @@ function render(R){
     const how=setM?`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> I set it on Step 4 under <b>Next year's budget → An amount I choose</b> (${fmt(I.setspN)} for ${I.yr+1}${G.mode==='setcut'?`, then cut by the guardrails because that amount fell below my ${pctS(I.lo)} chance`:''}).${G.mode==='setcut'?'':' This amount is <b>not</b> the most I could spend.'} For the most I can spend safely${G.mode==='setcut'?' at my target chance':''}, choose <b>Set by the guardrails</b> there instead and leave this year's spending blank on Step 2: the budget becomes the most that lasts to ${I.end} in ${pctS(I.tg)} of the market histories tested, about <b>${fmt(G.Wtg)}</b> in ${I.yr+1}.</p>`
       :`<p class="note" style="color:var(--ink)"><b>How this amount is chosen:</b> the guardrails on Step 4 (<b>Next year's budget → Set by the guardrails</b>), starting from ${I.lspBlank?`the most that lasts at my ${pctS(I.tg)} target, since this year's spending is blank on Step 2`:`this year's spending on Step 2`}. To spend a fixed amount of my choosing instead, pick <b>An amount I choose</b> there.</p>`;
     if(rk>0)li+=`<li><b>Roth contributions from pay:</b> set payroll to contribute <b class="amt">${fmt(rper)}</b> to the Roth 403(b) and <b class="amt">${fmt(rper)}</b> to the Roth 457(b) per paycheck. That's ${fmt(rk)} in ${I.yr+1} (Step 2), half to each plan, over ${I.npay} paychecks.</li>`;
-    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;cal(`${Y}-03-15`,`Spring Roth conversion: convert about ${fmt(sp)} (no tax withheld)`);cal(`${Y}-10-15`,`Run the ${Y} Retirement Wizard; convert the Roth top-up (about ${fmt(NC.C-sp)}) by Dec 31`);act(`Mar–Apr ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`Oct–Nov ${Y}`,`Run the ${Y} <a class="wzlink" href="#">Wizard</a> (with the spring conversion entered on Step 2) and convert the top-up, about ${fmt(NC.C-sp)} now, by Dec 31.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
+    {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const sp=Math.round(NC.C*.75/500)*500;cal(`${Y}-03-15`,`Spring Roth conversion: convert about ${fmt(sp)} (no tax withheld)`);cal(`${Y}-10-15`,`Run the ${Y} Retirement Wizard; convert the Roth top-up (about ${fmt(NC.C-sp)}) by Dec 31`);act(`Mar–Apr ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`Oct–Nov ${Y}`,`Run the ${Y} <a class="wznext" href="#">Wizard</a> (with the spring conversion entered on Step 2) and convert the top-up, about ${fmt(NC.C-sp)} now, by Dec 31.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
       <li><b>Spring (March–April ${Y}):</b> convert about <b class="amt">${fmt(sp)}</b>, three-quarters of the total, so it has longer to grow in the Roth. A sharp market drop earlier in the year is a good time too.</li>
       <li><b>Fall (October–November ${Y}):</b> with the spring conversion entered on Step 2, the ${Y} Wizard works out the top-up (about ${fmt(NC.C-sp)} now) from my actual ${Y} income; convert it by December 31. Waiting avoids converting too much, since a conversion can't be undone.</li></ul>The tax on this conversion is in the next item.</div>`})()
       :`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`)}
@@ -1014,8 +1014,8 @@ function render(R){
 
   return`<div class="plan">
   ${(()=>{if(!ACT.some(x=>/wizard/i.test(x[1])))cal(`${I.yr+1}-10-15`,`Run the ${I.yr+1} Retirement Wizard`);
-    if(!ACT.some(x=>/wizard/i.test(x[1])))act(`Oct–Nov ${I.yr+1}`,`Run the ${I.yr+1} <a class="wzlink" href="#">Wizard</a>.`);
-    return `<div class="card span" id="brief"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>Actions in brief</h2><ul class="brief">${ACT.map(([w,t])=>`<li><b>${w}:</b> ${t}</li>`).join('')}</ul>
+    if(!ACT.some(x=>/wizard/i.test(x[1])))act(`Oct–Nov ${I.yr+1}`,`Run the ${I.yr+1} <a class="wznext" href="#">Wizard</a>.`);
+    return `<div class="card span" id="brief"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>Actions in brief</h2><p class="brieftop" style="margin:0 0 6px"><b>Actions from <a class="wzlink" href="#">${I.yr} Wizard</a></b></p><ul class="brief">${ACT.map(([w,t])=>`<li><b>${w}:</b> ${t}</li>`).join('')}</ul>
     <div class="btns" style="justify-content:flex-start;margin-top:8px"><button class="btn ghost" type="button" id="copybrief">Copy this list</button>${CAL.length?`<button class="btn ghost" type="button" id="calbrief">Add to my calendar</button>`:''}<span class="note" id="copymsg" style="margin:0 0 0 8px;align-self:center"></span></div><p class="note">The details for each action are in the to-do list below.</p></div>`})()}
   <div class="card span"><h2>My to-do list</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<!--cover-->');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
     const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<div class="sub"><h4>[^<]*<\/h4>/,'').replace(/<\/div>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
@@ -1058,7 +1058,9 @@ function plan(){const key=JSON.stringify(state());if(key===lastKey&&$('out').dat
   setTimeout(()=>{let h;try{h=render(compute())}catch(e){h=`<div class="card"><p class="warn">Something in the inputs couldn't be calculated (${e.message}). Check the steps above.</p></div>`}
     $('out').innerHTML=h;$('out').dataset.done='1';
     // the word "Wizard" in Actions in brief links to this plan with all its entries
-    (async()=>{const st=state();delete st._wk;const u=location.href.split('#')[0]+'#'+await packState(st);document.querySelectorAll('#brief a.wzlink').forEach(a=>a.href=u)})()},30)}
+    (async()=>{const st=state();delete st._wk;const u=location.href.split('#')[0]+'#'+await packState(st);document.querySelectorAll('#brief a.wzlink').forEach(a=>a.href=u);
+      // "Run next year's Wizard" opens next year's file with these entries and starts the update (like the Start button)
+      const nx=new URL(`wizard${num('yr')+1}.html?carry=1#`+u.split('#')[1],location.href).href;document.querySelectorAll('#brief a.wznext').forEach(a=>a.href=nx)})()},30)}
 
 const OPT={
  down:{no:'Normal year: spending comes from take-home pay first, then cash, then brokerage.',
@@ -1201,9 +1203,9 @@ document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='calbri
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//autodax//Retirement Planning Wizard//EN','CALSCALE:GREGORIAN',...ev,'END:VCALENDAR'].join('\r\n')+'\r\n';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'}));a.download=`retirement-actions-${num('yr')}.ics`;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);m.textContent=`${C.length} events ready to add to Calendar.`});
-document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const lis=[...document.querySelectorAll('#brief .brief li')],t=lis.map(li=>li.innerText).join('\n'),m=$('copymsg');
+document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const lis=[...document.querySelectorAll('#brief .brieftop, #brief .brief li')],t=lis.map(li=>li.innerText).join('\n'),m=$('copymsg');
   // Rich text with only bold (no fonts or colors), one paragraph per action, so a notes app keeps the bold and adds its own bullets
-  const esc=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'),h='<meta charset="utf-8">'+lis.map(li=>'<p>'+[...li.childNodes].map(n=>n.nodeType===3?esc(n.nodeValue):n.nodeName==='B'?`<b>${esc(n.textContent)}</b>`:n.nodeName==='A'?`<a href="${esc(n.href).replace(/"/g,'&quot;')}">${esc(n.textContent)}</a>`:esc(n.textContent)).join('')+'</p>').join('');
+  const esc=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'),ser=n=>n.nodeType===3?esc(n.nodeValue):n.nodeName==='B'?`<b>${[...n.childNodes].map(ser).join('')}</b>`:n.nodeName==='A'?`<a href="${esc(n.href).replace(/"/g,'&quot;')}">${esc(n.textContent)}</a>`:esc(n.textContent),h='<meta charset="utf-8">'+lis.map(li=>'<p>'+[...li.childNodes].map(ser).join('')+'</p>').join('');
   try{if(window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([h],{type:'text/html'}),'text/plain':new Blob([t],{type:'text/plain'})})]);m.textContent='Copied.'}else throw 0}
   catch(err0){try{await navigator.clipboard.writeText(t);m.textContent='Copied (plain text).'}catch(err){const r=document.createRange();r.selectNodeContents(document.querySelector('#brief .brief'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);m.textContent='Selected; press Copy.'}}});
 function state(){saveWork();const o={};fields().forEach(e=>{o[e.id]=e.value});o._wk=JSON.stringify(WK);return o}
@@ -1245,7 +1247,8 @@ async function saveLink(){const s=state();delete s._wk;const qs=await packState(
 rebuildSS();
 (async()=>{let initial=await fromHash();if(!initial){try{initial=JSON.parse(localStorage.getItem('rpwState')||'null')}catch(e){}}
 load(initial);if(!ACC.length)accInit();renderWork();sync();
-  let carry=false;try{carry=localStorage.getItem('rpwCarry')==='1';localStorage.removeItem('rpwCarry')}catch(e){}
+  let carry=new URLSearchParams(location.search).get('carry')==='1';try{carry=carry||localStorage.getItem('rpwCarry')==='1';localStorage.removeItem('rpwCarry')}catch(e){}
+  if(location.search)try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
   if(carry&&num('yr')&&num('yr')<FILEYEAR)carryForward()})();
 document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#work'))saveWork();if(e.target.id==='yr'||e.target.id==='lw')renderWork();if(/^ss\d\d$/.test(e.target.id))rebuildSS();sync();save();$('out').dataset.done=''});
 document.addEventListener('change',()=>{sync();save()});
