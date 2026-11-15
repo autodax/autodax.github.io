@@ -284,6 +284,8 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
     <div><label for="bwd">Brokerage withdrawals this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="bwd" type="number" inputmode="decimal" step="500" value="" placeholder="calculated"><div class="help" id="bwdHint"></div></div>
     <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>), in today's $</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. Take-home pay covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
     <div><label for="npay">Pay periods next year (<span class="y" data-o="1"></span>)</label><input id="npay" type="number" inputmode="decimal" step="0.5" value="" placeholder="26"><div class="help">How many two-week pay periods my pay covers next year. 26 if I'm paid every two weeks all year (the Wizard uses 26 if I leave this blank); 19.5 on a nine-month appointment with no summer pay; fewer in the year I stop working. 19.5 pay periods come as 19 full paychecks plus two small prorated ones (late May and mid-August); the Wizard spreads Roth contributions and extra withholding over the full paychecks.</div></div>
+    <div><label for="xcash">One-time money next year (<span class="y" data-o="1"></span>), $</label><input id="xcash" type="number" inputmode="decimal" step="100" value=""><div class="help">Money I'll receive next year, other than pay and Social Security, and spend instead of selling brokerage shares, like savings bonds I cash in. The full amount received, in next year's dollars. Leave blank if none.</div></div>
+    <div><label for="xtax">Taxable part of that money, $</label><input id="xtax" type="number" inputmode="decimal" step="100" value=""><div class="help">The part taxed as ordinary income: for savings bonds, the interest (the amount received minus what I paid for them). The Wizard adds this to next year's income, so it leaves less room for the Roth conversion.</div></div>
     <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. The Wizard uses last year's tax for the safe harbor: the minimum I must pay during the year, through withholding or estimated payments, to avoid an underpayment penalty.</div></div>
     <div><label for="lagi">AGI last year (<span class="y" data-o="-1"></span> tax year)</label><input id="lagi" type="number" inputmode="decimal" step="1000" value=""><div class="help">Form 1040 line 11. If last year's AGI was over $150,000, safe harbor is 110% of last year's (<span class="y" data-o="-1"></span>) tax instead of 100%.</div></div>
   </div>
@@ -654,7 +656,7 @@ function inputs(){saveWork();
   const inf=num('inf')/100,g=isBlank('g')?M.mean/100:num('g')/100;
   const _r={yr,by,age,o65:age>=65,ssA,ssM,pre,roth,brk,bas,bp:brk>0?bas/brk:1,ef,efp,cash,cashMin,down:mkt().auto?mkt().down:val('down')==='yes',div:num('div'),
     wage:wage(yr),wageNext:wage(yr+1),WH:wwhCalc(yr,wage(yr)),wwh:wwhCalc(yr,wage(yr)).v,wwhEst:wwhCalc(yr,wage(yr)).src==='est',ltgTyped:!isBlank('ltg'),int:isBlank('int')?num('ef')*.03:num('int'),intEst:isBlank('int'),stg:num('stg'),oth:num('oth'),rmd,rmdP,ssThis,
-    NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?wkN(yr+1)[1]:0,inf,npayOf()):num('thp')*(1+inf),npay:npayOf(),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
+    NOW:nowCalc(yr,wage(yr),wwhCalc(yr,wage(yr)).v,ssThis,rmd,brk,brk>0?Math.min(num('bas'),brk)/brk:1,inf),lsp:num('lsp'),lspBlank:isBlank('lsp'),thp:isBlank('thp')?thpEst(wage(yr+1),yr+1<=num('lw')&&WK[yr+1]?wkN(yr+1)[1]:0,inf,npayOf()):num('thp')*(1+inf),npay:npayOf(),xcash:Math.max(0,num('xcash')),xtax:Math.max(0,Math.min(num('xtax'),isBlank('xcash')?num('xtax'):num('xcash'))),thpEst:isBlank('thp'),ltax:num('ltax'),ltaxBlank:isBlank('ltax'),lagi:num('lagi'),agi2:num('agi2'),
     model:val('model'),corder:val('corder'),acc:{p403:num('p403'),p457:num('p457'),pira:num('pira')},accRows:ACC.filter(a=>a.g==='pre'&&!a.e&&+a.b>0).map(a=>({n:a.n||({403:'403(b)',457:'457(b)',ira:'Traditional IRA'})[a.t],c:a.t,b:+a.b,o:a.o})),camt:num('camt'),camtN:isBlank('camtN')?num('camt'):num('camtN'),ttype:val('ttype'),teff:num('teff'),tbrk:+val('tbrk'),tamt:num('tamt'),rtgt:num('rtgt'),cmax:Math.min(100,Math.max(60,num('cmax')||74)),pay:'qtr',
     meth:val('meth'),mix:num('mix'),wrap:val('wrap')==='1',M,inf,end:num('end'),tg:num('tgt')/100,lo:num('lowP')/100,up:num('upP')/100,bmode:val('bmode'),setsp:num('setsp')/(1+inf),setspN:num('setsp'),g,cush:num('cush'),
     WK:Object.fromEntries(Object.keys(WK).map(y=>[y,wkN(+y)])),lw:num('lw'),T:ssTable()};
@@ -719,6 +721,7 @@ function compute(){const I=inputs();
   const W=R.G.err?0:R.G.W;let rem=W+R.med.total;R.src=[];
   if(I.thp>0){const x=Math.min(rem,I.thp);R.src.push(['Take-home pay',x]);rem-=x}
   if(R.med.ssN>0&&rem>0){const x=Math.min(rem,R.med.ssN);R.src.push(['Social Security',x]);rem-=x}
+  if(I.xcash>0&&rem>0){const x=Math.min(rem,I.xcash);R.src.push(['One-time money (Step 2)',x]);rem-=x}
   R.draw=Math.max(0,W+R.med.total-Math.min(W+R.med.total,I.thp+R.med.ssN));
   if(I.rmd>0){const x=Math.min(rem,I.rmd);if(x>0){R.src.push(['Required minimum distribution (pre-tax)',x]);rem-=x}}
   {const avail=Math.max(0,I.cash-I.cashMin);if(avail>0&&rem>0){const x=Math.min(rem,avail);R.src.push(['Cash (checking and savings)',x]);rem-=x}}
@@ -731,7 +734,7 @@ function compute(){const I=inputs();
   // 6. Next year's tax preview (2026 brackets, next year's income)
   {const brkSale=(R.src.find(x=>x[0]==='Brokerage')||[0,0])[1],efUse=(R.src.find(x=>x[0]==='Emergency fund in brokerage')||[0,0])[1],epUse=(R.src.find(x=>x[0].startsWith('Emergency fund in pre-tax'))||[0,0])[1];
    const ageN=I.age+1,ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*(1+I.inf)*(ageN==I.ssA?1/12:1):0,rmdN=ageN>=75&&DIV[ageN]?(I.pre+I.efp)/DIV[ageN]:0;
-   const intN=I.ef>0?I.int*Math.max(0,I.ef-efUse)/I.ef:I.int;
+   const intN=(I.ef>0?I.int*Math.max(0,I.ef-efUse)/I.ef:I.int)+I.xtax;
    const gN=brkSale*(1-I.bp),tN=taxOf({wages:I.wageNext,ira:rmdN+R.viaConv+epUse,int:intN,qdiv:I.div,stcg:0,ltcg:gN,ss:ssN,o65:ageN>=65,r:R.NR});
    const req=Math.min(.9*tN.tax,R.nextReq),wh=R.nextWH,short=Math.max(0,req-wh),owe=Math.max(0,tN.tax-wh);
    R.N={brkSale,gN,tax:tN.tax,eff:tN.eff,agi:tN.tot,req,wh,short,owe,ok:short<1||owe<1000,pct90:.9*tN.tax,prior:R.nextReq,niit:tN.niit};
@@ -856,7 +859,7 @@ function render(R){
     let li=`<span class="when">Planning ${Y}'s tax now</span> <b>Estimated for now.</b>`;
     li+=`<div>${Y}'s federal tax${conv?`, including the ${fmt(NC.C)} Roth conversion,`:', with no Roth conversion,'} comes to about <b class="amt">${fmt(NC.tax)}</b> (${pc(NC.eff)} effective).${NC.gainTax>=1?` That includes about ${fmt(NC.gainTax)} of tax on brokerage gains${N.brkSale>0||NC.refill>0?`, from selling ${[N.brkSale>0?`${fmt(N.brkSale)} of shares for spending`:'',NC.refill>0?`${fmt(NC.refill)} to pay the part of this tax that paycheck withholding doesn't cover${conv?' (mostly the tax on the Roth conversion)':''}`:''].filter(Boolean).join(' and ')}`:''}.`:''} Paychecks will withhold about ${fmt(N.wh)}, leaving <b class="amt">${fmt(tot)}</b> to cover.</div>
     <div class="scroll" style="margin:6px 0"><table>
-      ${Math.abs(NC.other)>=1?rw(NC.other>0?'Tax on wages and dividends not covered by paycheck withholding':'Paycheck withholding that is more than the tax on wages and dividends',(NC.other>0?'':'− ')+fmt(Math.abs(NC.other))):''}
+      ${Math.abs(NC.other)>=1?rw(NC.other>0?'Tax on wages, interest and dividends not covered by paycheck withholding':'Paycheck withholding that is more than the tax on wages, interest and dividends',(NC.other>0?'':'− ')+fmt(Math.abs(NC.other))):''}
       ${NC.gainTax>=1?rw(`Long-term gains, about ${fmt(NC.gains)}${NC.refillGain>0?` (including ${fmt(NC.refillGain)} from selling shares to pay the tax that paycheck withholding doesn't cover)`:''}${N.brkSale>0?` from selling ${fmt(N.brkSale)}${NC.refill>0?' + '+fmt(NC.refill):''} of brokerage`:''}`,'+ '+fmt(NC.gainTax)):''}
       ${conv?rw(`The ${fmt(NC.C)} conversion`,'+ '+fmt(NC.convTax)):''}
       ${rw('Total to cover',fmt(tot),'tot')}</table></div>`;
@@ -1174,7 +1177,7 @@ function carryForward(){const y0=num('yr');let tax='',agi='';
   try{const R=compute();if(!R.err&&R.S){tax=Math.round(R.S.t.tax);agi=Math.round(R.S.t.tot)}}catch(e){}
   const agiOld=val('lagi'),one=y0===FILEYEAR-1,old={};['ltg','stg','int','lsp','bwd','thp','npay','mkt1'].forEach(k=>old[k]=val(k));
   $('yr').value=FILEYEAR;$('ltax').value=one?tax:'';$('lagi').value=one?agi:'';$('agi2').value=one?agiOld:'';
-  ['pdate','ytdwh','perwh','wwh','ltg','stg','int','oth','lsp','bwd','thp','npay','mkt0','mkt1'].forEach(k=>{if($(k))$(k).value=''});
+  ['pdate','ytdwh','perwh','wwh','ltg','stg','int','oth','lsp','bwd','thp','npay','xcash','xtax','mkt0','mkt1'].forEach(k=>{if($(k))$(k).value=''});
   if($('down'))$('down').value='no';
   Object.keys(WK).forEach(k=>{if(+k<FILEYEAR)delete WK[k]});renderWork();
   // what to update: outlined until I change it (or press Enter to keep it); grey numbers are last year's, and Enter uses one
@@ -1185,7 +1188,7 @@ function carryForward(){const y0=num('yr');let tax='',agi='';
   const n=document.createElement('div');n.className='yrwarn';n.id='cfnote';
   n.innerHTML=`<b>Carried forward from my ${y0} plan.</b> ${one&&tax?`Last year's tax (${fmt(tax)}) and AGI (${fmt(agi)}) on Step 2 are the ${y0} plan's estimates; replace them with the figures from my ${y0} return when I have it. `:''}Fields outlined in orange need updating; the outline goes away once I change one, or press Enter in it to keep it as is. A grey number in an empty field is last year's (${y0}); press Enter to use it. Update, in order:<ol style="margin:6px 0 0;padding-left:1.4em">
     <li>Step 1: account balances, cost basis and dividends, and whether the market is down.</li>
-    <li>Step 2: latest paystub and withholding so far, gains and interest, any January Roth conversion (under conversions already done), and this year's spending. Check the wages and Roth contributions by year.</li>
+    <li>Step 2: latest paystub and withholding so far, gains and interest (including the taxable part of any one-time money I listed last year), any January Roth conversion (under conversions already done), and this year's spending. Check the wages and Roth contributions by year.</li>
     <li>Steps 3–4: settings are kept; change any I want.</li></ol>`;
   const w=$('yrwarn');w.parentNode.insertBefore(n,w);show(1);window.scrollTo(0,0)}
 document.addEventListener('click',e=>{if(e.target.id==='cfwd')carryForward()});
