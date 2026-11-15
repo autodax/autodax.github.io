@@ -819,9 +819,13 @@ function render(R){
     const rk=(I.yr+1<=I.lw&&wkN(I.yr+1))?wkN(I.yr+1)[1]:0,rper=Math.ceil(rk/2/I.npay);
     if(rk>0)cal(`${I.yr}-12-01`,`Set payroll Roth contributions for ${I.yr+1}: ${fmt(rper)} to the 403(b) and ${fmt(rper)} to the 457(b) per paycheck`);
     if(rk>0)act(`Before Jan ${I.yr+1}`,`Set payroll to contribute ${fmt(rper)} to the Roth 403(b) and ${fmt(rper)} to the Roth 457(b) per paycheck.`);
-    R.src.forEach(([k,x])=>{li+=k==='Take-home pay'&&nine?`<li>${k}: ${fmt(x)}, in ${I.npay} paychecks of about ${fmt(x/I.npay)} from about September 4 through May 14. No paychecks come in from mid-May to early September.</li>`:`<li>${k}: ${fmt(x)}${nine?'':` (${fmt(x/12)}/mo)`}</li>`});
-    if(R.src.some(s=>s[0]==='Brokerage')){if(nine){const tk=(R.src.find(s=>s[0]==='Take-home pay')||[0,0])[1],need=(W+R.med.total-R.med.ssN)/12,sum=Math.max(0,need),pay=Math.max(0,need-tk/pm);
-        li+=`<li><b>Monthly transfer</b> from my accounts to checking: about <b class="amt">${fmt(pay)}</b> a month from September through May, and <b class="amt">${fmt(sum)}</b> a month in the ${12-pm} summer months without paychecks.</li>`;act(`Jan–Dec ${I.yr+1}`,`Spend up to ${fmt(W)}. Transfer about ${fmt(pay)} a month from my accounts to checking September through May, and ${fmt(sum)} a month in summer.`)}
+    R.src.forEach(([k,x])=>{li+=k==='Take-home pay'&&nine?`<li>${k}: ${fmt(x)}, in ${I.npay} paychecks of about ${fmt(x/I.npay)} from January through about May 14 and from about September 4 through December. No paychecks come in from mid-May to early September.</li>`:`<li>${k}: ${fmt(x)}${nine?'':` (${fmt(x/12)}/mo)`}</li>`});
+    if(R.src.some(s=>s[0]==='Brokerage')){if(nine){// Paid months run from September for pm months; name them in calendar order (January first) for the year's plan
+        const MN=['January','February','March','April','May','June','July','August','September','October','November','December'],paid=m=>((m-8+12)%12)<pm,
+          rng=f=>{const o=[];let st=null;for(let m=0;m<=12;m++){const ok=m<12&&f(m);if(ok&&st===null)st=m;if(!ok&&st!==null){o.push(st===m-1?MN[st]:`${MN[st]} through ${MN[m-1]}`);st=null}}return o.join(' and ')},
+          payM=rng(paid),sumM=rng(m=>!paid(m));
+        const tk=(R.src.find(s=>s[0]==='Take-home pay')||[0,0])[1],need=(W+R.med.total-R.med.ssN)/12,sum=Math.max(0,need),pay=Math.max(0,need-tk/pm);
+        li+=`<li><b>Monthly transfer</b> from my accounts to checking: about <b class="amt">${fmt(pay)}</b> a month in ${payM}, and <b class="amt">${fmt(sum)}</b> a month in ${sumM}, when no paychecks come in.</li>`;act(`Jan–Dec ${I.yr+1}`,`Spend up to ${fmt(W)}. Transfer about ${fmt(pay)} a month from my accounts to checking in ${payM}, and ${fmt(sum)} a month in ${sumM}.`)}
       else{li+=`<li><b>Monthly transfer</b> from brokerage to checking: about <b class="amt">${fmt(R.draw/12)}</b> a month.</li>`;act(`Jan–Dec ${I.yr+1}`,`Spend up to ${fmt(W)}. Transfer about ${fmt(R.draw/12)} a month from brokerage to checking.`)}}
     else act(`Jan–Dec ${I.yr+1}`,`Spend up to ${fmt(W)}.`);
     if(R.viaConv>0)li+=`<li>Brokerage runs short: fund ${fmt(R.viaConv)} by converting that amount (and paying its tax with estimated payments) and taking it from the Roth. Never take a direct IRA distribution.</li>`;
