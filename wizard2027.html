@@ -1240,7 +1240,7 @@ document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='calbri
 document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copymd'))return;const m=$('copymsg'),
   md=n=>n.nodeType===3?n.nodeValue.replace(/([\\`*_\[\]])/g,'\\$1'):n.nodeName==='B'?`**${[...n.childNodes].map(md).join('').trim()}**`:n.nodeName==='A'?`[${n.textContent}](${n.href})`:n.textContent,
   top=document.querySelector('#brief .brieftop'),lis=[...document.querySelectorAll('#brief .brief li')],
-  t=(top?[...top.childNodes].map(md).join('')+'\n\n':'')+lis.map(li=>'- [ ] '+[...li.childNodes].map(md).join('').replace(/\s+/g,' ').trim()).join('\n')+'\n';
+  t=(top?[...top.childNodes].map(md).join('')+'\n':'')+lis.map(li=>'- [ ] '+[...li.childNodes].map(md).join('').replace(/\s+/g,' ').trim()).join('\n')+'\n';
   try{await navigator.clipboard.writeText(t);m.textContent='Copied as a Markdown checklist. In Apple Notes, use Paste as Markdown.'}catch(err){m.textContent='Couldn\'t copy; my browser blocked the clipboard.'}});
 document.addEventListener('click',async e=>{if(!(e.target&&e.target.id==='copybrief'))return;const lis=[...document.querySelectorAll('#brief .brieftop, #brief .brief li')],t=lis.map(li=>li.innerText).join('\n'),m=$('copymsg');
   // Rich text with only bold (no fonts or colors), one paragraph per action, so a notes app keeps the bold and adds its own bullets
