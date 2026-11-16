@@ -222,6 +222,7 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
   </div>
 
 <form id="wiz" autocomplete="off" onsubmit="return false">
+<!-- ===== STEP 1: accounts and balances (the account list feeds hidden total boxes the plan reads) ===== -->
 <section class="step card" data-s="1">
   <h2><span class="eyebrow">Step 1 of 5</span>Account balances today</h2>
   <p class="lead">List each account and its current value; add as many as I have. Tick <b>Emergency fund</b> for money-market or T-bill holdings set aside for bad market years: the plan spends the emergency fund only after the market drops more than 5%. Conversions and withdrawals can come from any pre-tax account.</p>
@@ -256,6 +257,7 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
   <div class="btns"><span></span><button class="btn" type="button" data-go="2">Next: income</button></div>
 </section>
 
+<!-- ===== STEP 2: this year's income and taxes, next year's pay, one-time money, Social Security, wages and Roth contributions by year ===== -->
 <section class="step card" data-s="2" hidden>
   <h2><span class="eyebrow">Step 2 of 5</span>My income and spending</h2>
   <p class="lead">This year's (<span class="y" data-o="0"></span>) income sets the tax for the <span class="y" data-o="0"></span> tax year, which decides how much I can convert. This year's (<span class="y" data-o="0"></span>) spending is the starting point for next year's (<span class="y" data-o="1"></span>) budget.</p>
@@ -303,6 +305,7 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
   <div class="btns"><button class="btn ghost" type="button" data-go="1">Back</button><button class="btn" type="button" data-go="3">Next: conversion</button></div>
 </section>
 
+<!-- ===== STEP 3: how to size the Roth conversion, conversion order, January share ===== -->
 <section class="step card" data-s="3" hidden>
   <h2><span class="eyebrow">Step 3 of 5</span>Roth conversion and how to pay the tax</h2>
   <p class="lead">A Roth conversion moves money from pre-tax to Roth. I pay income tax on the converted amount now, and that money then grows tax-free, isn't counted toward future required distributions, and is never taxed again.</p>
@@ -337,6 +340,7 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
   <div class="btns"><button class="btn ghost" type="button" data-go="2">Back</button><button class="btn" type="button" data-go="4">Next: returns</button></div>
 </section>
 
+<!-- ===== STEP 4: market returns and spending guardrails ===== -->
 <section class="step card" data-s="4" hidden>
   <h2><span class="eyebrow">Step 4 of 5</span>Market returns and spending guardrails</h2>
   <p class="lead">Next year's (<span class="y" data-o="1"></span>) budget comes from risk-based guardrails: the Wizard asks how likely my money is to last at a given level of after-tax spending, running each possible future year by year with my taxes, Roth conversions and Medicare, and adjusts spending only when that chance leaves my comfort band. The settings below choose how the Wizard models the markets and where the edges of that comfort band are.</p>
@@ -378,6 +382,28 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
 </div>
 
 <script>
+/* =====================================================================================
+   RETIREMENT PLANNING WIZARD: how this file is organized
+   Everything runs in the browser; nothing is sent anywhere. Entries live in the page's
+   fields, are saved in this browser (localStorage "rpwState") and in the link (#z=...).
+
+   1. HIST                   Yearly stock and bond returns, 1871 on (for the backtest).
+   2. Small helpers          $ (get element), num/val (read a field), fmt ($ text), pc (%).
+   3. Social Security, wages Step 2 grids: benefit by claim age; wages and Roth by year.
+   4. TAX FIGURES            *** The block to edit when the IRS or Medicare publishes new
+                             figures. Search for "TAX FIGURES" below. ***
+   5. Paydays and paychecks  USF nine-month pay calendar, payroll withholding estimate.
+   6. taxOf / taxCore        The federal tax calculation (one engine for every year).
+   7. rulesAt                Tax rules for any future year, indexed for inflation.
+   8. yearFlow / runYears    Year-by-year cash flow: spending, tax, RMDs, conversions.
+   9. guardrailAT, histCheck Spending guardrails and the long-range strategy comparison.
+  10. inputs()               Reads every field into one object, I.
+  11. compute()              Builds the plan: conversion, safe harbor, funding sources,
+                             next year's tax, next year's conversion.
+  12. render()               Writes Step 5: the to-do items, Actions in brief, cards,
+                             and the calendar events (cal) and brief lines (act).
+  13. Steps, accounts, carry-forward, links, saving, copy buttons, calendar file.
+   ===================================================================================== */
 const HIST=[[1871,0.1391,0.0346],[1872,0.0874,0.0151],[1873,0.0203,0.1125],[1874,0.1254,0.164],[1875,0.1176,0.1515],[1876,-0.1488,0.0474],[1877,0.1694,0.2476],[1878,0.2959,0.173],[1879,0.2384,-0.1239],[1880,0.3435,0.1287],[1881,-0.0718,-0.0348],[1882,0.0558,0.0551],[1883,0.023,0.1224],[1884,-0.0232,0.1636],[1885,0.3461,0.0847],[1886,0.1194,0.0223],[1887,-0.0514,-0.0226],[1888,0.082,0.1036],[1889,0.1241,0.0886],[1890,-0.0844,-0.0058],[1891,0.2651,0.1043],[1892,-0.015,-0.0492],[1893,-0.0635,0.2009],[1894,0.0797,0.1003],[1895,0.0354,0.0102],[1896,0.0625,0.0822],[1897,0.1694,0.0082],[1898,0.2743,0.0373],[1899,-0.1128,-0.1211],[1900,0.2393,0.0609],[1901,0.1659,0.0002],[1902,-0.0121,-0.0672],[1903,-0.1328,0.0724],[1904,0.2914,0.0049],[1905,0.2131,0.0386],[1906,-0.0362,-0.0274],[1907,-0.2252,0.0442],[1908,0.3506,0.0142],[1909,0.0492,-0.0731],[1910,0.0363,0.1089],[1911,0.0465,0.0489],[1912,-0.0015,-0.0609],[1913,-0.0664,0.0446],[1914,-0.0641,0.0255],[1915,0.2743,0.026],[1916,-0.0379,-0.0869],[1917,-0.3192,-0.1495],[1918,0.0018,-0.1084],[1919,0.0227,-0.1352],[1920,-0.1262,0.0576],[1921,0.2376,0.2466],[1922,0.299,0.0448],[1923,0.0241,0.035],[1924,0.2712,0.0556],[1925,0.2165,0.0169],[1926,0.1411,0.0872],[1927,0.3875,0.0461],[1928,0.4935,0.0247],[1929,-0.0943,0.0598],[1930,-0.169,0.1067],[1931,-0.3803,0.1205],[1932,0.0402,0.1808],[1933,0.531,0.024],[1934,-0.1071,0.0261],[1935,0.5271,0.0239],[1936,0.2989,0.0023],[1937,-0.3256,0.029],[1938,0.1895,0.0565],[1939,0.038,0.0432],[1940,-0.1017,0.0286],[1941,-0.1834,-0.121],[1942,0.1297,-0.0489],[1943,0.2007,-0.0055],[1944,0.17,0.0104],[1945,0.363,0.0154],[1946,-0.2553,-0.139],[1947,-0.0689,-0.0862],[1948,0.082,0.0219],[1949,0.2011,0.044],[1950,0.2451,-0.0717],[1951,0.1683,-0.0252],[1952,0.1426,0.0112],[1953,0.0188,0.0444],[1954,0.4793,0.0221],[1955,0.2846,-0.0003],[1956,0.0378,-0.0423],[1957,-0.0909,0.0261],[1958,0.3844,-0.0515],[1959,0.0655,-0.0203],[1960,0.0476,0.0944],[1961,0.183,0.0138],[1962,-0.0386,0.0456],[1963,0.1927,-0.0032],[1964,0.1489,0.0302],[1965,0.0952,-0.0076],[1966,-0.0953,0.0132],[1967,0.1204,-0.0546],[1968,0.0597,-0.0223],[1969,-0.1387,-0.1052],[1970,0.0214,0.1228],[1971,0.1039,0.0479],[1972,0.1372,-0.0106],[1973,-0.2346,-0.0584],[1974,-0.2939,-0.0721],[1975,0.3044,-0.0069],[1976,0.0573,0.0565],[1977,-0.1482,-0.0404],[1978,0.064,-0.0744],[1979,0.0286,-0.1255],[1980,0.1273,-0.0917],[1981,-0.1438,-0.0517],[1982,0.2548,0.3301],[1983,0.1554,-0.0025],[1984,0.0426,0.0939],[1985,0.2168,0.1975],[1986,0.2952,0.2112],[1987,-0.0617,-0.0637],[1988,0.127,0.0143],[1989,0.1693,0.0888],[1990,-0.0613,0.0313],[1991,0.2861,0.1207],[1992,0.0434,0.0641],[1993,0.0896,0.0968],[1994,-0.016,-0.0958],[1995,0.3174,0.1924],[1996,0.2362,-0.0346],[1997,0.2594,0.1204],[1998,0.2935,0.0961],[1999,0.125,-0.1055],[2000,-0.0862,0.1303],[2001,-0.1445,0.0481],[2002,-0.2215,0.0954],[2003,0.2615,0.0136],[2004,0.03,0.0065],[2005,0.0592,-0.0118],[2006,0.1109,-0.001],[2007,-0.0547,0.0782],[2008,-0.3565,0.1342],[2009,0.2984,-0.0898],[2010,0.1452,0.0463],[2011,0.0047,0.1173],[2012,0.144,0.0085],[2013,0.2365,-0.0701],[2014,0.1358,0.11],[2015,-0.0475,-0.0118],[2016,0.1816,-0.0305],[2017,0.2246,-0.0082],[2018,-0.062,0.0],[2019,0.2504,0.0787],[2020,0.1624,0.0608],[2021,0.1371,-0.1118],[2022,-0.1731,-0.1701]];
 const $=id=>document.getElementById(id);
 const val=id=>{const e=$(id);return e?e.value:''};
@@ -417,33 +443,85 @@ let zc={n:0,z:null};
 function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B79F5|0;let x=Math.imul(t^t>>>15,1|t);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296};
   const z=[];for(let i=0;i<2000*n;i+=1){const u=r()||1e-9,w=r();z.push(Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w))}zc={n,z};return z}
 /* ---------- This year's tax (tax estimator, 2027 rules) ---------- */
+/* =====================================================================================
+   TAX FIGURES (single filer). Update these when new figures come out.
+   Where they come from:
+     - Brackets, standard deduction, age-65 add-on: the IRS Revenue Procedure each October
+       or November (for example "Rev. Proc. 2026-35" for 2027). Search irs.gov for
+       "inflation adjustments" and the year.
+     - Social Security wage base: ssa.gov, each October (search "contribution and benefit base").
+     - Medicare Part B premium and IRMAA tiers: cms.gov / medicare.gov, each fall.
+   Format of a bracket list: [[rate, from, to], ...] in dollars of taxable income;
+   the last bracket runs to Infinity.
+
+   ORD   ordinary-income brackets for THIS file's year (FILEYEAR)
+   QUAL  0% / 15% / 20% brackets for qualified dividends and long-term gains, same year
+   IRM   IRMAA tiers: [MAGI from, MAGI to, monthly Part B premium, monthly Part D surcharge]
+   CUR   this year's rules: ord, qual, std (standard deduction), a65 (extra deduction at
+         65+), wb (Social Security wage base), sb (the $6,000 senior deduction applies:
+         2025 through 2028 under current law)
+   NXT   next year's rules in the same form, once the IRS has published them; set it to
+         null until then (the Wizard then indexes this year's figures for inflation)
+   PARTB standard monthly Part B premium (also the first number in IRM's bottom row)
+   DIV   IRS Uniform Lifetime Table: RMD divisor by age (changes rarely)
+
+   Also update, if they change (search for the text in quotes):
+     - "tbrk:" in OPT, near the end of the script: the bracket tops written out in words
+       on Step 3 ("Top of the 22% bracket: $105,700 ...").
+     - "202.90" also appears in irmaaFor and in compute() (Medicare premium for next year);
+       keep it equal to PARTB.
+     - FILEYEAR: the year this file is for; each new year gets its own file (wizard2028.html).
+   Fixed by law, not indexed (change only if Congress changes them):
+     - Social Security taxation thresholds $25,000 and $34,000 (taxCore, ssTaxable)
+     - Net investment income tax: 3.8% above $200,000 MAGI (taxCore)
+     - Additional Medicare tax: 0.9% on wages above $200,000 (ficaOf, ficaR)
+     - Senior deduction: $6,000, phased out 6% above $75,000 MAGI (stdDed, taxCore)
+     - Safe harbor: 110% of last year's tax when last year's AGI was over $150,000,
+       otherwise 100%; 90% of this year's tax; no penalty under $1,000 (compute(), render())
+     - RMDs start at 75 for my birth year (search for ">=75")
+   ===================================================================================== */
 const ORD=[[.10,0,12800],[.12,12800,52025],[.22,52025,109125],[.24,109125,208325],[.32,208325,264550],[.35,264550,661375],[.37,661375,Infinity]];
 const QUAL=[[0,0,51050],[.15,51050,563200],[.20,563200,Infinity]];
 // IRMAA: 2026 tiers and premiums, carried over until Medicare publishes 2027 figures
 // a titled section inside a plan item (plain, not another dropdown)
 const fold=(t,h)=>`<div class="sub"><h4>${t}</h4>${h}</div>`;
+// IRMAA (Medicare premium surcharge) tiers, single filer, by MAGI from two years earlier: [from, to, monthly Part B, monthly Part D surcharge]
 const IRM=[[0,109000,202.90,0],[109000,137000,284.10,14.50],[137000,171000,405.80,37.50],[171000,205000,527.50,60.40],[205000,500000,649.20,83.30],[500000,Infinity,689.90,91.00]];
+// Yearly IRMAA surcharge for a MAGI: the tier's Part B above the standard 202.90 (PARTB), plus the Part D surcharge, times 12
 const irmaaFor=m=>{let i=0;IRM.forEach((b,k)=>{if(m>b[0])i=k});const b=IRM[i];return{tier:i,annual:((b[2]-202.90)+b[3])*12}};
+// Splits amt dollars, stacked on top of base, across brackets; returns each bracket's dollars (x) and tax (t) for the tax tables
 function split(base,amt,br){let rem=amt,cur=base;return br.map(([r,lo,hi])=>{if(rem<=0||cur>=hi)return{r,lo,hi,x:0,t:0};const x=Math.min(rem,Math.max(0,hi-Math.max(lo,cur)));cur+=x;rem-=x;return{r,lo,hi,x,t:x*r}})}
+// Taxable Social Security: up to 50% of benefits above $25,000 of combined income, up to 85% above $34,000 (fixed by law)
 function ssTaxable(ss,other){const c=other+.5*ss,b50=Math.max(0,Math.min(c,34000)-25000),b85=Math.max(0,c-34000),t50=Math.min(.5*b50,.5*ss),tx=ss>0?Math.min(.85*ss,t50+.85*b85):0;return{taxable:tx,combined:c,rows:[['0%',0,25000,Math.max(0,Math.min(c,25000)),0],['up to 50%',25000,34000,b50,t50],['up to 85%',34000,Infinity,b85,Math.max(0,tx-t50)]]}}
+// The tax year this file is built for. wizard2027.html has 2027, and so on.
 const FILEYEAR=2027;
+// This year's rules (see TAX FIGURES above): brackets, standard deduction, age-65 add-on, Social Security wage base, senior deduction on/off
 const CUR={ord:ORD,qual:QUAL,std:16600,a65:2100,wb:192300,sb:FILEYEAR<=2028,d:1};
+// Next year's rules once published (null until then)
 const NXT=null;
+// Next year's rules, used only when the plan year matches this file's year
 const nextRules=()=>NXT&&num('yr')===FILEYEAR?NXT:null;
+// Standard deduction: base, plus the age-65 add-on, plus the senior deduction ($6,000, phased out 6% above $75,000 MAGI)
 function stdDed(magi,o65,r=CUR){if(!o65)return r.std;return r.std+r.a65+Math.max(0,6000-Math.max(0,(magi-75000)*.06))}
+// Federal withholding estimate for a year's wages: tax on wages minus the standard deduction
 const employerEst=(w,r=CUR)=>sumT(split(0,Math.max(0,w-r.std),r.ord));
 // USF nine-month paydays: every other Friday on the Sep 4, 2026 cycle, from January through May 28 and from mid-August (or early September) through December
 const payDates=y=>{const o=[];for(let d=new Date(2026,8,4);d.getFullYear()<=y;d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+14))if(d.getFullYear()===y&&(d.getMonth()<5||d.getMonth()>7||(d.getMonth()===7&&d.getDate()>=15)))o.push(d);return o};
+// The yearly check-in date: November 30 (run next year's Wizard, set Roth contributions, convert the top-up)
 const lastNov=y=>({d:new Date(y,10,30),s:'Nov 30',iso:`${y}-11-30`});
+// This file year's paydays, as [month, day]
 const PAYDAYS=payDates(FILEYEAR).map(d=>[d.getMonth(),d.getDate()]);
 const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// Market down more than 5% from a year ago (Step 1, optional values)?
 function mkt(){const a=num('mkt0'),b=num('mkt1');if(a>0&&b>0){const c=b/a-1;return{auto:true,chg:c,down:c<-.05}}return{auto:false}}
+// This year's total federal withholding: typed total, or year to date plus per-paycheck amount for the paydays left, or an estimate
 function wwhCalc(yr,wage){
   if(!isBlank('wwh'))return{v:num('wwh'),src:'typed'};
   const p=val('pdate').split('-').map(Number);
   if(p.length===3&&p[0]&&!isBlank('ytdwh')&&!isBlank('perwh')){const d=new Date(p[0],p[1]-1,p[2]),left=PAYDAYS.filter(([m,dd])=>new Date(yr,m,dd)>d);
     return{v:num('ytdwh')+num('perwh')*left.length,src:'paystub',left,ytd:num('ytdwh'),per:num('perwh'),warn:p[0]!==yr?`The paystub is dated ${p[0]}, not ${yr}.`:''}}
   return{v:employerEst(wage),src:'est'}}
+// Social Security (6.2% up to the wage base) and Medicare (1.45%, plus 0.9% above $200,000) tax on wages
 const ficaOf=(w,inf,r)=>w*.0145+.062*Math.min(w,r?r.wb:192300*(1+inf))+.009*Math.max(0,w-2e5);
 // Paychecks next year (Step 2; 26 if blank). Payroll withholds each check as if that pay came every two weeks all year,
 // so fewer, larger checks (a nine-month appointment) are withheld at a higher rate than the yearly tax.
@@ -451,10 +529,13 @@ const npayOf=()=>num('npay')>0?num('npay'):26;
 // Nine-month pay: 19.5 pay periods come as 19 full paychecks plus two small prorated ones (late May about 10%, mid-August about 40%)
 const fullOf=n=>n<26?Math.floor(n+1e-9):26,nchkOf=n=>n<26?fullOf(n)+(n-fullOf(n)>1e-9?2:0):26;
 const payrollWH=(w,n,r=CUR)=>n>=26||!(w>0)?employerEst(w,r):employerEst(w/n*26,r)/26*n;
+// Take-home pay estimate: wages minus Roth contributions, withholding and Social Security/Medicare tax
 const thpEst=(w,k,inf,n=26)=>{const r=nextRules();return w>0?Math.max(0,w-k-payrollWH(w,n,r||CUR)-ficaOf(w,inf,r)):0};
+// This year's spending and where it came from (take-home pay, Social Security, RMD, brokerage)
 function nowCalc(yr,w,wh,ss,rmd,brk,bp,inf){const k=yr<=num('lw')&&WK[yr]?WK[yr][1]:0,fica=w>0?ficaOf(w,0):0,thp=Math.max(0,w-k-wh-fica),spend=num('lsp'),oth=num('oth');
   const calc=Math.min(brk,Math.max(0,spend-thp-ss-rmd-oth)),typed=!isBlank('bwd'),bwd=typed?num('bwd'):calc;
   return{spend,thp,w,k,wh,fica,ss,rmd,oth,calc,typed,bwd,gains:bwd*(1-bp),other:Math.max(0,spend-thp-ss-rmd-oth-bwd)}}
+// Full tax breakdown for one year (used for the tax tables in Step 5); the tax itself comes from taxCore
 function taxOf(v){const RR=v.r||CUR,ORD_=RR.ord,QUAL_=RR.qual,w=Math.max(0,v.wages),i=Math.max(0,v.ira),qd=Math.max(0,v.qdiv),st=Math.max(0,v.stcg),lt=Math.max(0,v.ltcg),ss=Math.max(0,v.ss),it=Math.max(0,v.int||0);
   const K=taxCore({wages:w,ira:i,int:it,qdiv:qd,stcg:st,ltcg:lt,ss,o65:v.o65},RR),S=ssTaxable(ss,w+i+it+qd+st+lt),tss=K.tss,ord=K.ord,qual=K.qual,tot=K.tot,ded=K.ded,ordT=K.ordT,left=K.left,qualT=K.qualT;
   const oRows=split(0,ordT,ORD_),qRows=split(ordT,qualT,QUAL_),oTax=K.oTax,qTax=K.qTax,nii=it+qd+st+lt,niitBase=K.niitBase,niit=K.niit,tax=K.tax;
@@ -465,15 +546,21 @@ function taxOf(v){const RR=v.r||CUR,ORD_=RR.ord,QUAL_=RR.qual,w=Math.max(0,v.wag
     src:[['Wages',w,lt_[0]],['Taxable Social Security',tss,lt_[1]],['Pre-tax withdrawals and conversion',i,lt_[4]],['Interest',it,lt_[2]+ni],['Dividends',qd,qdTax+nd],['Capital gains',st+lt,lt_[3]+ltTax+ng]]}}
 
 /* ---------- One engine for every year: tax core, yearly rules, year-by-year cash flow ---------- */
+// RMD divisors (IRS Uniform Lifetime Table), by age
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
+// Standard monthly Medicare Part B premium (keep equal to the first premium in IRM)
 const PARTB=202.90;
 // Tax on amt dollars stacked on top of base, through brackets [[rate,lo,hi],...]
 const bt=(base,amt,br)=>{let t=0;if(amt<=0)return 0;const top=base+amt;for(let k=0;k<br.length;k++){const b=br[k],a=b[1]>base?b[1]:base,c=b[2]<top?b[2]:top;if(c>a)t+=b[0]*(c-a)}return t};
 // The single federal tax calculation used everywhere. r = rules for the year (brackets, deductions; d deflates fixed-dollar thresholds in today's-dollar projections).
 function taxCore(v,r){const d=r.d||1,w=v.wages||0,i=v.ira||0,it=v.int||0,qd=v.qdiv||0,st=v.stcg||0,lt=v.ltcg||0,ss=v.ss||0;
+  // Taxable Social Security: combined income = other income + half of benefits; thresholds $25,000 / $34,000
   const c=w+i+it+qd+st+lt+.5*ss,t1=25000/d,t2=34000/d,b50=Math.max(0,Math.min(c,t2)-t1),b85=Math.max(0,c-t2),t50=Math.min(.5*b50,.5*ss),tss=ss>0?Math.min(.85*ss,t50+.85*b85):0;
+  // Ordinary income vs. qualified dividends and long-term gains; deduction = standard + age-65 add-on + senior deduction
   const ord=w+i+it+st+tss,qual=qd+lt,tot=ord+qual;let ded=r.std;if(v.o65){ded+=r.a65;if(r.sb)ded+=Math.max(0,6000/d-Math.max(0,(tot-75000/d)*.06))}
+  // Ordinary taxable income fills the brackets first; dividends and gains stack on top at 0/15/20%
   const ordT=Math.max(0,ord-ded),left=Math.max(0,ded-ord),qualT=Math.max(0,qual-left),oTax=bt(0,ordT,r.ord),qTax=bt(ordT,qualT,r.qual);
+  // Net investment income tax: 3.8% of investment income above $200,000 of income
   const nii=it+qd+st+lt,niitBase=Math.min(nii,Math.max(0,tot-200000/d)),niit=.038*niitBase;
   return{tax:oTax+qTax+niit,ord,qual,tot,ded,ordT,qualT,left,oTax,qTax,niit,niitBase,tss,combined:c,b50,b85,t50}}
 // Rules for calendar year y, expressed in year-Y0 dollars. Known years use published figures; later years are indexed with inflation.
@@ -482,6 +569,7 @@ function rulesAt(y,Y0,inf){const k=y+'|'+Y0+'|'+inf;let o=_RC.get(k);if(o)return
   const useN=NXT&&y>=FILEYEAR+1,b=useN?NXT:CUR,by=useN?FILEYEAR+1:FILEYEAR,d=Math.pow(1+inf,y-Y0),s=Math.pow(1+inf,Math.max(0,y-by))/d,sI=Math.pow(1+inf,Math.max(0,y-FILEYEAR))/d;
   const sc=br=>br.map(([r,lo,hi])=>[r,lo*s,hi*s]);
   o={ord:sc(b.ord),qual:sc(b.qual),std:b.std*s,a65:b.a65*s,wb:b.wb*s,sb:y<=2028,d,s,sI,y};_RC.set(k,o);return o}
+// Same Social Security/Medicare tax as ficaOf, with the wage base from the year's rules
 const ficaR=(w,r)=>w>0?w*.0145+.062*Math.min(w,r.wb)+.009*Math.max(0,w-200000/r.d):0;
 // Annual IRMAA surcharge for a MAGI, thresholds indexed like the brackets (tiers are the latest published)
 function irmaaR(magi,r){let i=0;for(let k=0;k<IRM.length;k++)if(magi>IRM[k][0]*r.sI)i=k;const b=IRM[i];return((b[2]-PARTB)+b[3])*12}
@@ -712,13 +800,17 @@ function compute(){const I=inputs();
   const S=R.S;R.Wh=I.pay==='qtr'?0:Math.min(S.owed,R.C);R.short=I.pay!=='qtr'&&S.owed>R.C+1;
   if(R.short&&canConv){let lo=R.C,hi=Math.max(R.C,I.pre-I.rmdP);if(hi>lo){for(let i=0;i<40;i++){const m=(lo+hi)/2;m>=scenario(I,m).owed?hi=m:lo=m}R.Cmin=Math.ceil(hi/100)*100}}
   R.pays=I.wwh+R.Wh;
+  // Safe harbor for this year: the smaller of 90% of this year's tax and 100% of last year's (110% if last year's AGI was over $150,000)
   R.prior=I.ltaxBlank?null:(I.lagi>150000?1.1:1)*I.ltax;
   R.req=R.prior==null?.9*S.t.tax:Math.min(.9*S.t.tax,R.prior);
+  // No penalty if payments meet the safe harbor or less than $1,000 is owed
   R.safe=R.pays>=R.req-1||S.t.tax-R.pays<1000;
   R.qEach=Math.max(0,R.req-I.wwh)/4;
+  // Next year's safe harbor from this year's tax, and next year's paycheck withholding
   R.nextReq=(S.t.tot>150000?1.1:1)*S.t.tax;R.NR=nextRules();R.nextWH=payrollWH(I.wageNext,I.npay,R.NR||CUR);R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
   // Medicare in the budget year (Jan–Dec next year): Part B from the month I turn 65; IRMAA uses AGI from two years before that year (= last year's AGI)
   {const ageN=I.yr+1-I.by,mo=ageN<65?0:ageN==65?2:12,f=1+I.inf,ir=irmaaFor(I.lagi),ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*f*(ageN==I.ssA?1/12:1):0;
+   // 202.90 = standard Part B premium per month (keep equal to PARTB)
    R.med={ageN,mo,partB:202.90*mo*f,irm:ir.annual*mo/12*f,tier:ir.tier,ssN,noAgi:!I.lagi};R.med.total=R.med.partB+R.med.irm}
   // 5. Funding next year's after-tax budget (Medicare premiums on top)
   const W=R.G.err?0:R.G.W;let rem=W+R.med.total;R.src=[];
@@ -795,6 +887,7 @@ function render(R){
     if(N.thp>0)li+=`<p class="note">Take-home pay is an estimate that leaves out insurance and other paycheck deductions. My real paychecks will be a bit smaller, so I may need to withdraw a little more from brokerage. If I know my actual withdrawals, type them on Step 2.</p>`;
     todo.push(li)}}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='now'});
+  // ---- To-do: this year's Roth conversion ----
   // Conversion
   if(R.C>0){
     const AC=convSort(I.accRows.map(a=>({...a})),I.corder);
@@ -812,6 +905,7 @@ function render(R){
     todo.push(li);
   }
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='conv'});
+  // ---- To-do: this year's tax (quarterly payments or what's due in April) ----
   // Estimated tax
   {const yrs=[[I.yr,3,15],[I.yr,5,15],[I.yr,8,15],[I.yr+1,0,15]];
     let li=`<span class="when">${I.pay==='qtr'?`Quarterly, for ${I.yr}'s tax`:'Before April 15, '+(I.yr+1)}</span>`;
@@ -823,12 +917,13 @@ function render(R){
     if(S.owed>=1&&!(I.pay==='qtr'&&R.qEach>=1))act(`By Apr 15, ${I.yr+1}`,`Pay the rest of ${I.yr}'s tax, about ${fmt(S.owed)}, with my return.`);
     todo.push(li)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='est'});
+  // ---- To-do: next year's spending, monthly transfers, Roth contributions, one-time money, next year's conversion ----
   // Spending
   if(!G.err){const W=G.W,m=W/12;const setM=G.mode==='set'||G.mode==='setcut',pctS=x=>Math.round(x*100)+'%';let li=`<span class="when">Jan–Dec ${I.yr+1}</span><div>${setM?'<b>Amount I chose to pay myself (Step 4).</b>':'<b>Set by the guardrails.</b>'} Spend up to <b class="amt">${fmt(W)}</b> after tax in ${I.yr+1}, January through December (${fmt(W/(1+I.inf))} in today's dollars). Federal tax${medTxt?' and Medicare premiums are':' is'} not included: tax on wages comes out of my paychecks, and the rest of ${I.yr+1}'s tax (on brokerage gains and the Roth conversion) is under “Planning ${I.yr+1}'s tax now” below.</div><div style="margin-top:6px"><b>Where the money comes from:</b></div><ul>`;
     const nine=I.npay<26&&R.src.some(s=>s[0]==='Take-home pay'),pm=Math.round(I.npay/26*12);
     // Roth contributions from pay next year (Step 2), split evenly between the Roth 403(b) and the Roth 457(b)
     const rk=(I.yr+1<=I.lw&&wkN(I.yr+1))?wkN(I.yr+1)[1]:0,rnc=fullOf(I.npay),rper=Math.ceil(rk/2/rnc);
-    // Next year's last two December paydays
+    // Set next year's Roth contributions on Nov 30 of this year
     const nov=new Date(I.yr,10,30),novS='Nov 30';
     if(rk>0)cal(`${I.yr}-11-${String(nov.getDate()).padStart(2,'0')}`,`Set Roth contributions ${fmt(rper)} each`,`Set payroll Roth contributions for ${I.yr+1}: ${fmt(rper)} to the 403(b) and ${fmt(rper)} to the 457(b) per paycheck.`);
     if(rk>0)act(`${novS}, ${I.yr}`,`Set payroll to contribute ${fmt(rper)} to the Roth 403(b) and ${fmt(rper)} to the Roth 457(b) per paycheck.`);
@@ -861,6 +956,7 @@ function render(R){
       :(window._NCC=0,jpHint(),`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`))}
     todo.push(li+how)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='next'});
+  // ---- To-do: next year's tax and how to pay it (no-penalty, optional, or needed payments) ----
   // Next year estimate reminder
   {const N=R.N,NC=R.NC,Y=I.yr+1,conv=NC.C>0,npay=num('npay')>0?num('npay'):26,rw=(l,v,c='')=>`<tr class="${c}"><td>${l}</td><td>${v}</td></tr>`;
     const req=Math.min(.9*NC.tax,N.prior),minX=Math.max(0,req-N.wh),tot=NC.total,hp=Math.max(0,NC.gainTax+NC.other);
@@ -897,6 +993,7 @@ function render(R){
     li+=`<p class="note">Uses ${R.NR?`${I.yr+1} IRS brackets and standard deduction (${R.NR.src})`:`${I.yr} brackets`}, the ${fmt(N.brkSale)} brokerage withdrawal for next year's spending shown above (with my cost basis at ${Math.round(I.bp*100)}% of its value), and the conversion method from Step 3${NC.tax&&N.niit>0?', including the 3.8% net investment income tax':''}. When I run the ${I.yr+1} Wizard next November, the Wizard will redo this estimate with my actual ${I.yr+1} numbers.</p>`;
     todo.push(li)}}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='ntax'});
+  // ---- To-do: Medicare sign-up, Social Security application, IRMAA, RMDs ----
   // Social Security / RMD reminders
   if(I.age===64||I.age===65){const Y=I.by+65,end=new Date(Y+1,2,0).getDate(),now=I.age===65;
     let li=`<span class="when">${now?`Now: Aug ${Y} – Feb ${Y+1}`:`Aug ${Y} – Feb ${Y+1}`}</span><div>Sign up for Medicare. My sign-up window runs <b>August 1, ${Y} to February ${end}, ${Y+1}</b>, around my 65th birthday in November ${Y}. Signing up by October 31, ${Y} starts coverage on November 1.</div><ul>`;
