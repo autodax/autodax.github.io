@@ -269,7 +269,7 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
   <div class="group">Wages and Roth contributions by year (each year's own dollars)</div>
   <p class="lead">Wages are gross pay before Roth contributions (box 1 of my W-2 plus Roth 403(b)/457(b) contributions). Roth contribution is what goes from my paycheck into Roth 403(b) or 457(b); conversions are separate. Enter each year in that year's own dollars, what I expect to be paid then, since raises and Roth contribution limits are set that way. Unlike the Wizard's other future amounts, these are not in today's dollars.</p>
   <div id="work"></div>
-  <div class="group" id="tyHead">This year's other income</div>
+  <div class="group" id="tyHead">This year’s taxes and other income (<span class="y" data-o="0"></span>)</div>
   <div class="grid">
     <div><label for="pdate">Latest paystub date</label><input id="pdate" type="date"><div class="help" id="pdHelp"></div></div>
     <div><label for="ytdwh">Federal tax withheld, year to date</label><input id="ytdwh" type="number" inputmode="decimal" step="1" value=""><div class="help">The latest paystub's year-to-date federal income tax. Not Social Security or Medicare.</div></div>
@@ -280,19 +280,33 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
     <div><label for="int">Interest income, full year</label><input id="int" type="number" inputmode="decimal" step="100" value="" placeholder="estimate"><div class="help" id="intHint"></div></div>
     <div><label for="oth">Pre-tax withdrawals and Roth conversions already done this year (<span class="y" data-o="0"></span>)</label><input id="oth" type="number" inputmode="decimal" step="100" value=""><div class="help">Money already taken from a 403(b), 457(b) or traditional IRA this year (<span class="y" data-o="0"></span>), including a January Roth conversion. The Wizard then works out only the top-up conversion still to do by December 31.</div></div>
   </div>
-  <div class="group">This year (<span class="y" data-o="0"></span>) and next year (<span class="y" data-o="1"></span>)</div>
+  <div class="group">Last year’s tax return (<span class="y" data-o="-1"></span>)</div>
+  <p class="lead">For this year’s safe harbor: how much tax I must pay during the year to avoid a penalty.</p>
+  <div class="grid">
+    <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. The Wizard uses last year's tax for the safe harbor: the minimum I must pay during the year, through withholding or estimated payments, to avoid an underpayment penalty.</div></div>
+    <div><label for="lagi">AGI last year (<span class="y" data-o="-1"></span> tax year)</label><input id="lagi" type="number" inputmode="decimal" step="1000" value=""><div class="help">Form 1040 line 11. If last year's AGI was over $150,000, safe harbor is 110% of last year's (<span class="y" data-o="-1"></span>) tax instead of 100%.</div></div>
+  </div>
+  <div class="group">This year’s spending (Jan–Dec <span class="y" data-o="0"></span>)</div>
   <div class="grid">
     <div><label for="lsp">Total spending this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="lsp" type="number" inputmode="decimal" step="500" value=""><div class="help">Everything I'll spend this calendar year (<span class="y" data-o="0"></span>) however it's paid: paychecks, brokerage, Social Security. Spending so far plus what's left through December. Leave out taxes, Medicare premiums, Roth contributions and money moved between accounts. Last year's (<span class="y" data-o="-1"></span>) Wizard budget for <span class="y" data-o="0"></span> is a good stand-in. Next year's (<span class="y" data-o="1"></span>) budget starts from this amount. If I leave this blank, the Wizard sets next year's budget to the amount that has my target chance (Step 4) of lasting.</div></div>
     <div><label for="bwd">Brokerage withdrawals this year (Jan–Dec <span class="y" data-o="0"></span>)</label><input id="bwd" type="number" inputmode="decimal" step="500" value="" placeholder="calculated"><div class="help" id="bwdHint"></div></div>
+  </div>
+  <div class="group">Next year’s pay (<span class="y" data-o="1"></span>)</div>
+  <div class="grid">
     <div><label for="thp">Take-home pay next year (Jan–Dec <span class="y" data-o="1"></span>), in today's $</label><input id="thp" type="number" inputmode="decimal" step="500" value="" placeholder="estimate"><div class="help">What my paychecks will deposit in checking next year (<span class="y" data-o="1"></span>), after taxes, Roth contributions, insurance and other deductions. Take-home pay covers part of the budget, so less comes from my accounts.</div><div class="help" id="thpHint"></div></div>
     <div><label for="npay">Pay periods next year (<span class="y" data-o="1"></span>)</label><input id="npay" type="number" inputmode="decimal" step="0.5" value="" placeholder="26"><div class="help">How many two-week pay periods my pay covers next year. 26 if I'm paid every two weeks all year (the Wizard uses 26 if I leave this blank); 19.5 on a nine-month appointment with no summer pay; fewer in the year I stop working. 19.5 pay periods come as 19 full paychecks plus two small prorated ones (late May and mid-August); the Wizard spreads Roth contributions and extra withholding over the full paychecks.</div></div>
+  </div>
+  <div class="group">One-time money next year (<span class="y" data-o="1"></span>)</div>
+  <p class="lead">Money coming in next year other than pay and Social Security, such as savings bonds I cash in. It goes into checking and pays for spending before the monthly transfers from my accounts, so I sell less in brokerage. Leave these blank if there’s none.</p>
+  <div class="grid">
+    <div><label for="xname">What it is</label><input id="xname" type="text" value="" placeholder="Cash out I bonds"><div class="help">A short name or action for the plan, Actions in brief and the calendar, like “Cash out I bonds”.</div></div>
+    <div><label for="xdate">Date it goes into checking</label><input id="xdate" type="date"><div class="help">The Wizard adds a calendar event for this day. From this day on, the money pays for my spending in place of the monthly transfers until it’s used up (for part of a month, that month’s transfer is cut in proportion). If I leave this blank, the Wizard assumes early January.</div></div>
+    <div><label for="xcash">Amount I’ll receive, $</label><input id="xcash" type="number" inputmode="decimal" step="100" value=""><div class="help">The full amount, in next year’s dollars.</div></div>
+    <div><label for="xtax">Taxable part of the amount, $</label><input id="xtax" type="number" inputmode="decimal" step="100" value=""><div class="help">The part taxed as ordinary income: for savings bonds, the interest (the amount received minus what I paid for them). The Wizard adds this to next year’s income, so it leaves less room for the Roth conversion.</div></div>
+  </div>
+  <div class="group">Property tax</div>
+  <div class="grid">
     <div><label for="ptyr">First year I pay my property tax myself</label><input id="ptyr" type="number" inputmode="numeric" step="1" value=""><div class="help">The year my mortgage is paid off and the escrow stops paying it. From that year on, the plan reminds me to pay the property tax in November, when the discount is largest (4%). Leave blank while the mortgage pays it.</div></div>
-    <div><label for="xname">One-time money next year (<span class="y" data-o="1"></span>): what it is</label><input id="xname" type="text" value="" placeholder="Cash out I bonds"><div class="help">A short name or action for the plan, Actions in brief and the calendar, like “Cash out I bonds”.</div></div>
-    <div><label for="xdate">Date it goes into checking</label><input id="xdate" type="date"><div class="help">The Wizard adds a calendar event for this day, and the money replaces the monthly transfers that follow until it’s used up. A transfer due up to a week before this date is skipped too. If I leave this blank, the Wizard assumes early January.</div></div>
-    <div><label for="xcash">One-time money next year (<span class="y" data-o="1"></span>): amount, $</label><input id="xcash" type="number" inputmode="decimal" step="100" value=""><div class="help">Money I'll receive next year, other than pay and Social Security, and spend instead of selling brokerage shares, like savings bonds I cash in. The full amount received, in next year's dollars. Leave blank if none.</div></div>
-    <div><label for="xtax">Taxable part of that money, $</label><input id="xtax" type="number" inputmode="decimal" step="100" value=""><div class="help">The part taxed as ordinary income: for savings bonds, the interest (the amount received minus what I paid for them). The Wizard adds this to next year's income, so it leaves less room for the Roth conversion.</div></div>
-    <div><label for="ltax">Total federal tax last year (<span class="y" data-o="-1"></span> tax year)</label><input id="ltax" type="number" inputmode="decimal" step="100" value=""><div class="help">Form 1040 line 24, "total tax". Not the refund or amount owed. The Wizard uses last year's tax for the safe harbor: the minimum I must pay during the year, through withholding or estimated payments, to avoid an underpayment penalty.</div></div>
-    <div><label for="lagi">AGI last year (<span class="y" data-o="-1"></span> tax year)</label><input id="lagi" type="number" inputmode="decimal" step="1000" value=""><div class="help">Form 1040 line 11. If last year's AGI was over $150,000, safe harbor is 110% of last year's (<span class="y" data-o="-1"></span>) tax instead of 100%.</div></div>
   </div>
   <div class="group">Social Security and Medicare</div>
   <div class="grid">
@@ -1256,7 +1270,7 @@ function sync(){explain();cfApply();jpHint();
   const bm=val('bmode')==='set';const VIS={setsp:bm,tgt:!bm,upP:!bm,corder:m!=='none',camt:m==='fixed',camtN:m==='fixed',ttype:m==='target',teff:m==='target'&&tt==='eff',tbrk:(m==='target'&&tt==='brk')||m==='level',tamt:m==='target'&&tt==='amt',rtgt:m==='level',cmax:m!=='none',mean:me==='cus',vol:me==='cus',wrap:me==='bt'};
   for(const id in VIS){const e=$(id);if(e&&e.parentElement)e.parentElement.hidden=!VIS[id]}
   $('tbrkLbl').textContent=m==='level'?'Bracket I won\'t go above':'Bracket I fill to';
-  $('yrpill').textContent=val('yr');$('tyHead').textContent=`${val('yr')} other income`;
+  $('yrpill').textContent=val('yr');$('tyHead').textContent=`This year’s taxes and other income (${val('yr')})`;
   const brk=num('brk');$('basHint').textContent=brk>0?`${Math.round(Math.min(num('bas'),brk)/brk*100)}% of the balance`:'';
   const M=mv();$('mvNote').textContent=`Expected return ${M.mean}% a year, volatility ${M.vol}% (${M.lbl}).`+(me==='bt'?' The backtest replays actual years instead of using these averages.':'');
   $('gHint').textContent=`If I leave this blank, the Wizard uses ${M.mean}%, the average from my return model. A lower figure, such as 5.5–6%, gives a more conservative read.`;$('g').placeholder=M.mean;
