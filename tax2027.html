@@ -888,6 +888,37 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
 </div>
 
 <script>
+/* =====================================================================================
+   TAX ESTIMATOR: how this file is organized
+   1. TAX FIGURES (just below; NIIT and IRMAA figures are further down, marked)
+   2. Helpers: fmt ($ text), bracketSplit (dollars and tax in each bracket), table rendering
+   3. computeTaxableSocialSecurity, computeStandardDeduction, totalTaxFor: the tax itself
+   4. irmaa...: Medicare premium surcharge
+   5. calculate(): reads every field, works out the tax, fills the page (runs on every change)
+   6. Solvers: the IRA withdrawal that fills a bracket or reaches a rate; the stock sale
+      that pays the tax still owed
+   7. Saving the entries in the link (#...), theme, +/- buttons
+
+   TAX FIGURES (single filer) for this file's year. Update these when new figures come out.
+   Where new figures come from:
+     - Brackets, standard deduction, age-65 add-on: the IRS Revenue Procedure each October
+       or November (search irs.gov for "inflation adjustments" and the year).
+     - Social Security wage base: ssa.gov each October ("contribution and benefit base").
+     - Medicare Part B premium and IRMAA tiers: cms.gov / medicare.gov each fall.
+   Bracket format: {rate, from, to} in dollars of taxable income; the last runs to Infinity.
+   Also update, if they change:
+     - NIIT_RATE / NIIT_THRESHOLD_SINGLE and IRMAA_BRACKETS / STANDARD_PART_B (search for them)
+     - Text in the page that repeats figures: search the HTML above for "Standard deduction",
+       "Rev. Proc." (the figures note) and "Part B premium is".
+     - The safe-harbor note in calculate() (search "srcQtrNote"): 90% of this year's tax,
+       no penalty under $1,000 (fixed by law).
+   Fixed by law, not indexed (change only if Congress changes them):
+     - Social Security taxation thresholds $25,000 and $34,000
+     - Net investment income tax: 3.8% above $200,000 MAGI
+     - Additional Medicare tax: 0.9% on wages above $200,000
+     - Senior deduction: $6,000 at 65+, phased out 6% above $75,000 MAGI, 2025 through 2028
+   ===================================================================================== */
+// Standard deduction (single), the extra amount at 65+, and the senior deduction ($6,000, phased out 6% above $75,000 MAGI)
 const STD_DEDUCTION_BASE = 16600;
 const AGE_65_ADDON = 2100;
 const SENIOR_BONUS_MAX = 6000;
@@ -975,6 +1006,7 @@ let lastEffOrdinary = {tax:0, irmaa:0, inc:0}; // tax (without IRMAA), IRMAA, an
 let lastOrdinaryTaxable = 0; // latest ordinary taxable income, used by the IRA bracket solver
 let lastStillOwed = 0;      // latest "still owed after withholding", used by the LTCG solver
 
+// Taxable Social Security: up to 50% of benefits above $25,000 of combined income, up to 85% above $34,000
 function computeTaxableSocialSecurity(ssBenefits, otherIncome){
   const combinedIncome = otherIncome + 0.5 * ssBenefits;
 
@@ -1006,6 +1038,7 @@ function computeStandardDeduction(magi){
   return STD_DEDUCTION_BASE + AGE_65_ADDON + seniorBonus;
 }
 
+// Total federal tax for a set of incomes (used by the solvers); calculate() does the same with the full breakdown
 function totalTaxFor(v){
   const w=Math.max(0,v.wages), i=Math.max(0,v.ira), nd=Math.max(0,v.ndiv), qd=Math.max(0,v.qdiv),
         st=Math.max(0,v.stcg), lt=Math.max(0,v.ltcg), ss=Math.max(0,v.ssa);
@@ -1056,6 +1089,7 @@ function renderIrmaaTable(tableId, magi){
   });
 }
 
+// Reads every field, works out the tax, and fills in the tables and summary. Runs on every change.
 function calculate(){
   const wages = parseFloat(document.getElementById('wages').value) || 0;
   const ira = parseFloat(document.getElementById('ira').value) || 0;
@@ -1266,10 +1300,12 @@ function calculate(){
   document.getElementById('sMarginal').textContent = (marginal*100).toFixed(0) + '%';
 }
 
+// Net investment income tax: 3.8% on investment income above $200,000 MAGI (fixed by law)
 const NIIT_RATE = 0.038;
 const NIIT_THRESHOLD_SINGLE = 200000;
 
 // 2026 IRMAA tiers and premiums, carried over until Medicare publishes 2027 figures
+// IRMAA tiers (single), by MAGI from two years earlier: monthly Part B premium and Part D surcharge for each tier. Update each fall from Medicare.
 const IRMAA_BRACKETS = [
   {from:0,       to:109000,   partB:202.90, partD:0.00},
   {from:109000,  to:137000,   partB:284.10, partD:14.50},
@@ -1278,6 +1314,7 @@ const IRMAA_BRACKETS = [
   {from:205000,  to:500000,   partB:649.20, partD:83.30},
   {from:500000,  to:Infinity, partB:689.90, partD:91.00},
 ];
+// Standard monthly Part B premium (the first tier above)
 const STANDARD_PART_B = 202.90;
 
 function magiLabel(from, to){

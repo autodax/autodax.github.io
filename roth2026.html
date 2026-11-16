@@ -168,11 +168,45 @@ function saveWork(){document.querySelectorAll('#work input').forEach(e=>{const y
 function renderWork(){saveWork();const g=id=>+document.getElementById(id).value||0,s=g('start'),l=Math.min(g('lw'),s+30);let h='';
 if(s>=2000&&s<=2100)for(let y=s;y<=l;y++){const a=WK[y]||(WK[y]=[...(WK[y-1]||[0,0])]);h+=`<div><label for="w${y}a">${y} wages (taxable, before Roth, nominal)</label><input id="w${y}a" type="number" data-y="${y}" data-k="0" value="${a[0]||''}" step="500"></div><div><label for="w${y}b">${y} Roth contribution (nominal)</label><input id="w${y}b" type="number" data-y="${y}" data-k="1" value="${a[1]||''}" step="500"></div>`}
 document.getElementById('work').innerHTML=h}
+// Monthly Social Security benefit by claim age (from my SSA statement)
 const SSTBL={62:2316,63:2513,64:2729,65:3008,66:3294,67:3587,68:3692,69:4043,70:4648};
 const TGT=`<div><label for="ssclaim">Social Security claim age / monthly benefit</label><select id="ssclaim">${Object.entries(SSTBL).map(([a,m])=>`<option value="${a}"${a==70?' selected':''}>Age ${a}: $${m.toLocaleString('en-US')}/mo</option>`).join('')}</select></div><div><label for="ttype">Conversion strategy</label><select id="ttype"><option value="autog">Auto with guardrails: most spending at my target chance across market futures</option><option value="auto" selected>Auto: most after-tax spending (lowest tax among near-ties)</option><option value="low">Fill a bracket every year, for life</option><option value="full">Convert fully by a set age (level)</option><option value="level">Even out (level) up to a bracket</option><option value="brk">Fill a marginal bracket (front-loaded)</option><option value="eff">Fill to an effective tax rate</option><option value="amt">Cap the federal tax at a dollar amount</option><option value="fixed">Convert a set amount each year</option><option value="none">No conversions</option></select><input type="hidden" id="wz" value=""></div><div><label for="setsp">Spending I chose, today's $ (blank = the most I can spend)</label><input type="number" id="setsp" value="" step="1000" inputmode="decimal"></div><div><label for="meth">Market futures (Auto with guardrails)</label><select id="meth"><option value="bt" selected>Market history, 1871–2022</option><option value="sim">500 simulated futures</option></select></div><div><label for="mix">Stocks % (the rest in bonds)</label><input type="number" id="mix" value="95" step="5" inputmode="decimal"></div><div><label for="wrap">Start years</label><select id="wrap"><option value="0" selected>Only with a full history after them</option><option value="1">All, wrapping around</option></select></div><div><label for="mean">Simulated return % (nominal)</label><input type="number" id="mean" value="9.8" step=".1" inputmode="decimal"></div><div><label for="vol">Simulated volatility %</label><input type="number" id="vol" value="17.6" step=".1" inputmode="decimal"></div><div><label for="end">Plan to age</label><input type="number" id="end" value="95" step="1" inputmode="decimal"></div><div><label for="tgt">Target chance my money lasts %</label><input type="number" id="tgt" value="85" step="1" inputmode="decimal"></div><div><label for="down0">Market down more than 5% now?</label><select id="down0"><option value="0" selected>No</option><option value="1">Yes</option></select></div><div><label for="fixn">Later years' amount (set amount; blank = same)</label><input type="number" id="fixn" value="" step="1000" inputmode="decimal"></div><div><label for="corder">Convert and withdraw from first</label><select id="corder"><option value="small" selected>Smallest account first (fewer accounts sooner)</option><option value="ira">Traditional IRA first</option><option value="457">457(b) first</option><option value="403">403(b) first</option></select></div><div><label for="cmax">Last conversion age (default 74; RMDs start at 75)</label><input type="number" id="cmax" value="74" step="1" inputmode="decimal"></div><div><label for="autosafe">Auto: keep RMDs inside the 22% limit?</label><select id="autosafe"><option value="yes" selected>Yes (even at +2 pts growth)</option><option value="no">No (maximize spending)</option></select></div><div><label for="byage">Fully convert by age (convert-fully mode)</label><input type="number" id="byage" value="" step="1" inputmode="decimal"></div><div><label for="tval">Bracket % (or effective rate %)</label><input type="number" id="tval" value="" step=".5" inputmode="decimal"></div><div><label for="rtgt">Age-75 RMD ceiling (today's $; even mode)</label><input type="number" id="rtgt" value="" step="5000" inputmode="decimal"></div><div><label for="agicap">AGI cap ages 63+ to dodge IRMAA (today's $; 0=off)</label><input type="number" id="agicap" value="" step="1000" inputmode="decimal"></div><div><label for="planat">Plan at</label><select id="planat"><option value="mine" selected>My spending input</option><option value="max">Maximum sustainable spending (drain to cushion)</option></select></div><div><label for="cushion">Min age-95 cushion (today's $; sustainable spending)</label><input type="number" id="cushion" value="" step="25000" inputmode="decimal"></div>`;
 document.getElementById('inputs').innerHTML=IN.map(([id,l,v,s])=>`<div><label for="${id}">${l}</label><input type="number" id="${id}" value="" step="${s}" inputmode="decimal"></div>`).join('');
 document.getElementById('strategy').innerHTML=TGT;
 /* ---------- Same engine as the Wizard: one tax calculation, yearly rules, year-by-year cash flow (today's dollars) ---------- */
+/* =====================================================================================
+   ROTH CONVERSION PLANNER: how this file is organized
+   1. IN: the input fields (label, starting value, step); SSTBL: monthly Social Security
+      benefit by claim age (my own figures; edit as needed)
+   2. TAX FIGURES (just below), then the same engine as the Wizard: taxCore (the tax),
+      rulesAt (rules for any year, indexed for inflation), yearFlow / runYears (cash flow
+      year by year), convFor (conversion each year under a strategy)
+   3. HIST and paths: market history and simulated futures; guardrailAT and susSpend:
+      spending the plan can support
+   4. run(): reads the fields, runs the strategies, writes the tables and charts
+   5. Saving the entries in the link, theme
+
+   TAX FIGURES (single filer). Update these when new figures come out; keep them the same
+   as the Wizard's for the same year.
+   Where new figures come from:
+     - Brackets, standard deduction, age-65 add-on: the IRS Revenue Procedure each October
+       or November (search irs.gov for "inflation adjustments" and the year).
+     - Social Security wage base: ssa.gov each October ("contribution and benefit base").
+     - Medicare Part B premium and IRMAA tiers: cms.gov / medicare.gov each fall.
+   CUR  this year's rules (FILEYEAR): ord brackets [[rate, from, to], ...], qual (0/15/20%
+        brackets for dividends and long-term gains), std (standard deduction), a65 (extra
+        at 65+), wb (Social Security wage base)
+   NXT  next year's rules in the same form once published, or null (then CUR is indexed)
+   IRM  IRMAA tiers: [MAGI from, MAGI to, monthly Part B, monthly Part D surcharge]
+   PARTB standard monthly Part B premium; DIV RMD divisors by age (IRS Uniform Lifetime Table)
+   Also update, if they change: the figures written in the page's notes (search the HTML for
+   "wage base ($" and any bracket top written out in dollars), and "y<=2028" in rulesAt (last year of the senior deduction).
+   Fixed by law, not indexed (change only if Congress changes them):
+     - Social Security taxation thresholds $25,000 and $34,000
+     - Net investment income tax: 3.8% above $200,000 MAGI
+     - Additional Medicare tax: 0.9% on wages above $200,000
+     - Senior deduction: $6,000 at 65+, phased out 6% above $75,000 MAGI, 2025 through 2028
+   ===================================================================================== */
 const FILEYEAR=2026;
 const CUR={ord:[[.10,0,12400],[.12,12400,50400],[.22,50400,105700],[.24,105700,201775],[.32,201775,256225],[.35,256225,640600],[.37,640600,Infinity]],qual:[[0,0,49450],[.15,49450,545500],[.20,545500,Infinity]],std:16100,a65:2050,wb:184500};
 const NXT={ord:[[.10,0,12800],[.12,12800,52025],[.22,52025,109125],[.24,109125,208325],[.32,208325,264550],[.35,264550,661375],[.37,661375,Infinity]],qual:[[0,0,51050],[.15,51050,563200],[.20,563200,Infinity]],std:16600,a65:2100,wb:192300};
@@ -181,18 +215,22 @@ const PARTB=202.90;
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
 const fmt=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
 const bt=(base,amt,br)=>{let t=0;if(amt<=0)return 0;const top=base+amt;for(let k=0;k<br.length;k++){const b=br[k],a=b[1]>base?b[1]:base,c=b[2]<top?b[2]:top;if(c>a)t+=b[0]*(c-a)}return t};
+// The federal tax for one year (same as the Wizard): taxable Social Security, deductions, brackets, 3.8% NIIT
 function taxCore(v,r){const d=r.d||1,w=v.wages||0,i=v.ira||0,it=v.int||0,qd=v.qdiv||0,st=v.stcg||0,lt=v.ltcg||0,ss=v.ss||0;
   const c=w+i+it+qd+st+lt+.5*ss,t1=25000/d,t2=34000/d,b50=Math.max(0,Math.min(c,t2)-t1),b85=Math.max(0,c-t2),t50=Math.min(.5*b50,.5*ss),tss=ss>0?Math.min(.85*ss,t50+.85*b85):0;
   const ord=w+i+it+st+tss,qual=qd+lt,tot=ord+qual;let ded=r.std;if(v.o65){ded+=r.a65;if(r.sb)ded+=Math.max(0,6000/d-Math.max(0,(tot-75000/d)*.06))}
   const ordT=Math.max(0,ord-ded),left=Math.max(0,ded-ord),qualT=Math.max(0,qual-left),oTax=bt(0,ordT,r.ord),qTax=bt(ordT,qualT,r.qual);
   const nii=it+qd+st+lt,niitBase=Math.min(nii,Math.max(0,tot-200000/d)),niit=.038*niitBase;
   return{tax:oTax+qTax+niit,ord,qual,tot,ded,ordT,qualT,left,oTax,qTax,niit,niitBase,tss,combined:c,b50,b85,t50}}
+// Rules for calendar year y in year-Y0 dollars: published figures for known years, indexed with inflation after
 const _RC=new Map();
 function rulesAt(y,Y0,inf){const k=y+'|'+Y0+'|'+inf;let o=_RC.get(k);if(o)return o;
   const useN=NXT&&y>=FILEYEAR+1,b=useN?NXT:CUR,by=useN?FILEYEAR+1:FILEYEAR,d=Math.pow(1+inf,y-Y0),s=Math.pow(1+inf,Math.max(0,y-by))/d,sI=Math.pow(1+inf,Math.max(0,y-FILEYEAR))/d;
   const sc=br=>br.map(([r,lo,hi])=>[r,lo*s,hi*s]);
   o={ord:sc(b.ord),qual:sc(b.qual),std:b.std*s,a65:b.a65*s,wb:b.wb*s,sb:y<=2028,d,s,sI,y};_RC.set(k,o);return o}
+// Social Security (6.2% up to the wage base) and Medicare (1.45%, plus 0.9% above $200,000) tax on wages
 const ficaR=(w,r)=>w>0?w*.0145+.062*Math.min(w,r.wb)+.009*Math.max(0,w-200000/r.d):0;
+// Yearly IRMAA surcharge for a MAGI; tiers indexed like the brackets
 function irmaaR(magi,r){let i=0;for(let k=0;k<IRM.length;k++)if(magi>IRM[k][0]*r.sI)i=k;const b=IRM[i];return((b[2]-PARTB)+b[3])*12}
 function yearFlow(x,C){
   const rP=x.rmdP==null?x.rmd:x.rmdP,preA=Math.max(0,x.pre-rP-C),bf=x.brk>0?Math.min(1,x.bas/x.brk):1,cashA=Math.max(0,x.cash-x.cashMin),efA=x.down?x.ef:0,epA=x.down?Math.max(0,(x.efp||0)-(x.rmd-rP)):0;
