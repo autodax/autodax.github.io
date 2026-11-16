@@ -916,7 +916,7 @@ function render(R){
     if(I.pay==='qtr'&&R.qEach>=1)yrs.filter(([y,m,d])=>!dt(y,m,d)).forEach(([y,m,d])=>{act(`${MONTHS[m]} ${d}, ${y}`,`Pay ${fmt(R.qEach)} estimated tax for ${I.yr}.`);cal(`${y}-${String(m+1).padStart(2,'0')}-${d}`,`Pay ${fmt(R.qEach)} tax`,`Quarterly estimated tax payment for ${I.yr} (IRS Direct Pay or my IRS online account).`)});
     // Tax forms for this year's return, from what the entries say I had this year
     {const F=[I.wage>0?'W-2 from my employer':'',R.C>0||I.rmd>0||I.oth>0?`1099-R for ${R.C>0?'the Roth conversion':''}${R.C>0&&(I.rmd>0||I.oth>0)?' and ':''}${I.rmd>0||I.oth>0?'withdrawals':''}`:'',I.int>0?'1099-INT for interest':'',I.brk>0?'brokerage 1099 (dividends and sales)':'',I.ssThis>0?'SSA-1099 for Social Security':''].filter(Boolean);
-     if(F.length){act(`Feb 15, ${I.yr+1}`,`Collect my ${I.yr} tax forms: ${andJoin(F,true)}.`);cal(`${I.yr+1}-02-15`,`Collect ${I.yr} tax forms`,`For my ${I.yr} return: ${andJoin(F,true)}.`)}}
+     if(F.length){act(`Mar 15, ${I.yr+1}`,`Collect my ${I.yr} tax forms: ${andJoin(F,true)}.`);cal(`${I.yr+1}-03-15`,`Collect ${I.yr} tax forms`,`For my ${I.yr} return: ${andJoin(F,true)}.`)}}
     // File this year's return by April 15, paying what's still owed
     {const owe=S.owed>=1&&!(I.pay==='qtr'&&R.qEach>=1);
      cal(`${I.yr+1}-04-15`,owe?`File ${I.yr} return, pay ${fmt(S.owed)} tax`:`File ${I.yr} tax return`,owe?`The rest of ${I.yr}'s tax, paid with my ${I.yr} return by April 15.`:`My ${I.yr} federal return is due April 15.`);
