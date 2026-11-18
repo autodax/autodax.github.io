@@ -240,7 +240,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.7';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.8';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1063,7 +1063,8 @@ function safeInsets(){
 }
 function diagText(){
   const [t,b] = safeInsets(); const app = $('app').getBoundingClientRect();
-  return `view ${innerHeight} · screen ${screen.height} · app ${Math.round(app.height)} · safe ${t}/${b} · ${isStandalone() ? 'home-screen' : 'browser'}${navigator.standalone ? ' (s)' : ''}`;
+  const nav = $('nav').getBoundingClientRect(), vv = window.visualViewport;
+  return `view ${innerWidth}×${innerHeight} · screen ${screen.width}×${screen.height} · doc ${document.documentElement.clientHeight} · vv ${vv ? Math.round(vv.height) + '@' + vv.scale : '-'} · app ${Math.round(app.top)}–${Math.round(app.bottom)} · nav ${Math.round(nav.top)}–${Math.round(nav.bottom)} · safe ${t}/${b} · dpr ${devicePixelRatio} · ${isStandalone() ? 'home-screen' : 'browser'}${navigator.standalone ? ' (s)' : ''}`;
 }
 function fitStandalone(){
   const app = $('app'); app.style.bottom = ''; app.style.height = '';
