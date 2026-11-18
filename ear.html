@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.23';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.24';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -465,15 +465,23 @@ async function checkForUpdate(){
   try {
     const r = await fetch(location.pathname + '?check=' + Date.now(), {cache:'no-store'});
     const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
-    if (m && m[1] !== APP_VERSION){ pendingUpdate = true; applyUpdateIfIdle(); }
+    if (m && m[1] !== APP_VERSION){
+      // Only try once per new version: if a reload still gave us the old page, don't loop.
+      let tried = null; try { tried = sessionStorage.getItem('ear.updateTried'); } catch(e){}
+      if (tried === m[1]) return;
+      pendingUpdate = m[1]; applyUpdateIfIdle();
+    }
   } catch(e){}
 }
 function applyUpdateIfIdle(){
   if (!pendingUpdate) return;
   const busy = Car.running || (T.phase !== 'idle') || !$('modal').classList.contains('hidden') || !$('lvlOv').classList.contains('hidden');
   if (busy) return;
-  if (!$('startOv').classList.contains('hidden')){ location.reload(); return; }
-  toast('Updating to the latest version…'); setTimeout(() => location.reload(), 900);
+  // Load the new version from an address iOS hasn't cached (a plain reload can return the old page).
+  const go = () => { try { sessionStorage.setItem('ear.updateTried', pendingUpdate); } catch(e){}
+    location.replace(location.pathname + '?v=' + encodeURIComponent(pendingUpdate)); };
+  if (!$('startOv').classList.contains('hidden')){ go(); return; }
+  toast('Updating to the latest version…'); setTimeout(go, 900);
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden){ checkForUpdate(); if (T.phase === 'idle' && !Car.running) syncPull().catch(syncErr); }
