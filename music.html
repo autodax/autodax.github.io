@@ -240,7 +240,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.5';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1051,6 +1051,17 @@ $('bBegin').addEventListener('click', async () => {
     buttons:[{label:'Back up now', fn: () => exportProgress()}, {label:'Later', ghost:true, fn: snoozeBackup}] });
   A.fetching.then(failed => { if (failed > SAMPLE_LIST.length*0.4) toast('Piano samples could not load, so a simple synth is playing instead'); });
 });
+// iPhone home-screen apps can report a viewport ~one status bar shorter than the screen,
+// leaving the bottom bar floating. Size the app to the real screen height when that happens.
+function fitStandalone(){
+  const app = $('app'); app.style.bottom = ''; app.style.height = '';
+  if (!navigator.standalone) return;
+  const portrait = innerHeight >= innerWidth;
+  const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  const short = full - innerHeight;
+  if (short > 10 && short < 130){ app.style.bottom = 'auto'; app.style.height = full + 'px'; }
+}
+fitStandalone(); addEventListener('resize', fitStandalone); addEventListener('orientationchange', () => setTimeout(fitStandalone, 300));
 if (!S.firstUse){ S.firstUse = today(); save(); }
 checkForUpdate();
 updateHeader(); resetTrainIdle();
