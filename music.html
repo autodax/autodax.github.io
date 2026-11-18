@@ -171,6 +171,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
           <button class="tool" id="bCadence">Cadence</button>
           <button class="tool" id="bReplay">Replay</button>
           <button class="tool" id="bCompare" disabled>Compare</button>
+          <button class="tool" id="bStop">Stop</button>
         </div>
       </div>
       <div class="pad" id="tPad"></div>
@@ -330,7 +331,8 @@ const pushCap = (arr, v, cap) => { arr.push(v); while (arr.length > cap) arr.shi
    AUDIO: sampled piano (Salamander Grand, via the Tone.js sample host)
    cached on the phone after the first load, with a synth fallback.
    ===================================================================== */
-const SAMPLE_BASE = 'https://tonejs.github.io/audio/salamander/';
+// Samples live next to the app (music/piano/); the Tone.js host is a backup.
+const SAMPLE_BASES = ['music/piano/', 'https://tonejs.github.io/audio/salamander/'];
 const SAMPLE_LIST = (() => { const out = []; const names = {0:'C',3:'Ds',6:'Fs',9:'A'};
   for (let m = 33; m <= 96; m++) if (names[m%12] !== undefined) out.push({ midi:m, file: names[m%12] + (Math.floor(m/12)-1) + '.mp3' });
   return out; })();
@@ -341,7 +343,7 @@ const A = {
   prefetch(onProg){
     const total = SAMPLE_LIST.length; let done = 0, failed = 0;
     this.fetching = Promise.all(SAMPLE_LIST.map(async s => {
-      try { this.raw[s.midi] = await fetchCached(SAMPLE_BASE + s.file); if (this.ctx) this.decodeOne(s.midi); } catch(e){ failed++; }
+      try { this.raw[s.midi] = await fetchFirst(SAMPLE_BASES.map(b => b + s.file)); if (this.ctx) this.decodeOne(s.midi); } catch(e){ failed++; }
       done++; onProg(done/total);
     })).then(() => failed);
     return this.fetching;
@@ -398,6 +400,9 @@ const A = {
     this.live.clear();
   }
 };
+async function fetchFirst(urls){
+  let err; for (const u of urls){ try { return await fetchCached(u); } catch(e){ err = e; } } throw err;
+}
 async function fetchCached(url){
   let cache = null;
   try { cache = await caches.open('music-samples-v1'); const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); } catch(e){}
@@ -865,7 +870,7 @@ function renderSettings(){
     </div>
     <h2>Sound</h2><div class="card">
       <div class="row"><div class="lab">Volume</div><input type="range" min="0.2" max="1.2" step="0.05" value="${s.volume}" id="volRange"></div>
-      <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander grand piano samples'}</div></div></div>
+      <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander Grand Piano by Alexander Holm (CC BY 3.0)'}</div></div></div>
     </div>
     <h2>Levels</h2><div class="card">
       ${optSelect('_skip','Skip ahead','If you already know earlier material', S.unlocked, LEVELS.map((L,i) => [i, `Unlock through L${i+1}`]))}
@@ -925,6 +930,7 @@ $('bCadence').addEventListener('click', async () => {
   if (T.q && T.phase === 'answering'){ await wait(300, token); if (!token.dead) await playQuestionNotes(T.q, token); }
 });
 $('bCompare').addEventListener('click', compare);
+$('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); toast('Stopped. Progress is saved.'); });
 $('tPad').addEventListener('pointerdown', e => { const b = e.target.closest('.deg'); if (!b) return; e.preventDefault(); onAnswer({ label: b.dataset.d }); });
 $('tPiano').addEventListener('pointerdown', e => {
   const k = e.target.closest('[data-m]'); if (!k) return; e.preventDefault();
