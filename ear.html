@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.21';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.22';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -358,6 +358,7 @@ const SAMPLE_BASES = ['ear/piano/', 'https://tonejs.github.io/audio/salamander/'
 const SAMPLE_LIST = (() => { const out = []; const names = {0:'C',3:'Ds',6:'Fs',9:'A'};
   for (let m = 33; m <= 96; m++) if (names[m%12] !== undefined) out.push({ midi:m, file: names[m%12] + (Math.floor(m/12)-1) + '.mp3' });
   return out; })();
+const release = m => m < 40 ? 2.2 : m < 55 ? 1.5 : m < 72 ? 0.9 : 0.6;
 const A = {
   ctx:null, master:null, buffers:{}, raw:{}, live:new Set(),
   // Samples load in the background; each one is used as soon as it is ready,
@@ -398,13 +399,13 @@ const A = {
       src.playbackRate.value = Math.pow(2, (midi - best)/12);
       g.gain.setValueAtTime(vel, t);
       g.gain.setValueAtTime(vel, t + dur);
-      g.gain.exponentialRampToValueAtTime(0.0008, t + dur + 0.45);
+      g.gain.setTargetAtTime(0.0001, t + dur, release(midi)/4);   // low notes ring out longer, like a real piano
     } else {
       src = ctx.createOscillator(); src.type = 'triangle'; src.frequency.value = 440*Math.pow(2,(midi-69)/12);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vel*0.5, t+0.01);
       g.gain.exponentialRampToValueAtTime(vel*0.18, t+0.4); g.gain.exponentialRampToValueAtTime(0.0008, t+dur+0.4);
     }
-    src.connect(g); src.start(t); src.stop(t + dur + 0.5);
+    src.connect(g); src.start(t); src.stop(t + dur + release(midi)*1.5);
     const rec = {src, g}; this.live.add(rec); src.onended = () => this.live.delete(rec);
   },
   // events: [{notes:[midi...], dur, vel}] played back to back. Resolves when finished.
