@@ -240,7 +240,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.6';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.7';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -944,7 +944,7 @@ function renderSettings(){
       <div class="row"><div><div class="lab" style="color:var(--bad)">Reset everything</div></div><button class="tool" style="flex:none;padding:8px 14px;color:var(--bad)" id="bReset">Reset</button></div>
     </div>
     <p class="note">Progress is saved on this phone. Export now and then so it isn’t lost if Safari clears website data.</p>
-    <p class="note" style="text-align:center;color:var(--faint)">Version ${APP_VERSION}</p>`;
+    <p class="note" style="text-align:center;color:var(--faint)">Version ${APP_VERSION}<br><span style="font-size:11px">${diagText()}</span></p>`;
 }
 function renderProgress(){
   const m = masteryInfo(S.current);
@@ -1053,9 +1053,21 @@ $('bBegin').addEventListener('click', async () => {
 });
 // iPhone home-screen apps can report a viewport ~one status bar shorter than the screen,
 // leaving the bottom bar floating. Size the app to the real screen height when that happens.
+function isStandalone(){
+  return !!navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+}
+function safeInsets(){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+  document.body.appendChild(d); const cs = getComputedStyle(d); const r = [parseFloat(cs.paddingTop)||0, parseFloat(cs.paddingBottom)||0]; d.remove(); return r;
+}
+function diagText(){
+  const [t,b] = safeInsets(); const app = $('app').getBoundingClientRect();
+  return `view ${innerHeight} · screen ${screen.height} · app ${Math.round(app.height)} · safe ${t}/${b} · ${isStandalone() ? 'home-screen' : 'browser'}${navigator.standalone ? ' (s)' : ''}`;
+}
 function fitStandalone(){
   const app = $('app'); app.style.bottom = ''; app.style.height = '';
-  if (!navigator.standalone) return;
+  if (!isStandalone()) return;
   const portrait = innerHeight >= innerWidth;
   const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
   const short = full - innerHeight;
