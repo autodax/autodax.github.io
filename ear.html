@@ -71,7 +71,7 @@ nav button.on{color:var(--accent)}
 .tool{flex:1;background:var(--panel2);border-radius:10px;padding:10px 4px;font-size:14px;color:var(--dim)}
 .tool:active{background:var(--line)}
 .tool[disabled]{opacity:.35}
-.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px;margin-top:14px}
 .deg{height:68px;border-radius:14px;background:var(--panel2);font-size:28px;font-weight:700;transition:transform .06s,background .15s}
 .deg:active{transform:scale(.96)}
 .deg.tonic{background:#2b2a22;color:var(--accent)}
@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.18';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.19';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -605,7 +605,8 @@ function renderPad(q){
   pad.classList.toggle('hidden', usePiano); piano.classList.toggle('hidden', !usePiano);
   if (usePiano){ renderPiano(q.key); return; }
   const active = q ? LEVELS[q.lvl].degrees : LEVELS[S.current].degrees;
-  pad.innerHTML = ALL7.map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}">${d}</button>`).join('');
+  // 1–7 plus the upper 1, so the pad reads as a full octave in two rows of four
+  pad.innerHTML = [...ALL7, '1'].map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}">${d}</button>`).join('');
 }
 // Keyboard: C up to E of the next octave, covers every pitch in any key.
 function renderPiano(key){
@@ -673,7 +674,7 @@ function onAnswer(a){
   const q = T.q;
   T.ans.push(a); renderSlots(q);
   if (q.input === 'numbers'){
-    const b = document.querySelector(`.deg[data-d="${a.label}"]`);
+    const b = T.tapped;
     if (b){ b.classList.add('flash-tap'); setTimeout(() => b.classList.remove('flash-tap'), 160); }
   }
   if (T.ans.length >= q.len) grade();
@@ -713,9 +714,9 @@ async function grade(){
   const secs = (t/1000).toFixed(1);
   const lim = masteryInfo(lvl).limit;
   if (q.input === 'numbers' && q.len === 1){
-    const btn = document.querySelector(`.deg[data-d="${T.ans[0].label}"]`);
+    const btn = T.tapped;
     btn && btn.classList.add(ok ? 'flash-ok' : 'flash-no');
-    if (!ok){ const r = document.querySelector(`.deg[data-d="${q.labels[0]}"]`); r && r.classList.add('reveal'); }
+    if (!ok) document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
   }
   if (q.input === 'piano') markPianoResult(q, res);
   if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`, 'good');
@@ -1013,7 +1014,7 @@ $('bCadence').addEventListener('click', async () => {
 });
 $('bCompare').addEventListener('click', compare);
 $('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); toast('Stopped. Progress is saved.'); });
-$('tPad').addEventListener('pointerdown', e => { const b = e.target.closest('.deg'); if (!b) return; e.preventDefault(); onAnswer({ label: b.dataset.d }); });
+$('tPad').addEventListener('pointerdown', e => { const b = e.target.closest('.deg'); if (!b) return; e.preventDefault(); T.tapped = b; onAnswer({ label: b.dataset.d }); });
 $('tPiano').addEventListener('pointerdown', e => {
   const k = e.target.closest('[data-m]'); if (!k) return; e.preventDefault();
   const m = +k.dataset.m; A.note(m, A.now()+0.01, 0.8, 0.85);
