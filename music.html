@@ -240,6 +240,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
+const APP_VERSION = '2026-11-17.1';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -444,6 +445,24 @@ function unlockIOS(){
     A.silentEl = el;
   } catch(e){}
 }
+// When the app comes back to the front, check GitHub for a newer version and reload if idle.
+let pendingUpdate = false;
+async function checkForUpdate(){
+  try {
+    const r = await fetch(location.pathname + '?check=' + Date.now(), {cache:'no-store'});
+    const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
+    if (m && m[1] !== APP_VERSION){ pendingUpdate = true; applyUpdateIfIdle(); }
+  } catch(e){}
+}
+function applyUpdateIfIdle(){
+  if (!pendingUpdate) return;
+  const busy = Car.running || (T.phase !== 'idle') || !$('modal').classList.contains('hidden') || !$('lvlOv').classList.contains('hidden');
+  if (busy) return;
+  if (!$('startOv').classList.contains('hidden')){ location.reload(); return; }
+  toast('Updating to the latest version…'); setTimeout(() => location.reload(), 900);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+setInterval(applyUpdateIfIdle, 5000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && A.ctx && A.ctx.state !== 'running') A.ctx.resume().catch(()=>{});
   if (!document.hidden && Car.running) requestWake();
@@ -877,6 +896,7 @@ function showView(v){
   if (v !== 'car' && Car.running) stopCar();
 }
 function resetTrainIdle(){
+  setTimeout(applyUpdateIfIdle, 300);
   T.q = null; T.ans = []; renderSlots(null); setChip(null); lockPad(true); renderPad(null);
   setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
   $('bCompare').disabled = true; T.cadKey = null; T.sinceCad = 99;
@@ -924,6 +944,7 @@ function renderSettings(){
     </div>
     <h2>Sound</h2><div class="card">
       <div class="row"><div class="lab">Volume</div><input type="range" min="0.2" max="1.2" step="0.05" value="${s.volume}" id="volRange"></div>
+      <div class="row"><div><div class="lab">Version</div><div class="sub">${APP_VERSION}</div></div></div>
       <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander Grand Piano by Alexander Holm (CC BY 3.0)'}</div></div></div>
     </div>
     <h2>Levels</h2><div class="card">
@@ -1043,6 +1064,7 @@ $('bBegin').addEventListener('click', async () => {
   A.fetching.then(failed => { if (failed > SAMPLE_LIST.length*0.4) toast('Piano samples could not load, so a simple synth is playing instead'); });
 });
 if (!S.firstUse){ S.firstUse = today(); save(); }
+checkForUpdate();
 updateHeader(); resetTrainIdle();
 </script>
 </body>
