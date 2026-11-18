@@ -40,6 +40,8 @@ header{padding:10px 16px 8px}
 .bar-label{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:4px}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 16px}
 .view{display:none}.view.on{display:block}
+/* Train screen: center the controls vertically in the space between header and tab bar */
+#v-train.on{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding-bottom:12px}
 nav{display:flex;border-top:1px solid var(--line);background:var(--panel);
   padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;padding:10px 0 9px;color:var(--faint);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -185,7 +187,6 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
       <div class="pad" id="tPad"></div>
       <div class="piano hidden" id="tPiano"></div>
       <button class="go" id="bGo">Start</button>
-      <p class="note" id="tDiag" style="text-align:center;font-size:11px;color:var(--faint)"></p>
     </section>
 
     <!-- CAR -->
@@ -245,7 +246,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.12';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.13';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -593,7 +594,7 @@ async function playResolution(s, key, token){
 
 function renderPad(q){
   const pad = $('tPad'), piano = $('tPiano');
-  const usePiano = q && q.input === 'piano';
+  const usePiano = (q ? q.input : LEVELS[S.current].input) === 'piano';
   pad.classList.toggle('hidden', usePiano); piano.classList.toggle('hidden', !usePiano);
   if (usePiano){ renderPiano(q.key); return; }
   const active = q ? LEVELS[q.lvl].degrees : LEVELS[S.current].degrees;
@@ -1088,8 +1089,7 @@ function fitHeight(){
   }
 }
 fitHeight(); addEventListener('resize', () => setTimeout(fitHeight, 100)); addEventListener('orientationchange', () => setTimeout(fitHeight, 400));
-function showDiag(){ try { $('tDiag').textContent = diagText(); } catch(e){} }
-setTimeout(showDiag, 500); addEventListener('resize', showDiag); setInterval(showDiag, 3000);
+
 if (!S.firstUse){ S.firstUse = today(); save(); }
 checkForUpdate();
 updateHeader(); resetTrainIdle();
