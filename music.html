@@ -104,6 +104,8 @@ h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--fain
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row .lab{font-size:15px}.row .sub{font-size:12px;color:var(--dim);margin-top:2px}
+.tok{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;-webkit-user-select:text;user-select:text}
+a.lnk{color:var(--accent)}
 select,input[type=range]{font:inherit;font-size:16px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:52%}
 input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 .toggle{width:50px;height:30px;border-radius:15px;background:var(--panel2);position:relative;flex:none;border:1px solid var(--line)}
@@ -246,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.14';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.15';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -326,16 +328,18 @@ function freshState(){
            xp:0, total:0, bestStreak:0, days:{}, settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) };
 }
 let S = load();
+function normalize(s){
+  const f = freshState();
+  s.settings = Object.assign(f.settings, s.settings||{}); s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
+  return Object.assign(f, s);
+}
 function load(){
-  try {
-    const raw = localStorage.getItem(STORE);
-    if (raw){ const s = JSON.parse(raw); const f = freshState();
-      s.settings = Object.assign(f.settings, s.settings||{}); s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
-      return Object.assign(f, s); }
-  } catch(e){}
+  try { const raw = localStorage.getItem(STORE); if (raw) return normalize(JSON.parse(raw)); } catch(e){}
   return freshState();
 }
-function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e){} }
+// save() marks the progress as changed on this device (for syncing); saveRaw() doesn't.
+function saveRaw(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e){} }
+function save(){ S.updatedAt = Date.now(); saveRaw(); }
 const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 function dayStreak(){
   let n = 0; const d = new Date();
@@ -467,7 +471,10 @@ function applyUpdateIfIdle(){
   if (!$('startOv').classList.contains('hidden')){ location.reload(); return; }
   toast('Updating to the latest version…'); setTimeout(() => location.reload(), 900);
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden){ checkForUpdate(); if (T.phase === 'idle' && !Car.running) syncPull().catch(syncErr); }
+  else if (localChanged()) syncPull().catch(syncErr);
+});
 setInterval(applyUpdateIfIdle, 5000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && A.ctx && A.ctx.state !== 'running') A.ctx.resume().catch(()=>{});
@@ -695,6 +702,7 @@ async function grade(){
     }
   });
   S.total++; S.days[today()] = (S.days[today()] || 0) + 1;
+  SY.sincePush = (SY.sincePush || 0) + 1; if (SY.sincePush >= 10) syncSoon();
   if (ok){ T.streak++; S.xp += 10*q.len + Math.min(T.streak, 20); S.bestStreak = Math.max(S.bestStreak, T.streak); }
   else T.streak = 0;
   save();
@@ -791,7 +799,7 @@ function showGoalReachedAfter(){
     {label:'Done for today', ghost:true, fn: () => resetTrainIdle()} ]});
 }
 const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
-function backupDue(){ return S.total >= 20 && !(S.snoozeUntil && today() < S.snoozeUntil)
+function backupDue(){ return S.total >= 20 && !(SY.token && SY.lastSyncAt && Date.now() - SY.lastSyncAt < 7*86400000) && !(S.snoozeUntil && today() < S.snoozeUntil)
   && daysBetween(S.lastBackup || S.firstUse || today(), today()) >= 7; }
 function snoozeBackup(){ const d = new Date(); d.setDate(d.getDate()+3);
   S.snoozeUntil = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); save(); }
@@ -892,6 +900,7 @@ function showView(v){
   if (v !== 'car' && Car.running) stopCar();
 }
 function resetTrainIdle(){
+  if (typeof SY !== 'undefined' && localChanged()) syncSoon();
   setTimeout(applyUpdateIfIdle, 300);
   T.q = null; T.ans = []; renderSlots(null); setChip(null); lockPad(true); renderPad(null);
   setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
@@ -944,12 +953,13 @@ function renderSettings(){
     <h2>Levels</h2><div class="card">
       ${optSelect('_skip','Skip ahead','If you already know earlier material', S.unlocked, LEVELS.map((L,i) => [i, `Unlock through L${i+1}`]))}
     </div>
+    <h2>Sync across devices</h2><div class="card">${syncCardHTML()}</div>
     <h2>Your data</h2><div class="card">
       <div class="row"><div><div class="lab">Export progress</div><div class="sub">${S.lastBackup ? 'Last backup ' + S.lastBackup : 'No backup yet'} · reminder weekly</div></div><button class="tool" style="flex:none;padding:8px 14px" id="bExport">Export</button></div>
       <div class="row"><div><div class="lab">Import progress</div><div class="sub">Restore from a backup file</div></div><label class="tool" style="flex:none;padding:8px 14px">Import<input type="file" accept="application/json,.json" id="fImport" hidden></label></div>
       <div class="row"><div><div class="lab" style="color:var(--bad)">Reset everything</div></div><button class="tool" style="flex:none;padding:8px 14px;color:var(--bad)" id="bReset">Reset</button></div>
     </div>
-    <p class="note">Progress is saved on this phone. Export now and then so it isn’t lost if Safari clears website data.</p>
+    <p class="note">${SY.token ? 'Progress is saved on this device and synced to a private gist in your GitHub account.' : 'Progress is saved on this device. Export now and then so it isn’t lost if Safari clears website data.'}</p>
     <p class="note" style="text-align:center;color:var(--faint)">Version ${APP_VERSION}<br><span style="font-size:11px">${diagText()}</span></p>`;
 }
 function renderProgress(){
@@ -1021,7 +1031,7 @@ document.addEventListener('change', e => {
   }
   if (e.target.id === 'fImport'){
     const f = e.target.files[0]; if (!f) return;
-    f.text().then(t => { const d = JSON.parse(t); if (!d || d.v !== 1) throw 0; localStorage.setItem(STORE, t); S = load(); updateHeader(); renderSettings(); toast('Progress restored'); })
+    f.text().then(t => { const d = JSON.parse(t); if (!d || d.v !== 1) throw 0; localStorage.setItem(STORE, t); S = load(); save(); syncSoon(); updateHeader(); renderSettings(); toast('Progress restored'); })
      .catch(() => toast('That file could not be read'));
   }
 });
@@ -1037,9 +1047,126 @@ document.addEventListener('click', e => {
     setPath(id, v); st.querySelector('span').textContent = v + unit; return; }
   const lb = e.target.closest('[data-lv]');
   if (lb){ S.current = +lb.dataset.lv; save(); updateHeader(); T.cadKey = null; showView('train'); toast(`Practicing L${S.current+1}`); return; }
+  if (e.target.id === 'bSyncConnect'){ const v = $('gTok').value.trim(); if (v) syncConnect(v); return; }
+  if (e.target.id === 'bSyncNow'){ syncNow(); return; }
+  if (e.target.id === 'bSyncOff'){ if (confirm('Stop syncing on this device? Your gist on GitHub is kept.')){ SY = {}; saveSync(); renderSettings(); toast('Sync is off on this device'); } return; }
   if (e.target.id === 'bExport'){ exportProgress().then(() => renderSettings()); return; }
   if (e.target.id === 'bReset'){ if (confirm('Erase all progress and settings?')){ S = freshState(); save(); updateHeader(); renderSettings(); resetTrainIdle(); toast('Reset'); } }
 });
+
+/* =====================================================================
+   SYNC via a private GitHub gist
+   The token lives only in this device's storage (never in progress files or exports).
+   ===================================================================== */
+const SYNC_KEY = 'music.ear.sync', GIST_FILE = 'ear-trainer-progress.json';
+const TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=Ear%20Trainer%20sync';
+let SY = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e){ return {}; } })();
+function saveSync(){ try { localStorage.setItem(SYNC_KEY, JSON.stringify(SY)); } catch(e){} }
+const localChanged = () => !!SY.token && (S.updatedAt || 0) > (SY.lastLocal || 0);
+function deviceName(){ const u = navigator.userAgent;
+  return /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? (navigator.maxTouchPoints > 1 ? 'iPad' : 'Mac') : /Windows/.test(u) ? 'PC' : 'another device'; }
+function ago(t){ if (!t) return 'never'; const m = Math.round((Date.now() - t)/60000);
+  return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m/60) + ' h ago' : Math.round(m/1440) + ' days ago'; }
+async function gh(path, opts={}){
+  const headers = { 'Accept':'application/vnd.github+json', 'Authorization':'Bearer ' + SY.token };
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  const r = await fetch('https://api.github.com' + path, { method: opts.method || 'GET', body: opts.body, headers, cache:'no-store', keepalive: !!opts.keepalive });
+  if (!r.ok){ const e = new Error('GitHub ' + r.status); e.status = r.status; throw e; }
+  return r.json();
+}
+function syncErr(e){
+  if (!SY.token) return;
+  SY.err = e && e.status === 401 ? 'GitHub no longer accepts the token. Paste a new one.' : e && e.status === 403 ? 'GitHub refused (token may lack the gist permission).' : 'Couldn’t reach GitHub. Will retry.';
+  saveSync(); if (activeView === 'set') renderSettings();
+}
+let syncBusy = false, syncTimer = null;
+// Always check GitHub before writing, so newer progress from another device is never overwritten.
+function syncSoon(){ clearTimeout(syncTimer); syncTimer = setTimeout(() => syncPull().catch(syncErr), 800); }
+async function syncPush(opts={}){
+  if (!SY.token || syncBusy && !opts.keepalive) return;
+  syncBusy = true;
+  try {
+    if (!S.updatedAt) S.updatedAt = Date.now(), saveRaw();
+    const stamp = S.updatedAt;
+    const body = { files: { [GIST_FILE]: { content: JSON.stringify({ v:1, updatedAt: stamp, device: deviceName(), state: S }) } } };
+    if (!SY.gistId){
+      body.description = 'Ear Trainer progress (autodax.github.io/music.html)'; body.public = false;
+      const g = await gh('/gists', { method:'POST', body: JSON.stringify(body) }); SY.gistId = g.id;
+    } else await gh('/gists/' + SY.gistId, { method:'PATCH', body: JSON.stringify(body), keepalive: opts.keepalive });
+    SY.lastLocal = SY.lastRemote = stamp; SY.lastSyncAt = Date.now(); SY.err = null; SY.sincePush = 0; saveSync();
+    if (activeView === 'set') renderSettings();
+  } finally { syncBusy = false; }
+}
+let pullBusy = false;
+async function syncPull(opts={}){
+  if (!SY.token || syncBusy || pullBusy) return;
+  pullBusy = true;
+  try { return await syncPullInner(opts); } finally { pullBusy = false; }
+}
+async function syncPullInner(opts){
+  if (!SY.gistId) return syncPush();
+  let g;
+  try { g = await gh('/gists/' + SY.gistId); }
+  catch(e){ if (e.status === 404){ SY.gistId = null; saveSync(); return syncPush(); } throw e; }
+  const f = g.files && g.files[GIST_FILE]; if (!f) return syncPush();
+  let text = f.content; if (f.truncated) text = await (await fetch(f.raw_url, {cache:'no-store'})).text();
+  const remote = JSON.parse(text);
+  const remoteNew = remote.updatedAt && remote.updatedAt !== S.updatedAt && remote.updatedAt > (SY.lastRemote || 0);
+  if (opts.first){
+    if (!S.total) return adopt(remote);
+    if (!remote.state || !remote.state.total || remote.updatedAt === S.updatedAt) return syncPush();
+    return askWhich(remote);
+  }
+  if (remoteNew && !localChanged()) return adopt(remote);
+  if (remoteNew && localChanged()) return askWhich(remote);
+  if (localChanged()) return syncPush();
+  SY.lastSyncAt = Date.now(); SY.err = null; saveSync(); if (activeView === 'set') renderSettings();
+}
+function adopt(remote){
+  S = normalize(remote.state); S.updatedAt = remote.updatedAt; saveRaw();
+  SY.lastLocal = SY.lastRemote = remote.updatedAt; SY.lastSyncAt = Date.now(); SY.err = null; saveSync();
+  updateHeader(); if (T.phase === 'idle') resetTrainIdle();
+  if (activeView === 'set') renderSettings(); if (activeView === 'prog') renderProgress();
+  toast('Progress loaded from ' + (remote.device && remote.device !== 'another device' ? 'your ' + remote.device : 'your other device'));
+}
+function askWhich(remote){
+  if (!$('modal').classList.contains('hidden')) return;
+  const r = remote.state || {}, desc = (st, t) => `L${(st.current||0)+1}, ${st.total||0} answers, saved ${ago(t)}`;
+  modal({ icon:'🔄', title:'Which progress should I keep?',
+    text: `Progress changed on this ${deviceName()} and on your ${remote.device || 'other device'}.<br><br><b>This ${deviceName()}:</b> ${desc(S, S.updatedAt)}<br><b>${remote.device || 'Other device'}:</b> ${desc(r, remote.updatedAt)}`,
+    buttons: [ { label: `Keep this ${deviceName()}’s`, fn: () => { S.updatedAt = Date.now(); saveRaw(); syncPush().then(() => toast('Synced')).catch(syncErr); } },
+               { label: `Use the ${remote.device || 'other device'}’s`, ghost: true, fn: () => adopt(remote) } ] });
+}
+async function syncConnect(token){
+  SY = { token };
+  toast('Connecting to GitHub…');
+  try {
+    let id = null;
+    for (let page = 1; page <= 5 && !id; page++){
+      const list = await gh(`/gists?per_page=100&page=${page}`); if (!list.length) break;
+      const hit = list.find(x => x.files && x.files[GIST_FILE]); if (hit) id = hit.id;
+    }
+    SY.gistId = id; saveSync();
+    if (id) await syncPull({ first: true }); else await syncPush();
+    toast('Sync is on');
+  } catch(e){
+    SY = {}; saveSync();
+    toast(e.status === 401 ? 'GitHub didn’t accept that token' : e.status === 403 ? 'That token doesn’t have the gist permission' : 'Couldn’t reach GitHub');
+  }
+  renderSettings();
+}
+async function syncNow(){ try { await syncPull(); toast('Synced'); } catch(e){ syncErr(e); toast('Sync failed'); } }
+function syncCardHTML(){
+  if (!SY.token) return `
+    <div class="row"><div class="sub" style="font-size:13px;line-height:1.45">Keep your progress in a private gist in your GitHub account so every device stays in step.
+      <a class="lnk" href="${TOKEN_URL}" target="_blank" rel="noopener">Create a token</a> (the gist box is already ticked), copy it, and paste it here. Do this once on each device.</div></div>
+    <div class="row"><input class="tok" id="gTok" type="password" placeholder="Paste GitHub token" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="tool" style="flex:none;padding:8px 14px" id="bSyncConnect">Connect</button></div>`;
+  return `
+    <div class="row"><div><div class="lab">Sync is on</div><div class="sub">${SY.err ? '<span style="color:var(--bad)">' + SY.err + '</span>' : 'Last synced ' + ago(SY.lastSyncAt)}</div></div>
+      <button class="tool" style="flex:none;padding:8px 14px" id="bSyncNow">Sync now</button></div>
+    <div class="row"><div class="sub">Turn off on this device (keeps the gist)</div><button class="tool" style="flex:none;padding:8px 14px" id="bSyncOff">Turn off</button></div>`;
+}
 
 /* =====================================================================
    BOOT
@@ -1052,6 +1179,7 @@ $('bBegin').addEventListener('click', async () => {
   await A.start();
   A.decodeAll();
   $('startOv').classList.add('hidden');
+  syncPull().catch(syncErr);
   if (backupDue()) modal({ icon:'💾', title:'Back up your progress?',
     text:`${S.lastBackup ? 'Your last backup was ' + daysBetween(S.lastBackup, today()) + ' days ago.' : 'You haven’t backed up yet.'} Save a copy to Files or iCloud Drive so it can’t be lost.`,
     buttons:[{label:'Back up now', fn: () => exportProgress()}, {label:'Later', ghost:true, fn: snoozeBackup}] });
