@@ -240,7 +240,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-17.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.1';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -257,7 +257,6 @@ const KEYS = [
 ];
 const SHARP_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const FLAT_NAMES  = ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
-const WORDS = ['one','two','three','four','five','six','seven'];
 const mod = (n, m) => ((n % m) + m) % m;
 function noteName(midi, keyPc){ return (KEYS[keyPc].flat ? FLAT_NAMES : SHARP_NAMES)[mod(midi,12)]; }
 // Tonic register: G3..F#4 so cadences and notes sit in a comfortable middle range
@@ -284,7 +283,8 @@ function cadence(pc){
    keyMode: 'C' fixed | 'block' new key every few questions | 'each' new key every question
    input: 'numbers' | 'piano' (play the actual notes in the key you heard)
    ===================================================================== */
-const R1 = [0,6], R3 = [-7,13], RP = [-3,10];
+const R1 = [0,6], R2 = [-7,6], R3 = [-7,13], R4 = [-14,13], RP = [-3,10];
+const CAR_RANGES = { one:R1, two:R2, three:R3, four:R4 };
 const ALL7 = ['1','2','3','4','5','6','7'];
 const LEVELS = [
   {title:'Home base: 1 3 5',    desc:'Numbers · key of C · one octave', degrees:['1','3','5'], range:R1, keyMode:'C', len:1, input:'numbers'},
@@ -313,7 +313,7 @@ const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
   cadenceEvery: 5, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true,
   tempo: 1, volume: 0.85, dailyGoal: 60,
-  car: { per: 5, pause: 2, gap: 1.5, speak: 'before', keyMode: 'random', degrees: 'level', range: 'one' }
+  car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
 function freshState(){
   return { v:1, current:0, unlocked:0, mastered:{}, hist:{}, levelDeg:{}, deg:{}, conf:{},
@@ -468,16 +468,6 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && Car.running) requestWake();
 });
 
-function speak(text, token){
-  return new Promise(res => {
-    if (!('speechSynthesis' in window)) return res();
-    const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 1; u.volume = 1;
-    let done = false; const fin = () => { if (!done){ done = true; res(); } };
-    u.onend = fin; u.onerror = fin; setTimeout(fin, 2500);
-    if (token) token.timers.push([0, () => { speechSynthesis.cancel(); fin(); }]);
-    speechSynthesis.speak(u);
-  });
-}
 
 /* =====================================================================
    ADAPTIVE ENGINE
@@ -825,7 +815,7 @@ function confetti(){
 
 /* =====================================================================
    CAR MODE (passive listening)
-   cadence → [note · pause · (spoken number) · resolution] × N → cadence …
+   cadence → [note · pause · resolution] × N → cadence …
    ===================================================================== */
 const Car = { running:false, token:null, wake:null };
 async function requestWake(){ try { if ('wakeLock' in navigator) Car.wake = await navigator.wakeLock.request('screen'); } catch(e){} }
@@ -840,7 +830,7 @@ async function carLoop(token){
     await playCadence(key, token); if (token.dead) return;
     await wait(700, token);
     for (let i = 0; i < c.per && !token.dead; i++){
-      const degs = carDegrees(); const range = c.range === 'three' ? R3 : R1;
+      const degs = carDegrees(); const range = CAR_RANGES[c.range] || R1;
       const lvl = Math.min(S.current, LEVELS.length-1);
       const label = weightedPick(degs, degs.map(d => (S.levelDeg[lvl] && S.levelDeg[lvl][d] ? degWeight(d,lvl) : 1) * (d === last ? 0.3 : 1)));
       const ps = positionsFor(label, range); const s = ps[Math.floor(Math.random()*ps.length)]; last = label;
@@ -848,9 +838,7 @@ async function carLoop(token){
       await A.seq([ev(posMidi(s,key), 1.1, 0.85)], token); if (token.dead) return;
       await wait(c.pause*1000, token); if (token.dead) return;
       $('cBig').textContent = label;
-      if (c.speak === 'before'){ await speak(WORDS[+label-1], token); if (token.dead) return; }
       await playResolution(s, key, token); if (token.dead) return;
-      if (c.speak === 'after'){ await speak(WORDS[+label-1], token); if (token.dead) return; }
       await wait(c.gap*1000, token);
     }
   }
@@ -865,7 +853,7 @@ async function toggleCar(){
   if (Car.token === token) stopCar();
 }
 function stopCar(){
-  Car.running = false; kill(Car.token); A.stopAll(); try { speechSynthesis.cancel(); } catch(e){}
+  Car.running = false; kill(Car.token); A.stopAll(); 
   if (Car.wake){ Car.wake.release().catch(()=>{}); Car.wake = null; }
   $('cGo').textContent = 'Start'; $('cGo').classList.remove('stop'); $('cBig').textContent = '·'; $('cStatus').textContent = 'Stopped';
 }
@@ -921,10 +909,9 @@ function renderCarOpts(){
   $('cOpts').innerHTML =
     optStep('car.per','Notes between cadences','The cadence returns to remind you of the key', c.per, 1, 12, 1, '') +
     optStep('car.pause','Think time','Pause before the answer', c.pause, 0.5, 6, 0.5, 's') +
-    optToggle('car.speakOn','Say the number','Spoken before the resolution', c.speak !== 'off') +
     optSelect('car.keyMode','Key','', c.keyMode, [['random','New each time'],['C','Stay in C'],['level','Same as training']]) +
     optSelect('car.degrees','Notes','', c.degrees, [['level','Your current level’s'],['all','All seven']]) +
-    optSelect('car.range','Range','', c.range, [['one','One octave'],['three','Three octaves']]) +
+    optSelect('car.range','Range','', c.range, [['one','One octave'],['two','Two octaves'],['three','Three octaves'],['four','Four octaves']]) +
     optStep('car.gap','Gap after each note','', c.gap, 0.5, 5, 0.5, 's');
 }
 function renderSettings(){
@@ -1034,8 +1021,7 @@ document.addEventListener('input', e => { if (e.target.id === 'volRange'){ S.set
 document.addEventListener('click', e => {
   const tg = e.target.closest('[data-tog]');
   if (tg){ const id = tg.dataset.tog;
-    if (id === 'car.speakOn'){ S.settings.car.speak = S.settings.car.speak === 'off' ? 'before' : 'off'; save(); }
-    else setPath(id, !getPath(id));
+    setPath(id, !getPath(id));
     tg.classList.toggle('on'); return; }
   const sb = e.target.closest('.stepper button');
   if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = id.endsWith('per') ? '' : 's';
