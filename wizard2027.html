@@ -919,6 +919,7 @@ function render(R){
     todo.push(li+'</ul>');
   }else{
     let li=`<span class="when">This year (${I.yr})</span><div><b>No Roth conversion in ${I.yr}.</b> ${R.cWhy}</div>`;
+    act(`By Dec 31, ${I.yr}`,`No Roth conversion in ${I.yr}.`);
     if(R.more&&(R.more.yes||R.more.down))li+=`<ul><li class="warn">${R.more.down||'<b>Convert more?</b> '+R.more.txt.replace(/ In strong markets.*$/,'')} (See "Should I convert more?" below.)</li></ul>`;
     todo.push(li);
   }
@@ -979,7 +980,7 @@ function render(R){
     {const NC=R.NC,Y=I.yr+1;li+='</ul>'+(NC.C>0?(()=>{const jp=janPct(),sp=Math.min(NC.C,Math.round(NC.C*jp/500)*500),top=NC.C-sp;window._NCC=NC.C;jpHint();if(sp>0)cal(`${Y}-01-15`,`Roth convert ${fmt(sp)} no withholding`,`January part of ${Y}'s Roth conversion.`);const ln=lastNov(Y),setR=Y+1<=I.lw?', and set '+(Y+1)+' payroll Roth contributions':'';cal(ln.iso,`Run ${Y} Wizard; Roth convert ${fmt(top)}${setR?'; set Roth contributions':''}`,`Run the ${Y} Retirement Wizard; convert the Roth top-up (estimated now at ${fmt(top)}) by Dec 31${setR}.`);if(sp>0)act(`Jan 15, ${Y}`,`Convert about ${fmt(sp)} to Roth, with no tax withheld.`);act(`${ln.s}, ${Y}`,`Run the ${Y} <a class="wznext" href="#">Wizard</a> (with the January conversion entered on Step 2), convert the top-up, about ${fmt(top)} now, by Dec 31${setR}.`);return `<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> about <b class="amt">${fmt(NC.C)}</b> in total (${NC.why}), with no tax withheld, in two parts:<ul>
       <li><b>January 15, ${Y}:</b> convert about <b class="amt">${fmt(sp)}</b>, ${Math.round(jp*100)}% of the total (Step 3), so it has the whole year to grow in the Roth.</li>
       <li><b>November 30, ${Y}:</b> with the January conversion entered on Step 2, the ${Y} Wizard works out the top-up (about ${fmt(top)} now) from my actual ${Y} income; convert it by December 31. Waiting avoids converting too much, since a conversion can't be undone.</li></ul>The tax on this conversion is in the next item.</div>`})()
-      :(window._NCC=0,jpHint(),`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`))}
+      :(window._NCC=0,jpHint(),act(`Jan–Dec ${Y}`,`No Roth conversion planned in ${Y}.`),`<div style="margin-top:10px"><b>Roth conversion in ${Y}:</b> none planned (${NC.why.replace(/^(?!I )./,c=>c.toLowerCase())}).</div>`))}
     todo.push(li+how)}
   todo.forEach((x,i)=>{if(!KIND[i])KIND[i]='next'});
   // ---- To-do: next year's tax and how to pay it (no-penalty, optional, or needed payments) ----
@@ -1163,7 +1164,7 @@ function render(R){
     // Property tax, once I pay it myself (Step 2): pay in November for the 4% discount
     if(I.ptyr>0)[I.yr,I.yr+1].forEach(y=>{if(y>=I.ptyr&&new Date()<new Date(y,11,1)){act(`Nov ${y}`,`Pay my ${y} property tax by Nov 30 for the 4% discount.`);cal(`${y}-11-03`,`Pay ${y} property tax`,`The county tax bills go out around November 1; paying by November 30 takes 4% off (3% in December, 2% in January, 1% in February).`)}});
     if(!ACT.some(x=>/wizard/i.test(x[1])))act(`${ln.s}, ${I.yr+1}`,`Run the ${I.yr+1} <a class="wznext" href="#">Wizard</a>${setR}.`);
-    return `<div class="card span" id="brief"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>Actions in brief</h2><p class="brieftop" style="margin:0 0 6px"><b>Actions from <a class="wzlink" href="#">${I.yr} Wizard</a></b></p><ul class="brief">${actSort(ACT).map(([w,t])=>`<li><b>${w}:</b> ${t}</li>`).join('')}<li><b>Then:</b> Stop thinking about money and get into nature.</li></ul>
+    return `<div class="card span" id="brief"><h2><span class="eyebrow">Step 5 of 5 · My plan</span>Actions in brief</h2><p class="brieftop" style="margin:0 0 6px"><b>Actions from <a class="wzlink" href="#">${I.yr} Wizard</a></b></p><ul class="brief">${actSort(ACT).map(([w,t])=>`<li><b>${w}:</b> ${t}</li>`).join('')}</ul>
     <div class="btns" style="justify-content:flex-start;margin-top:8px"><button class="btn ghost" type="button" id="copybrief">Copy this list</button><button class="btn ghost" type="button" id="copymd">Copy as Markdown checklist</button>${CAL.length?`<button class="btn ghost" type="button" id="calbrief">Add to my calendar</button>`:''}<span class="note" id="copymsg" style="margin:0 0 0 8px;align-self:center"></span></div><p class="note">The details for each action are in the to-do list below.</p></div>`})()}
   <div class="card span"><h2>My to-do list</h2><ol class="todo">${todo.map((x,i)=>{let nx=null;if(KIND[i]==='ntax'){const a=x.indexOf('<div class="scroll"'),b=x.indexOf('<!--cover-->');if(a>0&&b>a){nx=x.slice(a,b);x=x.slice(0,a)+x.slice(b)}}
     const D={ntax:nx?[`${I.yr+1} tax details`,nx]:null,now:moneyOrder?['Where each year\'s money comes from',moneyOrder.replace(/^<div class="sub"><h4>[^<]*<\/h4>/,'').replace(/<\/div>$/,'')]:null,conv:['Conversion details and long-range check',conv],est:[`${I.yr} tax details`,tax],next:[`How the ${I.yr+1} budget is set`,spend]}[KIND[i]];
