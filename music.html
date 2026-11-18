@@ -181,6 +181,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
       <div class="pad" id="tPad"></div>
       <div class="piano hidden" id="tPiano"></div>
       <button class="go" id="bGo">Start</button>
+      <p class="note" id="tDiag" style="text-align:center;font-size:11px;color:var(--faint)"></p>
     </section>
 
     <!-- CAR -->
@@ -240,7 +241,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.8';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.9';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1068,13 +1069,15 @@ function diagText(){
 }
 function fitStandalone(){
   const app = $('app'); app.style.bottom = ''; app.style.height = '';
-  if (!isStandalone()) return;
+  return; // disabled: overshot on device; kept for reference while diagnosing
   const portrait = innerHeight >= innerWidth;
   const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
   const short = full - innerHeight;
   if (short > 10 && short < 130){ app.style.bottom = 'auto'; app.style.height = full + 'px'; }
 }
-fitStandalone(); addEventListener('resize', fitStandalone); addEventListener('orientationchange', () => setTimeout(fitStandalone, 300));
+fitStandalone(); addEventListener('resize', fitStandalone);
+function showDiag(){ try { $('tDiag').textContent = diagText(); } catch(e){} }
+setTimeout(showDiag, 500); addEventListener('resize', showDiag); setInterval(showDiag, 3000); addEventListener('orientationchange', () => setTimeout(fitStandalone, 300));
 if (!S.firstUse){ S.firstUse = today(); save(); }
 checkForUpdate();
 updateHeader(); resetTrainIdle();
