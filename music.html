@@ -20,11 +20,11 @@
   --r:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+html,body{margin:0;height:100%;background:var(--panel);color:var(--text);
   font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
   -webkit-user-select:none;user-select:none;overscroll-behavior:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:560px;margin:0 auto;
+#app{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;background:var(--bg);
   padding-top:env(safe-area-inset-top)}
 header{padding:10px 16px 8px}
 .lvl-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
@@ -240,7 +240,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.3';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.4';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
