@@ -241,7 +241,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.10';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.11';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1069,6 +1069,16 @@ function diagText(){
 // Undo any leftover zoom (iOS zooms in on form fields and can keep it in home-screen apps)
 function resetZoom(){ const vp = $('vp'); const c = vp.content; vp.content = c + ', x=1'; vp.content = c; }
 resetZoom(); document.addEventListener('focusout', () => setTimeout(resetZoom, 50));
+// iOS home-screen apps report a viewport one status bar shorter than the screen (e.g. 812 on an 874 screen),
+// leaving the tab bar floating. Extend the app by exactly the status-bar inset when that's what's happening.
+function fitHeight(){
+  const app = $('app'); app.style.bottom = ''; app.style.height = '';
+  if (!isStandalone() || !window.visualViewport || Math.abs(visualViewport.scale - 1) > 0.01) return;
+  const [top] = safeInsets(); const portrait = innerHeight >= innerWidth;
+  const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  if (top > 0 && Math.abs(innerHeight + top - full) <= 3){ app.style.bottom = 'auto'; app.style.height = full + 'px'; }
+}
+fitHeight(); addEventListener('resize', () => setTimeout(fitHeight, 100)); addEventListener('orientationchange', () => setTimeout(fitHeight, 400));
 function showDiag(){ try { $('tDiag').textContent = diagText(); } catch(e){} }
 setTimeout(showDiag, 500); addEventListener('resize', showDiag); setInterval(showDiag, 3000);
 if (!S.firstUse){ S.firstUse = today(); save(); }
