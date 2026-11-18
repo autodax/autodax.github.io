@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.15';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.16';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -906,7 +906,9 @@ function resetTrainIdle(){
   setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
   $('bCompare').disabled = true; T.cadKey = null; T.sinceCad = 99;
 }
-function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.id); toast.id = setTimeout(() => el.classList.remove('on'), 2200); }
+function toast(t){ const el = $('toast'); el.textContent = t;
+  // sit just above the tab bar, clear of the Start button
+  const navTop = $('nav').getBoundingClientRect().top; el.style.top = 'auto'; el.style.bottom = Math.max(12, innerHeight - navTop + 10) + 'px'; el.classList.add('on'); clearTimeout(toast.id); toast.id = setTimeout(() => el.classList.remove('on'), 2200); }
 
 // Generic option rows
 function optSelect(id, label, sub, val, opts){
