@@ -27,6 +27,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 #app{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;background:var(--bg);
   padding-top:env(safe-area-inset-top)}
 header{padding:10px 16px 8px}
+#app.ios-short header{padding-top:22px}
+#app.ios-short nav{padding-bottom:var(--deadzone,0px)}
+#app.ios-short nav button{padding:7px 0 6px;gap:2px;font-size:11px}
+#app.ios-short nav button svg{width:21px;height:21px}
 .lvl-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .lvl-name{font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lvl-num{color:var(--accent);font-weight:700;margin-right:6px}
@@ -241,7 +245,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.11';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.12';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1072,11 +1076,16 @@ resetZoom(); document.addEventListener('focusout', () => setTimeout(resetZoom, 5
 // iOS home-screen apps report a viewport one status bar shorter than the screen (e.g. 812 on an 874 screen),
 // leaving the tab bar floating. Extend the app by exactly the status-bar inset when that's what's happening.
 function fitHeight(){
-  const app = $('app'); app.style.bottom = ''; app.style.height = '';
+  const app = $('app'); app.style.bottom = ''; app.style.height = ''; app.classList.remove('ios-short');
   if (!isStandalone() || !window.visualViewport || Math.abs(visualViewport.scale - 1) > 0.01) return;
   const [top] = safeInsets(); const portrait = innerHeight >= innerWidth;
   const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-  if (top > 0 && Math.abs(innerHeight + top - full) <= 3){ app.style.bottom = 'auto'; app.style.height = full + 'px'; }
+  if (top > 0 && Math.abs(innerHeight + top - full) <= 3){
+    // The bottom (full - innerHeight) points get colored but not drawn, so fill them with the bar's
+    // background and keep the bar's icons and labels just above that dead zone.
+    app.style.bottom = 'auto'; app.style.height = full + 'px';
+    app.style.setProperty('--deadzone', (full - innerHeight + 2) + 'px'); app.classList.add('ios-short');
+  }
 }
 fitHeight(); addEventListener('resize', () => setTimeout(fitHeight, 100)); addEventListener('orientationchange', () => setTimeout(fitHeight, 400));
 function showDiag(){ try { $('tDiag').textContent = diagText(); } catch(e){} }
