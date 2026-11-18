@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.22';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.23';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -354,9 +354,12 @@ const pushCap = (arr, v, cap) => { arr.push(v); while (arr.length > cap) arr.shi
    cached on the phone after the first load, with a synth fallback.
    ===================================================================== */
 // Samples live next to the app (ear/piano/); the Tone.js host is a backup.
-const SAMPLE_BASES = ['ear/piano/', 'https://tonejs.github.io/audio/salamander/'];
+// Salamander Grand Piano (full-quality originals, velocity layer 8), A0–C8, one recording every 3 keys.
+// Files are named by MIDI note number. The Tone.js copy of the same piano is a backup (A1–C7 only).
+const SAMPLE_BASE = 'ear/piano/', BACKUP_BASE = 'https://tonejs.github.io/audio/salamander/';
 const SAMPLE_LIST = (() => { const out = []; const names = {0:'C',3:'Ds',6:'Fs',9:'A'};
-  for (let m = 33; m <= 96; m++) if (names[m%12] !== undefined) out.push({ midi:m, file: names[m%12] + (Math.floor(m/12)-1) + '.mp3' });
+  for (let m = 21; m <= 108; m++) if (names[m%12] !== undefined)
+    out.push({ midi:m, urls: [SAMPLE_BASE + m + '.m4a', ...(m >= 33 && m <= 96 ? [BACKUP_BASE + names[m%12] + (Math.floor(m/12)-1) + '.mp3'] : [])] });
   return out; })();
 const release = m => m < 40 ? 2.2 : m < 55 ? 1.5 : m < 72 ? 0.9 : 0.6;
 const A = {
@@ -366,7 +369,7 @@ const A = {
   prefetch(onProg){
     const total = SAMPLE_LIST.length; let done = 0, failed = 0;
     this.fetching = Promise.all(SAMPLE_LIST.map(async s => {
-      try { this.raw[s.midi] = await fetchFirst(SAMPLE_BASES.map(b => b + s.file)); if (this.ctx) this.decodeOne(s.midi); } catch(e){ failed++; }
+      try { this.raw[s.midi] = await fetchFirst(s.urls); if (this.ctx) this.decodeOne(s.midi); } catch(e){ failed++; }
       done++; onProg(done/total);
     })).then(() => failed);
     return this.fetching;
@@ -423,12 +426,13 @@ const A = {
     this.live.clear();
   }
 };
+try { caches.delete('music-samples-v1'); } catch(e){}   // old sample set
 async function fetchFirst(urls){
   let err; for (const u of urls){ try { return await fetchCached(u); } catch(e){ err = e; } } throw err;
 }
 async function fetchCached(url){
   let cache = null;
-  try { cache = await caches.open('music-samples-v1'); const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); } catch(e){}
+  try { cache = await caches.open('music-samples-v2'); const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); } catch(e){}
   const ac = 'AbortController' in window ? new AbortController() : null;
   const to = setTimeout(() => ac && ac.abort(), 15000);
   let r;
