@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.20';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.21';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -299,10 +299,8 @@ const LEVELS = [
   {title:'Add 2 and 4',          desc:'1 2 3 4 5 · key of C',             degrees:['1','2','3','4','5'], range:R1, keyMode:'C', len:1, input:'numbers'},
   {title:'Add 6',                desc:'1–6 · key of C',                   degrees:['1','2','3','4','5','6'], range:R1, keyMode:'C', len:1, input:'numbers'},
   {title:'Full major scale',     desc:'All seven · key of C',             degrees:ALL7, range:R1, keyMode:'C', len:1, input:'numbers'},
-  {title:'New key every round',  desc:'One octave · key changes every 8 questions', degrees:ALL7, range:R1, keyMode:'block', len:1, input:'numbers'},
-  {title:'New key every note',   desc:'One octave · fresh cadence every question',   degrees:ALL7, range:R1, keyMode:'each', len:1, input:'numbers'},
-  {title:'Three octaves, new key every round', desc:'Low to high · key changes every 8 questions', degrees:ALL7, range:R3, keyMode:'block', len:1, input:'numbers'},
-  {title:'Three octaves, new key every note',  desc:'Low to high · fresh cadence every question',  degrees:ALL7, range:R3, keyMode:'each', len:1, input:'numbers'},
+  {title:'New key every round',  desc:'One octave · new key and octave each round', degrees:ALL7, range:R1, keyMode:'block', len:1, input:'numbers'},
+  {title:'Three octaves, new key every round', desc:'Low to high · new key each round', degrees:ALL7, range:R3, keyMode:'block', len:1, input:'numbers'},
   {title:'Two-note phrases',     desc:'Name both notes in order',         degrees:ALL7, range:RP, keyMode:'block', len:2, input:'numbers'},
   {title:'Three-note phrases',   desc:'Short melodic fragments',          degrees:ALL7, range:RP, keyMode:'block', len:3, input:'numbers'},
   {title:'Four-note phrases',    desc:'Longer fragments',                 degrees:ALL7, range:RP, keyMode:'block', len:4, input:'numbers'},
@@ -313,14 +311,14 @@ const LEVELS = [
   {title:'Melodic dictation',    desc:'Keyboard · six-note melodies',     degrees:ALL7, range:RP, keyMode:'block', len:6, input:'piano'}
 ];
 const COMING = ['Minor keys & modes','Chromatic notes','Hearing chord tones','Sing it back','Rhythm in dictation'];
-const BLOCK = 8;
+const roundLen = () => S.settings.roundLen || 8;   // questions per round (key and octave stay put)
 
 /* =====================================================================
    STATE & STORAGE
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true,
+  cadenceEvery: 5, roundLen: 8, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true,
   tempo: 1, volume: 0.85, dailyGoal: 60,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -544,8 +542,8 @@ const T = { q:null, ans:[], phase:'idle', start:0, sinceCad:99, cadKey:null, key
 function chooseKey(L){
   if (L.keyMode === 'C') return 0;
   if (L.keyMode === 'each') return randKey(T.key);
-  // 'block': one key for BLOCK questions, kept even if review questions in other keys come in between
-  if (T.blockKey == null || T.blockCount >= BLOCK){ T.blockKey = randKey(T.blockKey); T.blockCount = 0; }
+  // 'block': one key per round, kept even if review questions in other keys come in between
+  if (T.blockKey == null || T.blockCount >= roundLen()){ T.blockKey = randKey(T.blockKey); T.blockCount = 0; }
   T.blockCount++;
   return T.blockKey;
 }
@@ -564,7 +562,7 @@ function makeQuestion(){
   // One-octave levels: the octave (below / middle / above) changes every round; the cadence moves with it.
   let oct = 0;
   if (L.range === R1){
-    if (T.oct == null || T.octCount >= BLOCK){ let o; do { o = Math.floor(Math.random()*3) - 1; } while (o === T.oct); T.oct = o; T.octCount = 0; }
+    if (T.oct == null || T.octCount >= roundLen()){ let o; do { o = Math.floor(Math.random()*3) - 1; } while (o === T.oct); T.oct = o; T.octCount = 0; }
     T.octCount++; oct = T.oct; pos = pos.map(s => s + 7*oct);
   }
   return { lvl, review, drill, key, oct, pos, labels: pos.map(s => posLabel(s)), midi: pos.map(s => posMidi(s, key)), len: L.len, input: L.input };
@@ -843,7 +841,7 @@ function confetti(){
    ===================================================================== */
 const Car = { running:false, token:null, wake:null };
 async function requestWake(){ try { if ('wakeLock' in navigator) Car.wake = await navigator.wakeLock.request('screen'); } catch(e){} }
-function carDegrees(){ return S.settings.car.degrees === 'all' ? ALL7 : LEVELS[Math.min(S.current, 7)].degrees; }
+function carDegrees(){ return S.settings.car.degrees === 'all' ? ALL7 : LEVELS[Math.min(S.current, 5)].degrees; }
 async function carLoop(token){
   const c = S.settings.car; let key = c.keyMode === 'random' ? randKey(-1) : c.keyMode === 'C' ? 0 : T.key;
   let last = null, first = true;
@@ -926,7 +924,7 @@ function optSelect(id, label, sub, val, opts){
 function optToggle(id, label, sub, val){ return `<div class="row"><div><div class="lab">${label}</div>${sub?`<div class="sub">${sub}</div>`:''}</div><button class="toggle ${val?'on':''}" data-tog="${id}"></button></div>`; }
 function optStep(id, label, sub, val, min, max, step, unit){
   return `<div class="row"><div><div class="lab">${label}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>
-    <div class="stepper" data-step="${id}" data-min="${min}" data-max="${max}" data-inc="${step}"><button data-d="-1">−</button><span>${val}${unit||''}</span><button data-d="1">+</button></div></div>`;
+    <div class="stepper" data-step="${id}" data-min="${min}" data-max="${max}" data-inc="${step}" data-unit="${unit||''}"><button data-d="-1">−</button><span>${val}${unit||''}</span><button data-d="1">+</button></div></div>`;
 }
 function getPath(p){ return p.split('.').reduce((o,k) => o[k], S.settings); }
 function setPath(p, v){ const ks = p.split('.'); let o = S.settings; while (ks.length > 1) o = o[ks.shift()]; o[ks[0]] = v; save(); }
@@ -945,6 +943,7 @@ function renderSettings(){
   const s = S.settings;
   $('v-set').innerHTML = `
     <h2>Training</h2><div class="card">
+      ${optStep('roundLen','Questions per round','Key, and octave on one-octave levels, stay the same for a round', s.roundLen, 5, 30, 1, '')}
       ${optSelect('cadenceEvery','Cadence','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
       ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick', s.speedLimit, [[0,'Off'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
@@ -1052,7 +1051,7 @@ document.addEventListener('click', e => {
     setPath(id, !getPath(id));
     tg.classList.toggle('on'); return; }
   const sb = e.target.closest('.stepper button');
-  if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = id.endsWith('per') ? '' : 's';
+  if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = st.dataset.unit;
     const v = Math.min(+st.dataset.max, Math.max(+st.dataset.min, Math.round((getPath(id) + inc*(+sb.dataset.d))*100)/100));
     setPath(id, v); st.querySelector('span').textContent = v + unit; return; }
   const lb = e.target.closest('[data-lv]');
