@@ -7,9 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ear Trainer">
-<link rel="apple-touch-icon" href="music/icon-180.png?v=4">
-<link rel="icon" href="music/icon-180.png?v=4">
-<link rel="manifest" href="music/manifest.json">
+<link rel="apple-touch-icon" href="ear/icon-180.png?v=4">
+<link rel="icon" href="ear/icon-180.png?v=4">
+<link rel="manifest" href="ear/manifest.json">
 <meta name="theme-color" content="#121419">
 <title>Ear Trainer</title>
 <style>
@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-18.16';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-18.17';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -354,8 +354,8 @@ const pushCap = (arr, v, cap) => { arr.push(v); while (arr.length > cap) arr.shi
    AUDIO: sampled piano (Salamander Grand, via the Tone.js sample host)
    cached on the phone after the first load, with a synth fallback.
    ===================================================================== */
-// Samples live next to the app (music/piano/); the Tone.js host is a backup.
-const SAMPLE_BASES = ['music/piano/', 'https://tonejs.github.io/audio/salamander/'];
+// Samples live next to the app (ear/piano/); the Tone.js host is a backup.
+const SAMPLE_BASES = ['ear/piano/', 'https://tonejs.github.io/audio/salamander/'];
 const SAMPLE_LIST = (() => { const out = []; const names = {0:'C',3:'Ds',6:'Fs',9:'A'};
   for (let m = 33; m <= 96; m++) if (names[m%12] !== undefined) out.push({ midi:m, file: names[m%12] + (Math.floor(m/12)-1) + '.mp3' });
   return out; })();
@@ -1092,7 +1092,7 @@ async function syncPush(opts={}){
     const stamp = S.updatedAt;
     const body = { files: { [GIST_FILE]: { content: JSON.stringify({ v:1, updatedAt: stamp, device: deviceName(), state: S }) } } };
     if (!SY.gistId){
-      body.description = 'Ear Trainer progress (autodax.github.io/music.html)'; body.public = false;
+      body.description = 'Ear Trainer progress (autodax.github.io/ear.html)'; body.public = false;
       const g = await gh('/gists', { method:'POST', body: JSON.stringify(body) }); SY.gistId = g.id;
     } else await gh('/gists/' + SY.gistId, { method:'PATCH', body: JSON.stringify(body), keepalive: opts.keepalive });
     SY.lastLocal = SY.lastRemote = stamp; SY.lastSyncAt = Date.now(); SY.err = null; SY.sincePush = 0; saveSync();

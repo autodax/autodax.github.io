@@ -1,8 +1,8 @@
 {
   "name": "Ear Trainer",
   "short_name": "Ear Trainer",
-  "id": "/music.html",
-  "start_url": "/music.html",
+  "id": "/ear.html",
+  "start_url": "/ear.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
