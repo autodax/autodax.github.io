@@ -8,6 +8,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <script>
 if(/^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent)&&!(navigator.maxTouchPoints>1))document.documentElement.classList.add('safari');
+if(/iPhone/.test(navigator.userAgent))document.documentElement.classList.add('iphone');
 var DAY=[7,19],ov=null;
 function isDay(){var h=new Date().getHours();return h>=DAY[0]&&h<DAY[1]}
 function nextChange(){var n=new Date(),d=new Date(n);d.setHours(isDay()?DAY[1]:DAY[0],0,0,0);if(d<=n)d.setDate(d.getDate()+1);return d.getTime()}
@@ -37,6 +38,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:860px;margin:0 auto}
 html.safari{zoom:1.5}
 @media (max-width:700px){html.safari{zoom:1.15}}
+html.iphone{zoom:1.15}
 header.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:14px}
 h1{font-size:1.3rem;margin:0;color:var(--green);text-wrap:balance}
 .ty{display:inline-block;padding:3px 12px;border-radius:999px;background:var(--green);color:var(--on-green);font-size:.92rem;font-weight:700;white-space:nowrap}
