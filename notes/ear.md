@@ -34,6 +34,9 @@ to melodic dictation.
 - Pentatonic first: levels 1–2 use only 1 2 3 5 6; 4 and 7 come after (levels 3–4).
 - A break reminder after a set time of practice (setting, default 10 min; "Take a break" or "Keep going").
 - No isolated interval drills (two notes with no key). Everything is heard in the context of a key.
+- Stop, "Done for today" and "Take a break" release the iPhone's audio channel (so the app leaves the
+  Dynamic Island and lock screen) and go back to the Start screen; tapping "Tap to begin" brings audio back.
+  iOS apps can't quit themselves, so releasing the audio is the most the app can do.
 - iPhone only for now. Sing-back mode is wanted later.
 - Sync: a private GitHub gist, one user. Multi-user sign-in (Firebase) was discussed and put off.
 - No redirect pages when renaming (he removed music.html rather than redirect it).
@@ -108,6 +111,10 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 - The home-screen app has its own storage, separate from Safari tabs. Removing the icon deletes
   its data, so export or sync first. The icon image is saved when added; a new icon needs the
   app removed and re-added.
+- A playing audio session shows in the Dynamic Island and on the lock screen. `A.release()` pauses the
+  silent looping element, sets `audioSession.type` to `auto` and suspends the AudioContext; `A.engage()`
+  undoes it and runs from the Start/Begin taps and from `A.seq`/`A.note`. Not testable in headless Chrome
+  beyond the states; check on the phone after changing it.
 - Web Audio is muted by the silent switch unless routed as playback (`navigator.audioSession`
   plus a looping silent audio element). Web apps pause when the screen locks, so Car mode keeps
   the screen on. Web MIDI isn't available on iOS.
