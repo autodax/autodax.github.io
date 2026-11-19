@@ -31,3 +31,14 @@ These notes were started from a quick read of the files; expand them as you work
 
 - Viewport is locked to the page width on phones (`minimum-scale=1`, no sideways panning).
 - The Wizard is scaled to 115% on iPhone in the page itself (not through Safari's zoom setting).
+
+## Paying next year's tax (Wizard, Step 3)
+
+- Setting `tpm`: quarterly estimated payments (default), extra paycheck withholding, or both; `wper` is the
+  extra withholding per full paycheck for "both". It applies to next year's tax only; the current year's
+  quarterly payments are unchanged.
+- Extra withholding E (per paycheck x full paychecks; the two small prorated checks are not counted) lowers
+  take-home pay by E, so the monthly transfers rise. In the code, `fund(E)` in `compute()` redoes the
+  funding and the tax; for "withholding only" it repeats until E covers the tax left after regular withholding.
+- The plan item, Actions in brief and calendar (W-4 change on Nov 30, quarterly dates) all follow the choice.
+
