@@ -115,6 +115,8 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
   silent looping element entirely (a merely paused one stays on the lock screen), sets `audioSession.type` to `auto` and closes the AudioContext (suspending it was not enough; decoded samples are kept); `A.engage()`
   rebuilds it (`A.build()`) and runs from the Start/Begin taps and from `A.seq`/`A.note`. Not testable in headless Chrome
   beyond the states; check on the phone after changing it.
+  Even after a full release the lock screen still lists the app, like any music app that has played
+  (iOS keeps the last media app there). Steve accepted that; don't spend more effort trying to remove it.
 - Web Audio is muted by the silent switch unless routed as playback (`navigator.audioSession`
   plus a looping silent audio element). Web apps pause when the screen locks, so Car mode keeps
   the screen on. Web MIDI isn't available on iOS.
