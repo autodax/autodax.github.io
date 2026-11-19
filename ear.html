@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-19.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-19.5';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -375,7 +375,7 @@ const A = {
     return this.fetching;
   },
   decodeOne(k){
-    const raw = this.raw[k]; if (!raw) return; delete this.raw[k];
+    const raw = this.raw[k]; if (!raw || !this.ctx) return; delete this.raw[k];
     try {
       const p = this.ctx.decodeAudioData(raw, b => { this.buffers[k] = b; }, () => {});
       if (p && p.then) p.then(b => { if (b) this.buffers[k] = b; }).catch(() => {});
@@ -389,7 +389,8 @@ const A = {
     this.released = false;
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
     makeSilent();
-    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(()=>{});
+    if (!this.ctx){ this.build(); this.decodeAll(); }
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(()=>{});
   },
   // iOS keeps a paused media element on the lock screen, so the silent loop is removed completely, not just paused.
   dropSilent(){
@@ -405,16 +406,21 @@ const A = {
       this.dropSilent();
       try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch(e){}
       try { if (navigator.mediaSession){ navigator.mediaSession.playbackState = 'none'; navigator.mediaSession.metadata = null; } } catch(e){}
-      if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(()=>{});
+      // Close the whole audio engine: a suspended one can still keep the app on the lock screen. Decoded samples are kept.
+      const c = this.ctx; this.ctx = null; this.master = null;
+      if (c) c.close().catch(()=>{});
     }, 300);
   },
-  async start(){
-    if (this.ctx) return;
+  build(){
     const AC = window.AudioContext || window.webkitAudioContext;
     this.ctx = new AC();
     const comp = this.ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3;
     this.master = this.ctx.createGain(); this.master.gain.value = S.settings.volume;
     this.master.connect(comp).connect(this.ctx.destination);
+  },
+  async start(){
+    if (this.ctx) return;
+    this.build();
     if (this.ctx.state === 'suspended') await this.ctx.resume().catch(()=>{});
   },
   decodeAll(){ for (const k of Object.keys(this.raw)) this.decodeOne(k); },
@@ -441,8 +447,8 @@ const A = {
   },
   // events: [{notes:[midi...], dur, vel}] played back to back. Resolves when finished.
   async seq(events, token, onStep){
-    if (!this.ctx) return;
     this.engage();
+    if (!this.ctx) return;
     if (this.ctx.state !== 'running') await this.ctx.resume().catch(()=>{});
     let t = this.now() + 0.06; const starts = [];
     for (const e of events){ starts.push(t); for (const m of e.notes) this.note(m, t, e.dur*0.95, e.vel ?? 0.8); t += e.dur; }
@@ -1250,7 +1256,7 @@ function syncCardHTML(){
 A.prefetch(p => { $('loadBar').style.width = (p*100).toFixed(0) + "%"; })
  .then(failed => { $('loadTxt').textContent = failed > SAMPLE_LIST.length*0.4 ? 'Piano samples unavailable (offline?). A simple synth will play.' : 'Piano ready'; });
 $('bBegin').addEventListener('click', async () => {
-  if (A.ctx){   // coming back from the stop screen
+  if (A.released){   // coming back from the stop screen
     A.engage(); $('startOv').classList.add('hidden'); syncPull().catch(syncErr); return;
   }
   $('bBegin').disabled = true; $('loadTxt').textContent = 'Starting audio…';
