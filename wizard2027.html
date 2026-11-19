@@ -695,7 +695,7 @@ const polName=p=>!p||p.k==='none'?'No conversions':p.k==='eff'?`Up to ${Math.rou
 function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
   const thisC=p=>{if(!canConv||p.k==='none')return 0;if(p.k==='eff')return solveC(I,s=>s.t.eff<=p.v+1e-9);if(p.k==='brk')return solveC(I,s=>s.t.ordT<=topOf(p.v));
     if(p.k==='amt')return solveC(I,s=>s.t.tax<=p.v);if(p.k==='fixed')return R.C||0;if(p.k==='level')return Math.min(Math.round(p.v),solveC(I,s=>s.t.ordT<=topOf(p.cap)));return 0};
-  const zP=prep(I,0),zS=susSpend(zP,{k:'none'},gR,cush,I.down);let pol,C0,note='',cands=null,living;
+  const zP=prep(I,0),zS=susSpend(zP,{k:'none'},gR,cush,I.down);let pol,C0,note='',cands=null,living,safeS0=null;
   let pickG=null;
   const SET=(I.model==='auto'||I.model==='autog')&&I.bmode==='set'&&I.setsp>0;
   if(SET){
@@ -727,17 +727,20 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
       ` It supports ${fmt(pick.S)} a year of after-tax spending in today's dollars${pick.S>=best-.5?`, the most of the ${cands.length} strategies tested`:`, within 0.2% of the best of the ${cands.length} strategies tested (${fmt(best)})`}${pick.k==='none'?'':`; no conversions supports ${fmt(zS)}`}. Among strategies that close, it has the lowest lifetime federal tax and IRMAA.`}
   else if(I.model==='level'){
     // The age-75 RMD depends on how much I spend before then, so size the conversions at the same spending the projection uses:
-    // my chosen amount, or else the sustainable spending of the strategy itself (found by repeating until the two agree).
+    // my chosen amount, or else the strategy's safe spending at my target chance of lasting (found by repeating until the two agree).
     const fixS=I.bmode==='set'&&I.setsp>0,polL=L=>({k:'level',v:L,cap:I.tbrk});
     // Each search runs from next January's balances after this year's conversion; this year's conversion itself follows the
     // even amount, so repeat until the starting point, the even amount and the spending all agree.
     const startOf=L=>{const c=thisC(polL(L));return c>0?prep(I,c):zP};
     const rm=(L,S,P0)=>runYears(P0,{S,pol:polL(L),g:gR,end:76,down0:I.down}).rmd75||0;
     const solve=(S,P0)=>{if(rm(0,S,P0)<=I.rtgt)return 0;if(rm(5e6,S,P0)>I.rtgt)return 5e6;let lo=0,hi=5e6;for(let n=0;n<26;n++){const m=(lo+hi)/2;rm(m,S,P0)>I.rtgt?lo=m:hi=m}return Math.ceil(hi/500)*500};
+    // Without a chosen amount, spend what the long-range check below calls safe spending: the most I can spend after tax with my target chance of lasting
+    const safeS=(P0,pl)=>{const G=guardrailAT(I,P0,pl);return G.err?susSpend(P0,pl,gR,cush,I.down):G.at(I.tg)};
     let S=fixS?I.setsp:zS,Lv=0;
-    for(let n=0;n<8;n++){const P0=startOf(Lv),L2=solve(S,P0),S2=fixS?S:susSpend(P0,polL(L2),gR,cush,I.down);
+    for(let n=0;n<8;n++){const P0=startOf(Lv),L2=solve(S,P0),S2=fixS?S:safeS(P0,polL(L2));
       if(L2===Lv&&Math.abs(S2-S)<50)break;Lv=L2;S=S2}
-    const at=fixS?` when I spend ${fmt(I.setspN)} in ${I.yr+1} (plus inflation after that)`:` at the spending this plan supports (${fmt(S)} a year)`;
+    if(!fixS){S=safeS(startOf(Lv),polL(Lv));safeS0=S}   // quote exactly the safe spending the long-range check below shows
+    const at=fixS?` when I spend ${fmt(I.setspN)} in ${I.yr+1} (plus inflation after that)`:` at my safe spending ({{SAFE}} a year, the most I can spend after tax with my ${Math.round(I.tg*100)}% target chance of lasting, as in the long-range check below)`;
     note=Lv===0?`My age-75 RMD is already under the ${fmt(I.rtgt)} ceiling without conversions${at}.`
       :Lv>=5e6?`The ${fmt(I.rtgt)} ceiling can't be reached while staying inside the ${I.tbrk}% bracket${at}, so this converts the most the bracket allows each year.`
       :`Even conversions of about ${fmt(Lv)} a year (today's dollars, never above the ${I.tbrk}% bracket) bring the age-75 RMD down to ${fmt(I.rtgt)}${at}.`;
@@ -752,6 +755,8 @@ function longRange(I,canConv,R){const gR=(1+I.g)/(1+I.inf)-1,cush=I.cush;
   const over=rows=>rows.find(x=>x.age>=75&&x.rmd>lim22(x)+1),r75=rows=>rows.find(x=>x.age===75);
   const m75=r75(main.rows),z75=r75(zero.rows),h75=r75(hi2.rows),ex=over(hi2.rows),N0=over(main.rows);
   const spol={k:'sched',a:main.rows.map(x=>x.C)},G=pickG||guardrailAT(I,P,spol);
+  // the sentence above quotes the same safe spending that the long-range check shows (computed with the yearly conversions of this plan)
+  if(note.includes('{{SAFE}}'))note=note.replace('{{SAFE}}',fmt(G.err?safeS0:G.at(I.tg)));
   const GZ=pickG&&cands?(cands.find(c=>c.k==='none')||{}).G||guardrailAT(I,zP,{k:'none'}):guardrailAT(I,zP,{k:'none'}),FXS=I.bmode==='set'&&I.setsp>0?I.setsp:0,H=histCheck(I,P,FXS?pol:spol,G,zP,GZ,FXS);
   // The "convert more?" alternative: fill the 24% bracket every year through my last conversion age, checked the same way
   let alt=null;if(canConv&&H&&!(pol.k==='brk'&&pol.v===24)){const ap={k:'brk',v:24},ca=cands&&cands.find(c=>c.k==='brk'&&c.v===24),C0a=ca?ca.C0:thisC(ap),Pa=ca?ca.P:(C0a>0?prep(I,C0a):zP),

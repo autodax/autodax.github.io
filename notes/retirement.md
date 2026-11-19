@@ -43,3 +43,7 @@ These notes were started from a quick read of the files; expand them as you work
 - The plan item, Actions in brief and calendar (W-4 change on Nov 30, quarterly dates) all follow the choice.
 - With withholding only, the plan also shows the least extra withholding per paycheck that avoids a penalty (the safe harbor).
 
+
+## "Even out" conversion sizing
+
+- Without a spending amount chosen, "Even out" sizes the yearly conversion at my safe spending (the most I can spend after tax with my target chance of lasting), the same figure the long-range check table shows as "This plan". The statement quotes that figure, so the two always agree. The Wizard and the Roth planner use the same basis (the 32-case test compares them).
