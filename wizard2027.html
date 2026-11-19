@@ -974,6 +974,8 @@ function render(R){
     const rk=(I.yr+1<=I.lw&&wkN(I.yr+1))?wkN(I.yr+1)[1]:0,rnc=fullOf(I.npay),rper=Math.ceil(rk/2/rnc);
     // Set next year's Roth contributions on Dec 15 of this year
     const nov=new Date(I.yr,11,15),novS='Dec 15';
+    cal(`${I.yr}-12-15`,`Run ${I.yr} Wizard again`,`Run the ${I.yr} Retirement Wizard again with my actual ${I.yr} numbers, after my last November paycheck. It updates the ${I.yr+1} plan, the Roth contributions and the extra withholding.`);
+    act(`${novS}, ${I.yr}`,`Run the ${I.yr} Wizard again with my actual ${I.yr} numbers. It updates the ${I.yr+1} plan.`);
     if(rk>0)cal(`${I.yr}-12-${String(nov.getDate()).padStart(2,'0')}`,`Set Roth contributions ${fmt(rper)} each`,`Set payroll Roth contributions for ${I.yr+1}: ${fmt(rper)} to the 403(b) and ${fmt(rper)} to the 457(b) per paycheck.`);
     if(rk>0)act(`${novS}, ${I.yr}`,`Set payroll to contribute ${fmt(rper)} to the Roth 403(b) and ${fmt(rper)} to the Roth 457(b) per paycheck.`);
     // Check the first paystub of next year: new Roth amounts and withholding under the new year's tables
