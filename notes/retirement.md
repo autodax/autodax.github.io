@@ -32,6 +32,10 @@ These notes were started from a quick read of the files; expand them as you work
 - Viewport is locked to the page width on phones (`minimum-scale=1`, no sideways panning).
 - The Wizard is scaled to 115% on iPhone in the page itself (not through Safari's zoom setting).
 
+## Yearly check-in date
+
+- The yearly check-in (run next year's Wizard, set Roth contributions and withholding, convert the Roth top-up) is Dec 15, set in `lastNov()` in the Wizard. Steve chose it. Fidelity's own pages say only that a Roth conversion must be done by Dec 31 to count for the year; they give no earlier recommended date or processing time.
+
 ## Paying next year's tax (Wizard, Step 3)
 
 - Setting `tpm`: quarterly estimated payments (default), extra paycheck withholding, or both; `wper` is the
@@ -40,8 +44,8 @@ These notes were started from a quick read of the files; expand them as you work
 - Extra withholding E (per paycheck x full paychecks; the two small prorated checks are not counted) lowers
   take-home pay by E, so the monthly transfers rise. In the code, `fund(E)` in `compute()` redoes the
   funding and the tax; for "withholding only" it repeats until E covers the tax left after regular withholding.
-- The plan item, Actions in brief and calendar (W-4 change on Nov 30, quarterly dates) all follow the choice.
-- Steve sets extra withholding in Oracle HR at USF (not a W-4), so the plan says "Oracle HR". It stays in effect until changed, so the plan adds a Nov 30 reminder in the following year to change it or reset it to $0.
+- The plan item, Actions in brief and calendar (Oracle HR withholding change on Dec 15, quarterly dates) all follow the choice.
+- Steve sets extra withholding in Oracle HR at USF (not a W-4), so the plan says "Oracle HR". It stays in effect until changed, so the plan adds a Dec 15 reminder in the following year to change it or reset it to $0.
 - With withholding only, the plan also shows the least extra withholding per paycheck that avoids a penalty (the safe harbor).
 
 
