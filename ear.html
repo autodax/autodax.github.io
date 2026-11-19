@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-19.5';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-19.6';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -296,11 +296,11 @@ const CAR_RANGES = { one:R1, two:R2, three:R3, four:R4 };
 const ALL7 = ['1','2','3','4','5','6','7'];
 const LEVELS = [
   {title:'Home base: 1 3 5',    desc:'Key of C · one octave, which moves every round', degrees:['1','3','5'], range:R1, keyMode:'C', len:1, input:'numbers'},
-  {title:'Add 2 and 6: pentatonic', desc:'1 2 3 5 6 · key of C. No 4 or 7 yet, so every note sounds stable', degrees:['1','2','3','5','6'], range:R1, keyMode:'C', len:1, input:'numbers'},
+  {title:'Pentatonic: add 2, 6', desc:'1 2 3 5 6 · key of C. No 4 or 7 yet, so every note sounds stable', degrees:['1','2','3','5','6'], range:R1, keyMode:'C', len:1, input:'numbers'},
   {title:'Add 4',                desc:'1–6 · key of C',                   degrees:['1','2','3','4','5','6'], range:R1, keyMode:'C', len:1, input:'numbers'},
-  {title:'Add 7: full major scale', desc:'All seven · key of C',          degrees:ALL7, range:R1, keyMode:'C', len:1, input:'numbers'},
+  {title:'Add 7: full scale', desc:'All seven · key of C',          degrees:ALL7, range:R1, keyMode:'C', len:1, input:'numbers'},
   {title:'New key every round',  desc:'One octave · new key and octave each round', degrees:ALL7, range:R1, keyMode:'block', len:1, input:'numbers'},
-  {title:'Three octaves, new key every round', desc:'Low to high · new key each round', degrees:ALL7, range:R3, keyMode:'block', len:1, input:'numbers'},
+  {title:'3 octaves, new keys', desc:'Low to high · new key each round', degrees:ALL7, range:R3, keyMode:'block', len:1, input:'numbers'},
   {title:'Two-note phrases',     desc:'Name both notes in order',         degrees:ALL7, range:RP, keyMode:'block', len:2, input:'numbers'},
   {title:'Three-note phrases',   desc:'Short melodic fragments',          degrees:ALL7, range:RP, keyMode:'block', len:3, input:'numbers'},
   {title:'Four-note phrases',    desc:'Longer fragments',                 degrees:ALL7, range:RP, keyMode:'block', len:4, input:'numbers'},
