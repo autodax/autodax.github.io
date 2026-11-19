@@ -41,4 +41,5 @@ These notes were started from a quick read of the files; expand them as you work
   take-home pay by E, so the monthly transfers rise. In the code, `fund(E)` in `compute()` redoes the
   funding and the tax; for "withholding only" it repeats until E covers the tax left after regular withholding.
 - The plan item, Actions in brief and calendar (W-4 change on Nov 30, quarterly dates) all follow the choice.
+- With withholding only, the plan also shows the least extra withholding per paycheck that avoids a penalty (the safe harbor).
 
