@@ -27,6 +27,8 @@ to melodic dictation.
   Review questions from earlier levels use the round's key and octave (they used to jump to C or
   another octave in between, which felt chaotic). On three-octave and phrase levels review questions stay in the middle octave.
 - New keys come before more octaves in the ladder.
+- Every octave range is bracketed by the home note (1) at both ends: one octave is 1 to the upper 1, three octaves run from 1 an octave
+  below the middle to 1 two octaves above it (two and four octaves likewise; Car mode too). Phrase and keyboard levels use a window around the tonic that is not bracketed.
 - Start with number answers; later require playing the melody on the keyboard in the key heard.
 - Car mode: cadence, then note → pause → resolution, with the cadence repeating every N notes
   (adjustable). No spoken numbers (removed at his request). Ranges: 1, 2, 3 or 4 octaves.

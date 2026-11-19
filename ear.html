@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-19.6';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-19.7';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -291,7 +291,8 @@ function cadence(pc, oct=0){
    keyMode: 'C' fixed | 'block' new key every few questions | 'each' new key every question
    input: 'numbers' | 'piano' (play the actual notes in the key you heard)
    ===================================================================== */
-const R1 = [0,6], R2 = [-7,6], R3 = [-7,13], R4 = [-14,13], RP = [-3,10];
+// Every range is bracketed by home notes (1) at the bottom and the top. RP (phrases and keyboard levels) is a window around the tonic, not bracketed.
+const R1 = [0,7], R2 = [-7,7], R3 = [-7,14], R4 = [-14,14], RP = [-3,10];
 const CAR_RANGES = { one:R1, two:R2, three:R3, four:R4 };
 const ALL7 = ['1','2','3','4','5','6','7'];
 const LEVELS = [
