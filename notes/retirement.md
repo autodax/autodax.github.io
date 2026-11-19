@@ -27,7 +27,9 @@ These notes were started from a quick read of the files; expand them as you work
 - Pay calendar: nine-month academic pay (biweekly paychecks during the academic year, small prorated
   checks at the start and end), used by the Wizard for withholding and contributions.
 
-## iPhone
+## iPhone and Mac
+
+- Steve uses the Wizard on both his iPhone and his Mac. Check layout at desktop width as well as phone width.
 
 - Viewport is locked to the page width on phones (`minimum-scale=1`, no sideways panning).
 - The Wizard is scaled to 115% on iPhone in the page itself (not through Safari's zoom setting).

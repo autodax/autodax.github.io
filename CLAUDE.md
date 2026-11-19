@@ -12,7 +12,8 @@ Never put personal details in the repo: no addresses, account numbers, balances,
 - Steve doesn't read code. Describe changes in plain language: what he'll see and do, not how
   it's built. Don't paste code into replies.
 - Ask clarifying questions in plain text, never as pop-up multiple-choice dialogs.
-- He uses an iPhone (Safari, and apps saved to the home screen as web apps). Mobile-first.
+- He uses an iPhone (Safari, and apps saved to the home screen as web apps). Mobile-first. He also uses the retirement Wizard on a Mac (desktop browser), so changes to those apps
+  must work at desktop widths too; the iPhone-only tweaks (115% scale, locked viewport) must not affect the Mac.
 - When a choice is visual (icons, layouts, sounds), show a few options side by side before
   committing to one.
 - Do the work, test it, and push it; then say briefly what changed and anything he must do
