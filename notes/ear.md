@@ -22,8 +22,10 @@ to melodic dictation.
 - Major keys until fully mastered, then minor and modes. Chords later; design for them.
 - Resolution goes to the nearest tonic: 1–4 step down, 5–7 step up.
 - The key stays fixed for a round of questions (no "new key every note"). Round length is
-  adjustable, 5–30 (default 8). On one-octave levels the octave (below / middle / above) also
-  changes each round, and the cadence moves with it.
+  adjustable, 10–30 (default 12; Steve wants at least 10). Key and, on one-octave levels, octave
+  (below / middle / above) change together at the round boundary, and the cadence moves with them.
+  Review questions from earlier levels use the round's key and octave (they used to jump to C or
+  another octave in between, which felt chaotic). On three-octave and phrase levels review questions stay in the middle octave.
 - New keys come before more octaves in the ladder.
 - Start with number answers; later require playing the melody on the keyboard in the key heard.
 - Car mode: cadence, then note → pause → resolution, with the cadence repeating every N notes

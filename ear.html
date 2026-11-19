@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-19.1';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-19.2';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -311,14 +311,14 @@ const LEVELS = [
   {title:'Melodic dictation',    desc:'Keyboard · six-note melodies',     degrees:ALL7, range:RP, keyMode:'block', len:6, input:'piano'}
 ];
 const COMING = ['Minor keys & modes','Chromatic notes','Hearing chord tones','Sing it back','Rhythm in dictation'];
-const roundLen = () => S.settings.roundLen || 8;   // questions per round (key and octave stay put)
+const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions per round (key and octave stay put)
 
 /* =====================================================================
    STATE & STORAGE
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, roundLen: 8, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true,
+  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true,
   tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -329,7 +329,7 @@ function freshState(){
 let S = load();
 function normalize(s){
   const f = freshState();
-  s.settings = Object.assign(f.settings, s.settings||{}); s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
+  s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
   return Object.assign(f, s);
 }
 function load(){
@@ -551,15 +551,18 @@ function pickPhrase(lvl){
   return out;
 }
 
-const T = { q:null, ans:[], phase:'idle', start:0, sinceCad:99, cadKey:null, key:0, blockKey:null, blockCount:0, streak:0, token:null, aux:null, qEnd:0, workStart:0, lastAnsAt:0 };
-function chooseKey(L){
-  if (L.keyMode === 'C') return 0;
-  if (L.keyMode === 'each') return randKey(T.key);
-  // 'block': one key per round, kept even if review questions in other keys come in between
-  if (T.blockKey == null || T.blockCount >= roundLen()){ T.blockKey = randKey(T.blockKey); T.blockCount = 0; }
-  T.blockCount++;
-  return T.blockKey;
+const T = { q:null, ans:[], phase:'idle', start:0, sinceCad:99, cadKey:null, key:0, roundKey:null, roundOct:null, roundCount:0, streak:0, token:null, aux:null, qEnd:0, workStart:0, lastAnsAt:0 };
+// One "round" = a stretch of questions in one key and one octave. Both change together, once, at the
+// round boundary. Review questions from earlier levels join the round's key and octave, so nothing jumps around in between.
+function startRoundIfNeeded(){
+  if (T.roundKey == null || T.roundCount >= roundLen()){
+    T.roundKey = randKey(T.roundKey);
+    let o; do { o = Math.floor(Math.random()*3) - 1; } while (o === T.roundOct); T.roundOct = o;
+    T.roundCount = 0;
+  }
+  T.roundCount++;
 }
+const chooseKey = () => LEVELS[S.current].keyMode === 'C' ? 0 : T.roundKey;
 function randKey(avoid){ let k; do { k = Math.floor(Math.random()*12); } while (k === avoid); return k; }
 
 function makeQuestion(){
@@ -567,17 +570,15 @@ function makeQuestion(){
   const pool = []; for (let i=0;i<S.current;i++) if (S.mastered[i] !== undefined) pool.push(i);
   if (pool.length && Math.random()*100 < S.settings.reviewPct){ lvl = pool[Math.floor(Math.random()*pool.length)]; review = true; }
   const L = LEVELS[lvl];
-  const key = chooseKey(L);
+  startRoundIfNeeded();
+  const key = chooseKey();
   T.key = key;
   let pos, drill = false;
   if (L.len === 1){ const p = pickSingle(lvl, T.q && T.q.pos.length===1 ? T.q.pos[0] : null); pos = [p.s]; drill = p.drill; }
   else pos = pickPhrase(lvl);
-  // One-octave levels: the octave (below / middle / above) changes every round; the cadence moves with it.
+  // One-octave levels: the octave (below / middle / above) is the round's octave; the cadence moves with it.
   let oct = 0;
-  if (L.range === R1){
-    if (T.oct == null || T.octCount >= roundLen()){ let o; do { o = Math.floor(Math.random()*3) - 1; } while (o === T.oct); T.oct = o; T.octCount = 0; }
-    T.octCount++; oct = T.oct; pos = pos.map(s => s + 7*oct);
-  }
+  if (L.range === R1 && LEVELS[S.current].range === R1){ oct = T.roundOct; pos = pos.map(s => s + 7*oct); }
   return { lvl, review, drill, key, oct, pos, labels: pos.map(s => posLabel(s)), midi: pos.map(s => posMidi(s, key)), len: L.len, input: L.input };
 }
 
@@ -974,7 +975,7 @@ function renderSettings(){
   const s = S.settings;
   $('v-set').innerHTML = `
     <h2>Training</h2><div class="card">
-      ${optStep('roundLen','Questions per round','Key, and octave on one-octave levels, stay the same for a round', s.roundLen, 5, 30, 1, '')}
+      ${optStep('roundLen','Questions per round','Key and octave change together, and only between rounds (at least 10)', s.roundLen, 10, 30, 1, '')}
       ${optSelect('cadenceEvery','Cadence','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
       ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick', s.speedLimit, [[0,'Off'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
@@ -1060,7 +1061,7 @@ $('tPiano').addEventListener('pointerdown', e => {
   onAnswer({ midi: m });
 });
 $('cGo').addEventListener('click', toggleCar);
-$('bLvlOk').addEventListener('click', () => { $('lvlOv').classList.add('hidden'); T.cadKey = null; T.blockKey = null; renderPad(null); nextQuestion(); });
+$('bLvlOk').addEventListener('click', () => { $('lvlOv').classList.add('hidden'); T.cadKey = null; T.roundKey = null; renderPad(null); nextQuestion(); });
 
 document.addEventListener('change', e => {
   const sel = e.target.closest('select[data-opt]');
