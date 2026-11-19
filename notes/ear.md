@@ -111,8 +111,8 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 - The home-screen app has its own storage, separate from Safari tabs. Removing the icon deletes
   its data, so export or sync first. The icon image is saved when added; a new icon needs the
   app removed and re-added.
-- A playing audio session shows in the Dynamic Island and on the lock screen. `A.release()` pauses the
-  silent looping element, sets `audioSession.type` to `auto` and suspends the AudioContext; `A.engage()`
+- A playing audio session shows in the Dynamic Island and on the lock screen. `A.release()` removes the
+  silent looping element entirely (a merely paused one stays on the lock screen), sets `audioSession.type` to `auto` and suspends the AudioContext; `A.engage()`
   undoes it and runs from the Start/Begin taps and from `A.seq`/`A.note`. Not testable in headless Chrome
   beyond the states; check on the phone after changing it.
 - Web Audio is muted by the silent switch unless routed as playback (`navigator.audioSession`

@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-19.3';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-19.4';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -388,15 +388,23 @@ const A = {
     if (!this.released) return;
     this.released = false;
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
-    if (this.silentEl) this.silentEl.play().catch(()=>{});
+    makeSilent();
     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(()=>{});
+  },
+  // iOS keeps a paused media element on the lock screen, so the silent loop is removed completely, not just paused.
+  dropSilent(){
+    const el = this.silentEl; if (!el) return;
+    try { el.pause(); el.removeAttribute('src'); el.load(); } catch(e){}
+    try { if (this.silentUrl) URL.revokeObjectURL(this.silentUrl); } catch(e){}
+    this.silentEl = null; this.silentUrl = null;
   },
   release(){
     clearTimeout(this.relTimer);
     this.relTimer = setTimeout(() => {
       this.stopAll(); this.released = true;
-      if (this.silentEl) this.silentEl.pause();
+      this.dropSilent();
       try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch(e){}
+      try { if (navigator.mediaSession){ navigator.mediaSession.playbackState = 'none'; navigator.mediaSession.metadata = null; } } catch(e){}
       if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(()=>{});
     }, 300);
   },
@@ -469,13 +477,17 @@ function kill(token){ if (!token) return; token.dead = true; for (const [id,res]
 // iPhone: route Web Audio as media playback so the ringer/silent switch doesn't mute it.
 function unlockIOS(){
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+  makeSilent();
+}
+function makeSilent(){
+  if (A.silentEl) return;
   try {
     const sr = 8000, n = sr/2, buf = new ArrayBuffer(44 + n*2), v = new DataView(buf);
     const w = (o,s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
     w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true);
     v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
     w(36,'data'); v.setUint32(40,n*2,true);
-    const el = document.createElement('audio'); el.src = URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+    const el = document.createElement('audio'); A.silentUrl = URL.createObjectURL(new Blob([buf],{type:'audio/wav'})); el.src = A.silentUrl;
     el.loop = true; el.setAttribute('playsinline',''); el.volume = 0.01; el.play().catch(()=>{});
     A.silentEl = el;
   } catch(e){}
