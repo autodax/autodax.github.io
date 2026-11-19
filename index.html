@@ -617,6 +617,9 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
           <input type="number" id="wrate" min="0" step="0.5" placeholder="auto" inputmode="decimal" style="padding-left:10px;">
         </div>
         <span class="hint">Blank = estimate from standard withholding. Enter custom rate or amount to override.</span>
+        <label for="npay" style="margin-top:10px;display:block">Paychecks in the year (optional)</label>
+        <div class="amount-wrap"><input type="number" id="npay" min="1" max="26" step="0.5" placeholder="26" inputmode="decimal" style="padding-left:10px;"></div>
+        <span class="hint">If I’m paid over fewer than 26 pay periods (for example, nine-month pay is about 19.5), payroll withholds each paycheck as if I were paid all year, so it withholds more than the estimate for 26 evenly spaced paychecks. Enter the number of pay periods and the estimate will do the same. Blank = 26.</span>
       </div>
 
       <div class="field">
@@ -813,7 +816,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
             <tr><td class="tfoot-label" id="srcTotalLabel">Total federal tax</td><td></td><td class="total-amount" style="text-align:right" id="srcTotal">$0</td><td></td></tr>
           </tfoot>
         </table>
-        <div class="summary-line" style="margin-top:7px;"><span id="srcEmployerLbl">Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only, as if paid evenly all year</small></span><span class="v" id="srcEmployer">$0</span></div>
+        <div class="summary-line" style="margin-top:7px;"><span id="srcEmployerLbl">Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only</small></span><span class="v" id="srcEmployer">$0</span></div>
         <div class="summary-line"><span>Still owed after wage withholding<br><small style="font-size:0.66rem;">Negative = over-withheld</small></span><span class="v" id="srcStillOwed">$0</span></div>
         <details class="foot-note" style="margin-top:6px;">
           <summary>How this is calculated</summary>
@@ -1194,7 +1197,11 @@ function calculate(){
   const wagesInc = pos(wages);
   document.getElementById('srcTotal').textContent = fmt(totalTaxWithIrmaa);
 
-  const employerEst = bracketSplit(0, Math.max(0, wagesInc - STD_DEDUCTION_BASE), ORDINARY_BRACKETS).reduce((a,r)=>a+r.tax, 0);
+  const fitOn = w => bracketSplit(0, Math.max(0, w - STD_DEDUCTION_BASE), ORDINARY_BRACKETS).reduce((a,r)=>a+r.tax, 0);
+  const npayIn = parseFloat(document.getElementById('npay').value);
+  const npayUse = npayIn > 0 && npayIn < 26 ? npayIn : 26;
+  // Payroll figures each paycheck as if it repeated all year (26 pay periods), then withholds for the paychecks actually paid
+  const employerEst = wagesInc > 0 && npayUse < 26 ? fitOn(wagesInc / npayUse * 26) / 26 * npayUse : fitOn(wagesInc);
   
   const wrateRaw = document.getElementById('wrate').value;
   const wrate = parseFloat(wrateRaw);
@@ -1210,7 +1217,7 @@ function calculate(){
       document.getElementById('srcEmployerLbl').innerHTML = 'Wage withholding<br><small style="font-size:0.66rem;">Your specified amount</small>';
     }
   } else {
-    document.getElementById('srcEmployerLbl').innerHTML = 'Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only, as if paid evenly all year</small>';
+    document.getElementById('srcEmployerLbl').innerHTML = 'Est. employer FIT on wages<br><small style="font-size:0.66rem;">Single, std. deduction, wages only, ' + (npayUse < 26 ? npayUse + ' pay periods' : 'paid evenly all year') + '</small>';
   }
 
   document.getElementById('srcEmployer').textContent = fmt(withheld);
@@ -1282,7 +1289,7 @@ function calculateIrmaa(){
   calculate();
 }
 
-['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','ltcgPlan'].forEach(id => {
+['wages','wrate','npay','ira','ssa','ndiv','qdiv','stcg','ltcg','ltcgPlan'].forEach(id => {
   document.getElementById(id).addEventListener('input', calculate);
 });
 document.getElementById('magi2yr').addEventListener('input', calculateIrmaa);
@@ -1616,7 +1623,7 @@ document.querySelectorAll('.age-btn, .wtype-btn').forEach(b => b.addEventListene
 
 // ---- Save the entered values to the page URL (after the #) on request ----
 // Click "Save values to URL", then bookmark the page; opening it again refills the form.
-const FIELD_IDS = ['wages','wrate','ira','ssa','ndiv','qdiv','stcg','ltcg','ltcgPlan','magi2yr','solveBasis','bracketSel','rateSel'];
+const FIELD_IDS = ['wages','wrate','npay','ira','ssa','ndiv','qdiv','stcg','ltcg','ltcgPlan','magi2yr','solveBasis','bracketSel','rateSel'];
 let lastHash = location.hash;
 
 function collectState(){

@@ -41,8 +41,13 @@ These notes were started from a quick read of the files; expand them as you work
   take-home pay by E, so the monthly transfers rise. In the code, `fund(E)` in `compute()` redoes the
   funding and the tax; for "withholding only" it repeats until E covers the tax left after regular withholding.
 - The plan item, Actions in brief and calendar (W-4 change on Nov 30, quarterly dates) all follow the choice.
+- Steve sets extra withholding in Oracle HR at USF (not a W-4), so the plan says "Oracle HR". It stays in effect until changed, so the plan adds a Nov 30 reminder in the following year to change it or reset it to $0.
 - With withholding only, the plan also shows the least extra withholding per paycheck that avoids a penalty (the safe harbor).
 
+
+## Withholding on nine-month pay
+
+- Payroll figures each paycheck as if it repeated all year (26 periods), so with about 19.5 pay periods it withholds more than the annual estimate (about $3,000 more on $138k). The Wizard uses `payrollWH`; the tax estimators have a "Paychecks in the year" box (`npay`) that does the same. Blank = 26.
 
 ## "Even out" conversion sizing
 
