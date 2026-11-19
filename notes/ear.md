@@ -29,13 +29,16 @@ to melodic dictation.
 - Car mode: cadence, then note → pause → resolution, with the cadence repeating every N notes
   (adjustable). No spoken numbers (removed at his request). Ranges: 1, 2, 3 or 4 octaves.
 - Piano sound: Salamander full quality (chosen by ear over Splendid Grand and MusyngKite).
+- Pentatonic first: levels 1–2 use only 1 2 3 5 6; 4 and 7 come after (levels 3–4).
+- A break reminder after a set time of practice (setting, default 10 min; "Take a break" or "Keep going").
+- No isolated interval drills (two notes with no key). Everything is heard in the context of a key.
 - iPhone only for now. Sing-back mode is wanted later.
 - Sync: a private GitHub gist, one user. Multi-user sign-in (Firebase) was discussed and put off.
 - No redirect pages when renaming (he removed music.html rather than redirect it).
 
 ## Level ladder (LEVELS in ear.html)
 
-1. Home base: 1 3 5 · 2. Add 2 and 4 · 3. Add 6 · 4. Full major scale (all key of C, one octave)
+1. Home base: 1 3 5 · 2. Add 2 and 6 (pentatonic: 1 2 3 5 6) · 3. Add 4 · 4. Add 7, full major scale (all key of C, one octave)
 5. New key every round (one octave) · 6. Three octaves, new key every round
 7–9. Two-, three-, four-note phrases (numbers)
 10–14. Keyboard ("Play it"): single notes, 2, 3, 4 notes, then 6-note melodic dictation
@@ -44,6 +47,30 @@ Shown as "coming later": minor & modes, chromatic notes, chord tones, sing-back,
 Mastery: last 20 answers (15 for phrases) at ≥90% (80% for phrases), every degree ≥75% recently,
 typical correct answer under the speed limit (3 s default, adjustable). About 30% of questions
 drill the most-confused pair; about 20% are review from mastered levels.
+
+## Research summary (searched Nov 2026; thin evidence, treat as hints)
+
+No head-to-head study of "best" scale-degree progressions exists. What is known:
+- Variety in practice material helps strong listeners but can hurt weaker ones, so start narrow
+  (one key, few notes) and widen as skill grows. This matches the ladder.
+- Learning transfers partly, but some of it stays tied to the trained conditions, so vary key,
+  octave and register.
+- Short sessions spread out beat long ones (one lab study found sessions under about 8 minutes
+  gave the best latent learning; spaced beat massed in a hearing-training study). Basis for the break reminder.
+- Mixing plain listening with active practice helped musical-interval learning. Supports Car mode.
+- Interval identification and working memory predict melodic dictation success, which is why phrases
+  grow one note at a time. (Correlation, not proof that drilling intervals causes dictation skill.)
+- Relative pitch and scale-degree hearing are the right target; researchers argue it gets too little
+  emphasis next to absolute pitch.
+- Teachers' practice (surveys, not tests): simple to complex, stay on pentatonic material a long time,
+  teach scale-degree function, use familiar melodies, prepare by singing. Backs pentatonic-first and sing-back.
+- Isolated intervals: no strong support. Researchers noted decades ago that ear training studied
+  intervals outside context although context changes how they are heard (Shatzkin 1981; Wapnick et al. 1982;
+  Telesco, "Contextual Ear Training", J. Music Theory Pedagogy). Interval learning is trainable and
+  can generalize (practice plus exposure study), but there is little research on good regimens.
+  Teachers argue the same interval sounds different at different places in a key.
+- Ideas from this that are not built: familiar-tune anchors for hard degrees (4, 7), more time on
+  pentatonic in new keys before adding 4 and 7.
 
 ## How ear.html is organized
 
