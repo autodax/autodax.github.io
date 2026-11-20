@@ -7,13 +7,13 @@ These notes were started from a quick read of the files; expand them as you work
 
 ## Files
 
-- `wizard2026.html`, `wizard2027.html`: Retirement Planning Wizard, one file per tax year. Strings
+- `wizard2026.html`, `wizard2027.html`, `wizard2028.html`: Retirement Planning Wizard, one file per tax year. Strings
   the other tools together: accounts, Social Security and wages, taxes, Roth conversions, spending,
   and an "Actions in brief" to-do list with calendar events. Entries are saved in localStorage
   (`rpwState`) and in the link (`#z=…`); it can carry a plan forward to the next year's file.
-- `roth2026.html`, `roth2027.html`: Roth Conversion Planner (same tax engine as the Wizard).
-- `tax2026.html`, `tax2027.html`: Federal Tax Estimator, single filer.
-- `spend2026.html`, `spend2027.html`: "What to Withdraw This Year" calculator.
+- `roth2026.html`, `roth2027.html`, `roth2028.html`: Roth Conversion Planner (same tax engine as the Wizard).
+- `tax2026.html`, `tax2027.html`, `tax2028.html`: Federal Tax Estimator, single filer.
+- `spend2026.html`, `spend2027.html`, `spend2028.html`: "What to Withdraw This Year" calculator.
 - `index.html`: an older copy of the 2026 tax estimator (a few labels differ from tax2026.html).
 - `roth.html`, `wizard.html`: small pages that forward to the 2026 versions.
 
@@ -54,6 +54,22 @@ These notes were started from a quick read of the files; expand them as you work
 ## Withholding on nine-month pay
 
 - Payroll figures each paycheck as if it repeated all year (26 periods), so with about 19.5 pay periods it withholds more than the annual estimate (about $3,000 more on $138k). The Wizard uses `payrollWH`; the tax estimators have a "Paychecks in the year" box (`npay`) that does the same. Blank = 26.
+
+## 2028 files (placeholders)
+
+- The four `*2028.html` files were built on Nov 20, 2026 from the 2027 files, before the IRS, SSA and CMS published 2028
+  figures. Their tax brackets, standard deduction, Social Security wage base, Medicare premiums and IRMAA tiers are
+  **placeholders**: the 2027 figures raised about 2.5% (Medicare premiums 3.5%). Each page shows a yellow notice, and the
+  TAX FIGURES comment says so. Replace them (and delete the notice) when the real figures come out: IRS in October-November
+  2027, CMS about mid-November 2027, SSA in October 2027. `spend2028.html` has no tax figures.
+- Last year of work (2028, paychecks end Fri May 26): in the 2027 Wizard, enter about 10.1 pay periods for next year (10 full
+  paychecks plus the small late-May one). Fewer than 12 pay periods means a spring-only year: the plan shows paychecks January
+  through late May, a small monthly transfer in those months and a full one from June, and no mid-August check. In the 2028 Wizard
+  (plan year 2028), the "through December" brokerage transfer is split the same way. Not modeled: a sick-leave payout (enter it
+  as one-time money on Step 2, but that is treated as interest-like income with no payroll tax), health insurance after leaving USF.
+- The "next year's tax" link in the Wizard goes to `tax${min(next year, 2028)}.html`; when a `*2029` set exists, raise that 2028.
+- The 32-case Wizard-versus-planner test on the 2028 files has one knife-edge case (`level rtgt=40000&tbrk=24` with a chosen
+  spending amount): the Wizard's repeat-until-stable sizing can land one $500 step (49,500 vs 50,000) below the planner's. Not caused by the new figures.
 
 ## Medicare figures
 
