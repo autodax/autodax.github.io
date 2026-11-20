@@ -76,6 +76,8 @@ nav button.on{color:var(--accent)}
 .deg:active{transform:scale(.96)}
 .deg.tonic{background:#212b4b;color:var(--accent)}
 .deg.off{opacity:.18;pointer-events:none}
+.deg.res-lit{background:var(--accent);color:var(--on-accent)}
+.deg.off.res-lit{opacity:.8}
 .deg.flash-tap{background:var(--line)}
 .deg.flash-ok{background:var(--good);color:var(--on-accent)}
 .deg.flash-no{background:var(--bad);color:#2a1508}
@@ -248,7 +250,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.3';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.4';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -653,10 +655,16 @@ async function playQuestionNotes(q, token, onStep){
   const d = q.len === 1 ? 1.1 : 0.62;
   await A.seq(q.midi.map(m => ev(m, d, 0.85)), token, onStep);
 }
-async function playResolution(s, key, token){
-  const path = resolution(s);
+// With lightPad, the number pad lights up in step with the notes: 1 2 3 4 on the top row resolve right to left,
+// 5 6 7 and the upper 1 on the bottom row resolve left to right.
+const clearPadLights = () => document.querySelectorAll('#tPad .deg.res-lit').forEach(b => b.classList.remove('res-lit'));
+async function playResolution(s, key, token, lightPad){
+  const path = resolution(s), base = s - mod(s,7);
   const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8));
-  await A.seq(evs, token);
+  const slots = path.map((x,i) => (i > 0 && x === base+7) ? 7 : mod(x,7));
+  const onStep = lightPad ? i => { clearPadLights(); const b = $('tPad').children[slots[i]]; if (b) b.classList.add('res-lit'); } : undefined;
+  try { await A.seq(evs, token, onStep); }
+  finally { if (lightPad) clearPadLights(); }
 }
 
 function renderPad(q){
@@ -793,7 +801,7 @@ async function grade(){
     highlightSlot(-1); await wait(250, token); if (token.dead) return;
   } else await wait(150, token);
   if (token.dead) return;
-  await playResolution(q.pos[q.pos.length-1], q.key, token);
+  await playResolution(q.pos[q.pos.length-1], q.key, token, true);
   if (token.dead) return;
 
   // mastery
@@ -831,8 +839,8 @@ async function compare(){
   if (q.input === 'piano'){ const lab = pcToLabel(T.ans[0].midi, q.key); if (!lab){ A.note(T.ans[0].midi, A.now()+0.05, 1); await wait(1300, token); }
     else gs = nearestPos(lab, q.pos[0]); }
   else gs = nearestPos(T.ans[0].label, q.pos[0]);
-  if (gs !== undefined){ setMsg(`Your answer: ${posLabel(gs)}`, '', 'bad'); await A.seq([ev(posMidi(gs,q.key),1.0,0.85)], token); if (token.dead) return; await playResolution(gs, q.key, token); if (token.dead) return; await wait(500, token); }
-  setMsg(`The note: ${q.labels[0]}`, '', 'good'); await A.seq([ev(q.midi[0],1.0,0.85)], token); if (token.dead) return; await playResolution(q.pos[0], q.key, token);
+  if (gs !== undefined){ setMsg(`Your answer: ${posLabel(gs)}`, '', 'bad'); await A.seq([ev(posMidi(gs,q.key),1.0,0.85)], token); if (token.dead) return; await playResolution(gs, q.key, token, true); if (token.dead) return; await wait(500, token); }
+  setMsg(`The note: ${q.labels[0]}`, '', 'good'); await A.seq([ev(q.midi[0],1.0,0.85)], token); if (token.dead) return; await playResolution(q.pos[0], q.key, token, true);
   if (!token.dead) showNext();
 }
 function nearestPos(label, near){ let best, bd = 99; for (let s = near-7; s <= near+7; s++) if (posLabel(s) === label && Math.abs(s-near) < bd){ bd = Math.abs(s-near); best = s; } return best; }

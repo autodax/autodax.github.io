@@ -21,6 +21,7 @@ to melodic dictation.
 - Answers as numbers 1–7, never solfège. The number pad shows 1 2 3 4 / 5 6 7 1 (upper 1 counts as 1).
 - Major keys until fully mastered, then minor and modes. Chords later; design for them.
 - Resolution goes to the nearest tonic: 1–4 step down, 5–7 step up.
+  The number pad lights up in step with the resolving notes: top row (1 2 3 4) right to left, bottom row (5 6 7 and the upper 1) left to right.
 - The key stays fixed for a round of questions (no "new key every note"). Round length is
   adjustable, 10–30 (default 12; Steve wants at least 10). Key and, on one-octave levels, octave
   (below / middle / above) change together at the round boundary, and the cadence moves with them.
