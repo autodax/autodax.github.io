@@ -171,7 +171,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
     <section class="view on" id="v-train">
       <div class="stage">
         <div class="stage-top">
-          <div class="keyname" id="tKey">Key of <b>C</b></div>
+          <div class="keyname" id="tKey"><b>C</b></div>
           <div style="display:flex;gap:8px;align-items:center">
             <span class="chip hidden" id="tChip"></span>
             <span class="streak" id="tStreak"></span>
@@ -194,7 +194,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
     <!-- CAR -->
     <section class="view" id="v-car">
       <div class="car-display">
-        <div class="car-key" id="cKey">Key of <b>C</b></div>
+        <div class="car-key" id="cKey"><b>C</b></div>
         <div class="car-big" id="cBig">·</div>
         <div class="car-status" id="cStatus">Hands-free listening. Set your options, then Start.</div>
       </div>
@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-19.7';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.1';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -698,7 +698,7 @@ function renderSlots(q, results){
   el.innerHTML = h;
 }
 function setMsg(big, small, cls){ $('tMsg').innerHTML = `<div class="big ${cls||''}">${big}</div><div class="small">${small||''}</div>`; }
-function setKeyLabel(k){ $('tKey').innerHTML = `Key of <b>${KEYS[k].name}</b>`; }
+function setKeyLabel(k){ $('tKey').innerHTML = `<b>${KEYS[k].name}</b>`; }
 function setChip(q){
   const c = $('tChip');
   if (q && q.review){ c.className = 'chip review'; c.textContent = 'Review'; }
@@ -921,7 +921,7 @@ async function carLoop(token){
   while (!token.dead){
     if (!first && c.keyMode === 'random') key = randKey(key);
     first = false;
-    $('cKey').innerHTML = `Key of <b>${KEYS[key].name}</b>`; $('cBig').textContent = '♪'; $('cStatus').textContent = 'Cadence';
+    $('cKey').innerHTML = `<b>${KEYS[key].name}</b>`; $('cBig').textContent = '♪'; $('cStatus').textContent = 'Cadence';
     await playCadence(key, token); if (token.dead) return;
     await wait(700, token);
     for (let i = 0; i < c.per && !token.dead; i++){
