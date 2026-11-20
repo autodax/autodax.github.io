@@ -67,9 +67,9 @@ These notes were started from a quick read of the files; expand them as you work
   through late May, a small monthly transfer in those months and a full one from June, and no mid-August check. In the 2028 Wizard
   (plan year 2028), the "through December" brokerage transfer is split the same way. Not modeled: health insurance after leaving USF.
 - Sick leave payout (Step 2, `skg` gross and `skw` federal tax withheld; shown only when next year is the last work year):
-  comes with the last paycheck before June. It counts as next year's wages (added to wages in the tax preview and the long-range
-  projection), Social Security and Medicare tax are figured on it, `skw` is added to next year's withholding (`R.nextWH`), and the
-  net cash goes into checking on the paycheck date through `xMonths`, so it covers the monthly transfers for the months after.
+  comes with the last paycheck before June. It is taxed as ordinary income (added to wages in the tax preview and the long-range
+  projection), no Social Security or Medicare tax is taken out of it (Steve said it is not subject to them), `skw` is added to next year's withholding (`R.nextWH`), and the
+  net cash (payout minus `skw`) goes into checking on the paycheck date through `xMonths`, so it covers the monthly transfers for the months after.
   The hint suggests the usual flat 22% withholding. In the Wizard run in the last work year the payout is just part of that year's wages.
 - The "next year's tax" link in the Wizard goes to `tax${min(next year, 2028)}.html`; when a `*2029` set exists, raise that 2028.
 - The 32-case Wizard-versus-planner test on the 2028 files has one knife-edge case (`level rtgt=40000&tbrk=24` with a chosen

@@ -308,7 +308,7 @@ input:not([type=checkbox]):not([type=radio])[type=date]{padding-top:.12em;paddin
     <div><label for="xtax">Taxable part, $</label><input id="xtax" type="number" inputmode="decimal" step="100" value=""><div class="help">The part taxed as ordinary income: for savings bonds, the interest (the amount received minus what I paid for them). The Wizard adds this to next year’s income, so it leaves less room for the Roth conversion.</div></div>
   </div>
   <div id="skbox"><div class="group">Sick leave payout on my last paycheck (<span class="y" data-o="1"></span>)</div>
-  <p class="lead">A payout of unused sick leave comes with my last paycheck (<span id="skdate">late May</span>) and counts as wages. Social Security and Medicare tax come out of it too; the Wizard works that out. Leave these blank if there’s none.</p>
+  <p class="lead">A payout of unused sick leave comes with my last paycheck (<span id="skdate">late May</span>) and is taxed as ordinary income. No Social Security or Medicare tax is taken out of it. Leave these blank if there’s none.</p>
   <div class="grid">
     <div><label for="skg">Sick leave payout, before tax, $</label><input id="skg" type="number" inputmode="decimal" step="100" value=""><div class="help">The full amount as it will show on my pay stub, in next year’s dollars.</div></div>
     <div><label for="skw">Federal tax withheld from it, $</label><input id="skw" type="number" inputmode="decimal" step="50" value=""><div class="help">The federal income tax payroll takes out of the payout. Blank means none. The Wizard counts it toward next year’s tax. <span id="skHint"></span></div></div>
@@ -844,8 +844,8 @@ function compute(){const I=inputs();
   R.qEach=Math.max(0,R.req-I.wwh)/4;
   // Next year's safe harbor from this year's tax, and next year's paycheck withholding
   R.nextReq=(S.t.tot>150000?1.1:1)*S.t.tax;R.NR=nextRules();R.nextWH=payrollWH(I.wageNext,I.npay,R.NR||CUR)+I.skw;
-  // Sick leave payout on my last paycheck: counts as wages (Social Security and Medicare tax come out), and the federal tax withheld counts toward the year's tax
-  R.sk={g:I.skg,w:I.skw,fica:0,net:0};if(I.skg>0){const r=R.NR||CUR;R.sk.fica=ficaOf(I.wageNext+I.skg,I.inf,r)-ficaOf(I.wageNext,I.inf,r);R.sk.net=Math.max(0,I.skg-I.skw-R.sk.fica)}R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
+  // Sick leave payout on my last paycheck: income tax applies (no Social Security or Medicare tax is taken out of it), and the federal tax withheld counts toward the year's tax
+  R.sk={g:I.skg,w:I.skw,net:Math.max(0,I.skg-I.skw)};R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
   // Medicare in the budget year (Jan–Dec next year): Part B from the month I turn 65; IRMAA uses AGI from two years before that year (= last year's AGI)
   {const ageN=I.yr+1-I.by,mo=ageN<65?0:ageN==65?2:12,f=1+I.inf,ir=irmaaFor(I.lagi),ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*f*(ageN==I.ssA?1/12:1):0;
    // 209.40 = standard Part B premium per month (keep equal to PARTB)
@@ -1001,9 +1001,9 @@ function render(R){
     // Sick leave payout on my last paycheck (last paycheck of the year, before June)
     const skItem=()=>{const x=R.src.find(s=>s[0]==='Sick leave payout (after tax)');return x&&x[1]>0?{amt:x[1],date:skDate(I.yr+1)}:null};
     if(R.sk&&R.sk.g>0){const pd=skDate(I.yr+1),ds=pd?pd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):`May ${I.yr+1}`,dl=pd?pd.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):`my last paycheck in ${I.yr+1}`,K=R.sk;
-      li+=`<li><b>Sick leave payout</b> on my last paycheck${pd?` (${dl})`:''}: <b class="amt">${fmt(K.g)}</b> before tax, less ${fmt(K.w)} federal tax withheld and about ${fmt(K.fica)} Social Security and Medicare tax, leaves about <b class="amt">${fmt(K.net)}</b> in checking. It counts as ${I.yr+1} wages: the tax on it is in the ${I.yr+1} tax estimate below, and the ${fmt(K.w)} withheld counts toward ${I.yr+1}'s tax.</li>`;
+      li+=`<li><b>Sick leave payout</b> on my last paycheck${pd?` (${dl})`:''}: <b class="amt">${fmt(K.g)}</b> before tax, less ${fmt(K.w)} federal tax withheld, leaves <b class="amt">${fmt(K.net)}</b> in checking. It is ordinary income for ${I.yr+1} with no Social Security or Medicare tax: the income tax on it is in the ${I.yr+1} tax estimate below, and the ${fmt(K.w)} withheld counts toward ${I.yr+1}'s tax.</li>`;
       act(ds,`On my last paycheck, check the sick leave payout of ${fmt(K.g)}: about ${fmt(K.w)} federal tax withheld and ${fmt(K.net)} into checking.`);
-      if(pd)cal(`${pd.getFullYear()}-${String(pd.getMonth()+1).padStart(2,'0')}-${String(pd.getDate()).padStart(2,'0')}`,`Last paycheck: sick leave payout ${fmt(K.g)}`,`Check the stub: ${fmt(K.g)} sick leave payout, about ${fmt(K.w)} federal tax withheld and ${fmt(K.fica)} Social Security and Medicare tax, about ${fmt(K.net)} into checking. If the withholding is off, I adjust my ${I.yr+1} tax payments.`)}
+      if(pd)cal(`${pd.getFullYear()}-${String(pd.getMonth()+1).padStart(2,'0')}-${String(pd.getDate()).padStart(2,'0')}`,`Last paycheck: sick leave payout ${fmt(K.g)}`,`Check the stub: ${fmt(K.g)} sick leave payout, about ${fmt(K.w)} federal tax withheld, ${fmt(K.net)} into checking. If the withholding is off, I adjust my ${I.yr+1} tax payments.`)}
     if(I.xcash>0){const nm=I.xname||'One-time money',d=I.xdate,ds=d?d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'',dl=d?d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'',tx=I.xtax>0?`; ${fmt(I.xtax)} of it is taxable income, included in the ${I.yr+1} tax below`:'';
       li+=`<li><b>${hEsc(nm)}</b>${d?` on ${dl}`:''}: <b class="amt">${fmt(I.xcash)}</b> into checking (Step 2)${tx}.</li>`;
       act(d?ds:`Early ${I.yr+1}`,`${hEsc(nm)}, ${fmt(I.xcash)} into checking${I.xtax>0?` (${fmt(I.xtax)} taxable)`:''}.`);
