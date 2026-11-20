@@ -65,8 +65,12 @@ These notes were started from a quick read of the files; expand them as you work
 - Last year of work (2028, paychecks end Fri May 26): in the 2027 Wizard, enter about 10.1 pay periods for next year (10 full
   paychecks plus the small late-May one). Fewer than 12 pay periods means a spring-only year: the plan shows paychecks January
   through late May, a small monthly transfer in those months and a full one from June, and no mid-August check. In the 2028 Wizard
-  (plan year 2028), the "through December" brokerage transfer is split the same way. Not modeled: a sick-leave payout (enter it
-  as one-time money on Step 2, but that is treated as interest-like income with no payroll tax), health insurance after leaving USF.
+  (plan year 2028), the "through December" brokerage transfer is split the same way. Not modeled: health insurance after leaving USF.
+- Sick leave payout (Step 2, `skg` gross and `skw` federal tax withheld; shown only when next year is the last work year):
+  comes with the last paycheck before June. It counts as next year's wages (added to wages in the tax preview and the long-range
+  projection), Social Security and Medicare tax are figured on it, `skw` is added to next year's withholding (`R.nextWH`), and the
+  net cash goes into checking on the paycheck date through `xMonths`, so it covers the monthly transfers for the months after.
+  The hint suggests the usual flat 22% withholding. In the Wizard run in the last work year the payout is just part of that year's wages.
 - The "next year's tax" link in the Wizard goes to `tax${min(next year, 2028)}.html`; when a `*2029` set exists, raise that 2028.
 - The 32-case Wizard-versus-planner test on the 2028 files has one knife-edge case (`level rtgt=40000&tbrk=24` with a chosen
   spending amount): the Wizard's repeat-until-stable sizing can land one $500 step (49,500 vs 50,000) below the planner's. Not caused by the new figures.
