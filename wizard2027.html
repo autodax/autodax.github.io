@@ -491,7 +491,7 @@ function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B7
    Also update, if they change (search for the text in quotes):
      - "tbrk:" in OPT, near the end of the script: the bracket tops written out in words
        on Step 3 ("Top of the 22% bracket: $105,700 ...").
-     - "202.90" also appears in irmaaFor and in compute() (Medicare premium for next year);
+     - "209.40" also appears in irmaaFor and in compute() (Medicare premium for next year);
        keep it equal to PARTB.
      - FILEYEAR: the year this file is for; each new year gets its own file (wizard2028.html).
    Fixed by law, not indexed (change only if Congress changes them):
@@ -505,13 +505,13 @@ function zs(n){if(zc.n===n)return zc.z;let t=12345;const r=()=>{t|=0;t=t+0x6D2B7
    ===================================================================================== */
 const ORD=[[.10,0,12800],[.12,12800,52025],[.22,52025,109125],[.24,109125,208325],[.32,208325,264550],[.35,264550,661375],[.37,661375,Infinity]];
 const QUAL=[[0,0,51050],[.15,51050,563200],[.20,563200,Infinity]];
-// IRMAA: 2026 tiers and premiums, carried over until Medicare publishes 2027 figures
+// IRMAA: 2027 tiers and premiums (CMS, published Nov 17, 2026)
 // a titled section inside a plan item (plain, not another dropdown)
 const fold=(t,h)=>`<div class="sub"><h4>${t}</h4>${h}</div>`;
 // IRMAA (Medicare premium surcharge) tiers, single filer, by MAGI from two years earlier: [from, to, monthly Part B, monthly Part D surcharge]
-const IRM=[[0,109000,202.90,0],[109000,137000,284.10,14.50],[137000,171000,405.80,37.50],[171000,205000,527.50,60.40],[205000,500000,649.20,83.30],[500000,Infinity,689.90,91.00]];
-// Yearly IRMAA surcharge for a MAGI: the tier's Part B above the standard 202.90 (PARTB), plus the Part D surcharge, times 12
-const irmaaFor=m=>{let i=0;IRM.forEach((b,k)=>{if(m>b[0])i=k});const b=IRM[i];return{tier:i,annual:((b[2]-202.90)+b[3])*12}};
+const IRM=[[0,112000,209.40,0],[112000,141000,293.10,15.40],[141000,177000,418.80,39.70],[177000,212000,544.40,64.00],[212000,500000,670.00,88.30],[500000,Infinity,711.80,96.40]];
+// Yearly IRMAA surcharge for a MAGI: the tier's Part B above the standard 209.40 (PARTB), plus the Part D surcharge, times 12
+const irmaaFor=m=>{let i=0;IRM.forEach((b,k)=>{if(m>b[0])i=k});const b=IRM[i];return{tier:i,annual:((b[2]-209.40)+b[3])*12}};
 // Splits amt dollars, stacked on top of base, across brackets; returns each bracket's dollars (x) and tax (t) for the tax tables
 function split(base,amt,br){let rem=amt,cur=base;return br.map(([r,lo,hi])=>{if(rem<=0||cur>=hi)return{r,lo,hi,x:0,t:0};const x=Math.min(rem,Math.max(0,hi-Math.max(lo,cur)));cur+=x;rem-=x;return{r,lo,hi,x,t:x*r}})}
 // Taxable Social Security: up to 50% of benefits above $25,000 of combined income, up to 85% above $34,000 (fixed by law)
@@ -572,7 +572,7 @@ function taxOf(v){const RR=v.r||CUR,ORD_=RR.ord,QUAL_=RR.qual,w=Math.max(0,v.wag
 // RMD divisors (IRS Uniform Lifetime Table), by age
 const DIV={75:24.6,76:23.7,77:22.9,78:22,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16,86:15.2,87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,94:9.5,95:8.9,96:8.4,97:7.8,98:7.3,99:6.8,100:6.4};
 // Standard monthly Medicare Part B premium (keep equal to the first premium in IRM)
-const PARTB=202.90;
+const PARTB=209.40;
 // Tax on amt dollars stacked on top of base, through brackets [[rate,lo,hi],...]
 const bt=(base,amt,br)=>{let t=0;if(amt<=0)return 0;const top=base+amt;for(let k=0;k<br.length;k++){const b=br[k],a=b[1]>base?b[1]:base,c=b[2]<top?b[2]:top;if(c>a)t+=b[0]*(c-a)}return t};
 // The single federal tax calculation used everywhere. r = rules for the year (brackets, deductions; d deflates fixed-dollar thresholds in today's-dollar projections).
@@ -838,8 +838,8 @@ function compute(){const I=inputs();
   R.nextReq=(S.t.tot>150000?1.1:1)*S.t.tax;R.NR=nextRules();R.nextWH=payrollWH(I.wageNext,I.npay,R.NR||CUR);R.qNext=Math.max(0,R.nextReq-R.nextWH)/4;
   // Medicare in the budget year (Jan–Dec next year): Part B from the month I turn 65; IRMAA uses AGI from two years before that year (= last year's AGI)
   {const ageN=I.yr+1-I.by,mo=ageN<65?0:ageN==65?2:12,f=1+I.inf,ir=irmaaFor(I.lagi),ssN=I.ssA&&ageN>=I.ssA?I.ssM*12*f*(ageN==I.ssA?1/12:1):0;
-   // 202.90 = standard Part B premium per month (keep equal to PARTB)
-   R.med={ageN,mo,partB:202.90*mo*f,irm:ir.annual*mo/12*f,tier:ir.tier,ssN,noAgi:!I.lagi};R.med.total=R.med.partB+R.med.irm}
+   // 209.40 = standard Part B premium per month (keep equal to PARTB)
+   R.med={ageN,mo,partB:209.40*mo*f,irm:ir.annual*mo/12*f,tier:ir.tier,ssN,noAgi:!I.lagi};R.med.total=R.med.partB+R.med.irm}
   // 5-6. Funding next year's budget and next year's tax, for E dollars of extra paycheck withholding over the year (Step 3).
   // Extra withholding lowers take-home pay by E, so spending draws E more from the other sources (brokerage, normally); whatever tax
   // is left after both regular and extra withholding is paid in quarterly payments, also from brokerage (the "refill" sale).
@@ -1094,7 +1094,7 @@ function render(R){
     if(i===0)li+=`<b>No surcharge.</b> I could add up to ${fmt(IRM[1][0]-A)} more income this year (${I.yr}), from a bigger conversion, say, before the first tier.</div>`;
     else{const down=A-IRM[i][0],save=ir.annual-irmaaFor(IRM[i][0]-1).annual,up=IRM[i][1]===Infinity?0:IRM[i][1]-A,cost=up?irmaaFor(IRM[i][1]+1).annual-ir.annual:0;
       li+=`<b>Tier ${i}:</b> about <b class="amt">${fmt(ir.annual)}</b> a year in surcharges.</div><ul><li>${fmt(down)} less income would drop a tier and save ${fmt(save)} a year.</li>${up?`<li>${fmt(up)} more would reach the next tier, adding ${fmt(cost)} a year.</li>`:''}</ul>`}
-    li+=`<p class="note">2026 tiers for a single filer (Medicare hasn't published 2027's yet); the tiers rise with inflation, and one dollar over a line triggers the whole tier.</p>`;
+    li+=`<p class="note">2027 tiers for a single filer (the latest Medicare has published); the tiers rise with inflation, and one dollar over a line triggers the whole tier.</p>`;
     todo.push(li)}
   if(I.age>=74&&I.age<75)todo.push(`<span class="when">Next year (${I.yr+1})</span><div><b>RMDs start next year (${I.yr+1}).</b> I turn 75, so conversions should stop after this year (${I.yr}).</div>`);
   if(I.rmd>0)cal(`${I.yr}-12-01`,`Take RMD ${fmt(I.rmd)} by Dec 31`,'Required minimum distribution from my pre-tax accounts; it must be out by December 31.');

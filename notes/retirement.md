@@ -55,6 +55,10 @@ These notes were started from a quick read of the files; expand them as you work
 
 - Payroll figures each paycheck as if it repeated all year (26 periods), so with about 19.5 pay periods it withholds more than the annual estimate (about $3,000 more on $138k). The Wizard uses `payrollWH`; the tax estimators have a "Paychecks in the year" box (`npay`) that does the same. Blank = 26.
 
+## Medicare figures
+
+- 2027 Part B premium ($209.40) and IRMAA tiers (single: $112,000 / $141,000 / $177,000 / $212,000 / $500,000) are the official CMS figures, published Nov 17, 2026. They are in the three 2027 files. The 2026 Wizard uses them only for next year's (2027) Medicare line; its other IRMAA figures and the 2026 Roth planner and tax estimator still carry the 2026 tiers. The 2028 figures come out about mid-November 2027.
+
 ## "Even out" conversion sizing
 
 - Without a spending amount chosen, "Even out" sizes the yearly conversion at my safe spending (the most I can spend after tax with my target chance of lasting), the same figure the long-range check table shows as "This plan". The statement quotes that figure, so the two always agree. The Wizard and the Roth planner use the same basis (the 32-case test compares them).

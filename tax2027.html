@@ -863,7 +863,7 @@ if(autoTheme() === 'dark') document.documentElement.setAttribute('data-theme', '
         </table>
         <details class="foot-note" style="margin-top:6px;">
           <summary>How this is calculated</summary>
-          <p>Medicare hasn't published 2027 premiums or tiers yet, so this uses the 2026 figures as a stand-in: standard Part B premium $202.90/month with no IRMAA. Part D surcharge is paid on top of your plan's own premium, direct to Medicare. It's a cliff — one dollar over moves the whole year to the next tier. Uses the 2025 MAGI entered at left.</p>
+          <p>Medicare published the 2027 premiums and tiers on November 17, 2026: standard Part B premium $209.40/month with no IRMAA. Part D surcharge is paid on top of your plan's own premium, direct to Medicare. It's a cliff — one dollar over moves the whole year to the next tier. Uses the 2025 MAGI entered at left.</p>
         </details>
       </div>
 
@@ -1311,18 +1311,18 @@ function calculate(){
 const NIIT_RATE = 0.038;
 const NIIT_THRESHOLD_SINGLE = 200000;
 
-// 2026 IRMAA tiers and premiums, carried over until Medicare publishes 2027 figures
+// 2027 IRMAA tiers and premiums (CMS, published Nov 17, 2026)
 // IRMAA tiers (single), by MAGI from two years earlier: monthly Part B premium and Part D surcharge for each tier. Update each fall from Medicare.
 const IRMAA_BRACKETS = [
-  {from:0,       to:109000,   partB:202.90, partD:0.00},
-  {from:109000,  to:137000,   partB:284.10, partD:14.50},
-  {from:137000,  to:171000,   partB:405.80, partD:37.50},
-  {from:171000,  to:205000,   partB:527.50, partD:60.40},
-  {from:205000,  to:500000,   partB:649.20, partD:83.30},
-  {from:500000,  to:Infinity, partB:689.90, partD:91.00},
+  {from:0,       to:112000,   partB:209.40, partD:0.00},
+  {from:112000,  to:141000,   partB:293.10, partD:15.40},
+  {from:141000,  to:177000,   partB:418.80, partD:39.70},
+  {from:177000,  to:212000,   partB:544.40, partD:64.00},
+  {from:212000,  to:500000,   partB:670.00, partD:88.30},
+  {from:500000,  to:Infinity, partB:711.80, partD:96.40},
 ];
 // Standard monthly Part B premium (the first tier above)
-const STANDARD_PART_B = 202.90;
+const STANDARD_PART_B = 209.40;
 
 function magiLabel(from, to){
   if(from === 0) return 'Up to ' + fmt(to);
