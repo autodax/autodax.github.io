@@ -176,6 +176,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
           <div class="keyname" id="tKey"><b>C</b></div>
           <div style="display:flex;gap:8px;align-items:center">
             <span class="chip hidden" id="tChip"></span>
+            <button class="chip" id="bInput" style="border:0;cursor:pointer" aria-label="Switch between number pad and keyboard"></button>
             <span class="streak" id="tStreak"></span>
           </div>
         </div>
@@ -250,7 +251,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.5';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -321,7 +322,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true,
+  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 3, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
   tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -622,7 +623,7 @@ function makeQuestion(){
   // One-octave levels: the octave (below / middle / above) is the round's octave; the cadence moves with it.
   let oct = 0;
   if (L.range === R1 && LEVELS[S.current].range === R1){ oct = T.roundOct; pos = pos.map(s => s + 7*oct); }
-  return { lvl, review, drill, key, oct, pos, labels: pos.map(s => posLabel(s)), midi: pos.map(s => posMidi(s, key)), len: L.len, input: L.input };
+  return { lvl, review, drill, key, oct, pos, labels: pos.map(s => posLabel(s)), midi: pos.map(s => posMidi(s, key)), len: L.len, input: inputFor(L) };
 }
 
 function masteryInfo(lvl){
@@ -667,11 +668,25 @@ async function playResolution(s, key, token, lightPad){
   finally { if (lightPad) clearPadLights(); }
 }
 
+// How answers are given: the number pad or the on-screen keyboard. 'level' follows the level; the toggle on the
+// training screen (or Settings) overrides it on every level.
+function inputFor(L){ const a = S.settings.answerWith; return a === 'pad' ? 'numbers' : a === 'piano' ? 'piano' : L.input; }
+function updateInputBtn(usePiano){ const b = $('bInput'); if (b) b.textContent = usePiano ? '🎹 Keys' : '123 Pad'; }
+function toggleInput(){
+  const nowPiano = (T.q ? T.q.input : inputFor(LEVELS[S.current])) === 'piano';
+  S.settings.answerWith = nowPiano ? 'pad' : 'piano'; save();
+  const q = T.q;
+  if (q && T.phase === 'answering' && T.ans.length === 0){ q.input = inputFor(LEVELS[q.lvl]); renderPad(q); renderSlots(q); }
+  else if (!q || T.phase === 'idle') renderPad(null);
+  else updateInputBtn(!nowPiano);
+  toast(S.settings.answerWith === 'piano' ? 'Answering on the keyboard' : 'Answering on the number pad');
+}
 function renderPad(q){
   const pad = $('tPad'), piano = $('tPiano');
-  const usePiano = (q ? q.input : LEVELS[S.current].input) === 'piano';
+  const usePiano = (q ? q.input : inputFor(LEVELS[S.current])) === 'piano';
+  updateInputBtn(usePiano);
   pad.classList.toggle('hidden', usePiano); piano.classList.toggle('hidden', !usePiano);
-  if (usePiano){ renderPiano(q.key); return; }
+  if (usePiano){ renderPiano(q ? q.key : (T.roundKey || 0)); return; }
   const active = q ? LEVELS[q.lvl].degrees : LEVELS[S.current].degrees;
   // 1–7 plus the upper 1, so the pad reads as a full octave in two rows of four
   pad.innerHTML = [...ALL7, '1'].map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}">${d}</button>`).join('');
@@ -1034,6 +1049,7 @@ function renderSettings(){
       ${optSelect('breakEvery','Break reminder','Short sessions help you learn more than long ones', s.breakEvery, [[0,'Off'],[5,'After 5 minutes'],[10,'After 10 minutes'],[15,'After 15 minutes'],[20,'After 20 minutes']])}
     </div>
     <h2>Keyboard</h2><div class="card">
+      ${optSelect('answerWith','Answer with','Also the 123 / Keys button on the training screen. On the keyboard, any octave counts', s.answerWith || 'level', [['level','As each level says'],['pad','Number pad'],['piano','Keyboard']])}
       ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
       ${optToggle('markTonic','Mark the tonic','Dot on the key’s home note', s.markTonic)}
     </div>
@@ -1101,6 +1117,7 @@ $('bCadence').addEventListener('click', async () => {
   if (T.q && T.phase === 'answering'){ await wait(300, token); if (!token.dead) await playQuestionNotes(T.q, token); }
 });
 $('bCompare').addEventListener('click', compare);
+$('bInput').addEventListener('click', toggleInput);
 $('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); toast('Stopped. Progress is saved.'); goToStartScreen(); });
 $('tPad').addEventListener('pointerdown', e => { const b = e.target.closest('.deg'); if (!b) return; e.preventDefault(); T.tapped = b; onAnswer({ label: b.dataset.d }); });
 $('tPiano').addEventListener('pointerdown', e => {
@@ -1118,7 +1135,7 @@ document.addEventListener('change', e => {
     const id = sel.dataset.opt, raw = sel.value;
     if (id === '_skip'){ const n = +raw; if (n > S.unlocked){ for (let i=0;i<n;i++) if (S.mastered[i] === undefined) S.mastered[i] = 'skipped';
         S.unlocked = n; S.current = n; save(); updateHeader(); toast(`Unlocked through L${n+1}`); } else sel.value = S.unlocked; return; }
-    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); return;
+    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); return;
   }
   if (e.target.id === 'fImport'){
     const f = e.target.files[0]; if (!f) return;

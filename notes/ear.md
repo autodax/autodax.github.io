@@ -31,6 +31,7 @@ to melodic dictation.
 - Every octave range is bracketed by the home note (1) at both ends: one octave is 1 to the upper 1, three octaves run from 1 an octave
   below the middle to 1 two octaves above it (two and four octaves likewise; Car mode too). Phrase and keyboard levels use a window around the tonic that is not bracketed.
 - Start with number answers; later require playing the melody on the keyboard in the key heard.
+- Keyboard input works on any level: a 123 Pad / Keys button at the top right of the training screen (and Settings → Keyboard → Answer with) overrides the level's own input method (`answerWith`: level, pad or piano). Any octave counts. Answers count toward the same mastery stats.
 - Car mode: cadence, then note → pause → resolution, with the cadence repeating every N notes
   (adjustable). No spoken numbers (removed at his request). Ranges: 1, 2, 3 or 4 octaves.
 - Blue look instead of yellow/orange: accent #7eabff (gradient end #5a86ee), background #101321, panels #191f33 / #232a42 (picked from three options between sky blue and periwinkle). The "review" tag is violet, "drill" is blue. No green anywhere (Steve dislikes it): correct is pale ice blue #bfe3ff, wrong is a subdued orange #d9895a. Colors are the variables at the top of the stylesheet.
@@ -129,7 +130,7 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 
 - Functional Ear Trainer features Steve wants to compare against: separate cadence and note
   tempos, a "give up" button, auto-advance choices (after correct / mistake / giving up), octave
-  markers on answers, keyboard input switchable on any level, more resolution styles and speed.
+  markers on answers, more resolution styles and speed. (Keyboard input on any level is built.)
 - Keyboard levels: whether to require the exact octave, and a landscape keyboard with about
   three octaves. Steve will decide when he reaches the keyboard levels.
 - Minor keys and modes, chromatic notes, chords, sing-back, rhythm in dictation.
