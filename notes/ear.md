@@ -32,7 +32,7 @@ to melodic dictation.
 - Start with number answers; later require playing the melody on the keyboard in the key heard.
 - Car mode: cadence, then note → pause → resolution, with the cadence repeating every N notes
   (adjustable). No spoken numbers (removed at his request). Ranges: 1, 2, 3 or 4 octaves.
-- Blue look instead of yellow/orange: accent #7eabff (gradient end #5a86ee), background #101321, panels #191f33 / #232a42 (picked from three options between sky blue and periwinkle). The "review" tag is violet, "drill" is blue. Colors are the variables at the top of the stylesheet.
+- Blue look instead of yellow/orange: accent #7eabff (gradient end #5a86ee), background #101321, panels #191f33 / #232a42 (picked from three options between sky blue and periwinkle). The "review" tag is violet, "drill" is blue. No green anywhere (Steve dislikes it): correct is pale ice blue #bfe3ff, wrong is a subdued orange #d9895a. Colors are the variables at the top of the stylesheet.
 - Piano sound: Salamander full quality (chosen by ear over Splendid Grand and MusyngKite).
 - Pentatonic first: levels 1–2 use only 1 2 3 5 6; 4 and 7 come after (levels 3–4).
 - A break reminder after a set time of practice (setting, default 10 min; "Take a break" or "Keep going").

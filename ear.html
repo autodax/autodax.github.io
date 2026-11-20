@@ -16,7 +16,7 @@
 :root{
   --bg:#101321; --panel:#191f33; --panel2:#232a42; --line:#2e3652;
   --text:#eef0f5; --dim:#9aa1b2; --faint:#646b7d;
-  --accent:#7eabff; --accent2:#5a86ee; --good:#4cc38a; --bad:#e5604f; --violet:#b69cff; --on-accent:#09101f;
+  --accent:#7eabff; --accent2:#5a86ee; --good:#bfe3ff; --bad:#d9895a; --violet:#b69cff; --on-accent:#09101f;
   --r:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -63,8 +63,8 @@ nav button.on{color:var(--accent)}
 .slots{display:flex;justify-content:center;gap:8px;margin:6px 0 10px;min-height:46px}
 .slot{width:44px;height:46px;border-radius:10px;background:var(--panel2);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:20px;border:2px solid transparent}
 .slot.cur{border-color:var(--line)}
-.slot.ok{background:rgba(76,195,138,.18);color:var(--good)}
-.slot.no{background:rgba(229,96,79,.18);color:var(--bad)}
+.slot.ok{background:rgba(191,227,255,.16);color:var(--good)}
+.slot.no{background:rgba(217,137,90,.18);color:var(--bad)}
 .slot.hl{border-color:var(--accent)}
 .slot small{font-size:11px;font-weight:600;color:var(--text);opacity:.85}
 .tools{display:flex;gap:8px;margin-top:12px}
@@ -77,8 +77,8 @@ nav button.on{color:var(--accent)}
 .deg.tonic{background:#212b4b;color:var(--accent)}
 .deg.off{opacity:.18;pointer-events:none}
 .deg.flash-tap{background:var(--line)}
-.deg.flash-ok{background:var(--good);color:#0c1a12}
-.deg.flash-no{background:var(--bad);color:#200}
+.deg.flash-ok{background:var(--good);color:var(--on-accent)}
+.deg.flash-no{background:var(--bad);color:#2a1508}
 .deg.reveal{box-shadow:inset 0 0 0 3px var(--good)}
 .pad.locked .deg{pointer-events:none}
 .go{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--on-accent);font-weight:800;font-size:18px}
@@ -95,8 +95,8 @@ nav button.on{color:var(--accent)}
 .key-dot{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;width:8px;height:8px;border-radius:50%;background:var(--accent2);pointer-events:none}
 .bk .key-dot{bottom:22px}
 .wk.down{background:#d8d2c2}.bk.down{background:#444851}
-.wk.k-ok{background:#9fe0bf}.bk.k-ok{background:#2a8a5b}
-.wk.k-no{background:#f1a99f}.bk.k-no{background:#a8382b}
+.wk.k-ok{background:#bfe3ff}.bk.k-ok{background:#3f7fc4}
+.wk.k-no{background:#f0c9ae}.bk.k-no{background:#a8602f}
 
 /* Cards / lists */
 h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:20px 2px 8px;font-weight:700}
@@ -117,7 +117,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 .lv{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
 .lv:last-child{border-bottom:0}
 .lv .n{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:var(--panel2);color:var(--faint)}
-.lv.done .n{background:rgba(76,195,138,.2);color:var(--good)}
+.lv.done .n{background:rgba(191,227,255,.16);color:var(--good)}
 .lv.cur .n{background:var(--accent);color:var(--on-accent)}
 .lv .t{flex:1;min-width:0}.lv .t b{font-weight:600;font-size:15px}.lv .t div{font-size:12px;color:var(--dim)}
 .lv.locked{opacity:.45}
@@ -138,7 +138,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 .car-big{font-size:96px;font-weight:800;line-height:1.1;min-height:106px;color:var(--accent)}
 .car-status{color:var(--dim);font-size:14px;min-height:20px}
 .carbtn{display:block;width:100%;margin-top:14px;padding:22px;border-radius:18px;font-weight:800;font-size:22px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--on-accent)}
-.carbtn.stop{background:var(--bad);color:#fff}
+.carbtn.stop{background:var(--bad);color:#2a1508}
 
 /* Overlays */
 .overlay{position:fixed;inset:0;background:rgba(10,11,14,.88);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -248,7 +248,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.2';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.3';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -902,7 +902,7 @@ function showLevelUp(lvl){
   $('lvlOv').classList.remove('hidden'); confetti();
 }
 function confetti(){
-  const cols = ['#7eabff','#5a86ee','#4cc38a','#b69cff','#e5604f'];
+  const cols = ['#7eabff','#5a86ee','#bfe3ff','#b69cff','#d9895a'];
   for (let i=0;i<40;i++){ const c = document.createElement('div'); c.className = 'confetti';
     c.style.left = Math.random()*100 + 'vw'; c.style.background = pick(cols); c.style.animationDelay = Math.random()*0.5 + 's';
     c.style.animationDuration = 1.2 + Math.random()*1 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 2800); }
