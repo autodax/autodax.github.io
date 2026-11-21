@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.2';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.3';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1086,6 +1086,8 @@ function renderSettings(){
       <div class="row"><div><div class="lab">Note loudness with voice</div><div class="sub" id="vBoostTxt">${(s.voiceBoost || 1.5).toFixed(1)}× · the phone plays quieter while the mic is on</div></div><input type="range" min="1" max="4" step="0.1" value="${s.voiceBoost || 1.5}" id="voiceBoostRange"></div>
       <div class="row"><div><div class="lab">Voice delay allowance</div><div class="sub" id="vLagTxt">${(s.voiceLag ?? 1.3).toFixed(1)} s · taken off the time when Safari doesn't say when you began speaking</div></div><input type="range" min="0" max="3" step="0.1" value="${s.voiceLag ?? 1.3}" id="voiceLagRange"></div>
       <div class="row"><div><div class="lab">Measure the delay</div><div class="sub">Three rounds: tap the button and say “one” at the same moment</div></div><button class="tool" id="vCal">Measure</button></div>
+      <div class="row"><div><div class="lab">Voice log</div><div class="sub">What the microphone heard recently, and what the app did with it</div></div><button class="tool" id="vLogBtn">Show</button></div>
+      <div class="sub hidden" id="vLogOut" style="white-space:pre-wrap;font-size:12px;padding:6px 2px;line-height:1.5"></div>
       <div class="row"><button class="tool hidden" id="vCalTap" style="width:100%;padding:18px">Tap here while saying “one”</button></div>
       <div class="row"><div><div class="lab">Match volume</div><div class="sub">Plays a chord with the mic off, then on. Slide until they sound the same, then press again</div></div><button class="tool" id="vMatch">Match</button></div>
       <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
@@ -1341,7 +1343,13 @@ $('bBegin').addEventListener('click', async () => {
 /* ===== VOICE ANSWERS (experiment) =====================================================
    Say a scale number instead of tapping. Easy to remove: delete this block, the "Voice" card in renderSettings,
    and the three hook lines marked VOICE (nextQuestion, grade, goToStartScreen). */
-const VOICE = { rec:null, on:false, fails:0, mic:null, ready:null, stopP:null };
+const VOICE = { rec:null, on:false, fails:0, mic:null, ready:null, stopP:null, first:{}, used:-1, log:[] };
+// A short log of what the recognizer heard (Settings → Voice → Voice log), to find out why an answer was or wasn't taken.
+function voiceLogAdd(k, text, fin, action){
+  const last = VOICE.log[VOICE.log.length-1];
+  if (last && last.k === k && last.text === text && last.action === action) return;
+  VOICE.log.push({ t: Date.now(), k, text, fin: !!fin, action }); if (VOICE.log.length > 40) VOICE.log.shift();
+}
 const VOICE_WORDS = { one:1, won:1, '1':1, two:2, to:2, too:2, '2':2, three:3, tree:3, '3':3, four:4, for:4, fore:4, '4':4, five:5, '5':5, six:6, '6':6, seven:7, '7':7 };
 const voiceSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 function voiceParse(alts){
@@ -1362,11 +1370,18 @@ function voiceStart(onNumber, onStatus){
     rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
   rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 4;
   rec.onspeechstart = () => { VOICE.speechAt = performance.now(); };
+  rec.onstart = () => { VOICE.first = {}; VOICE.used = -1; };   // result numbers start again from 0 in each listening session
   rec.onresult = e => {
-    const alts = []; for (let k = e.resultIndex || 0; k < e.results.length; k++){ const r = e.results[k]; for (let i=0;i<r.length;i++) alts.push(r[i].transcript); }
-    const n = voiceParse(alts); VOICE.fails = 0;
-    onStatus && onStatus(n ? `Heard “${alts[0].trim()}” → ${n}` : `Heard “${(alts[0]||'').trim()}” (no number in it)`);
-    if (n) onNumber(n);
+    VOICE.fails = 0;
+    // Only the top guess of each result counts (lower-ranked guesses led to wrong numbers), and each result can answer once.
+    for (let k = e.resultIndex || 0; k < e.results.length; k++){
+      const r = e.results[k], top = (r[0] && r[0].transcript || '').trim(), n = voiceParse([top]), now = performance.now();
+      if (!VOICE.first) VOICE.first = {};
+      if (VOICE.first[k] === undefined) VOICE.first[k] = now;
+      onStatus && onStatus(n ? `Heard “${top}” → ${n}` : `Heard “${top}” (no number in it)`);
+      if (n) onNumber(n, { k, first: VOICE.first[k], final: r.isFinal, text: top });
+      else voiceLogAdd(k, top, r.isFinal, 'no number');
+    }
   };
   rec.onerror = e => {
     VOICE.readyFin && VOICE.readyFin();
@@ -1394,9 +1409,13 @@ function voiceListen(){
   if (!S.settings.voiceOn){ voiceStop(); return null; }   // the mic stays on from the first question until you stop
   if (VOICE.on && VOICE.rec) return;
   VOICE.fails = 0;
-  const ok = voiceStart(n => {
-    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers' || performance.now() - (T.voiceOpen || 0) < 350) return;
-    const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b) return;
+  const ok = voiceStart((n, info) => {
+    const lagMs = (S.settings.voiceLag ?? 1.3) * 1000, log = a => voiceLogAdd(info.k, info.text, info.final, a);
+    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers'){ log(`ignored (not waiting for an answer)`); return; }
+    if (info.k <= VOICE.used){ log('ignored (that utterance already answered)'); return; }
+    if (info.first - lagMs < (T.voiceOpen || 0) - 300){ log('ignored (spoken before this question)'); return; }
+    const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b){ log(`ignored (${n} is not on this level)`); return; }
+    VOICE.used = info.k; log(`ANSWERED ${n}`);
     // the response time runs to when the speech began, not to when it was recognized
     // If Safari doesn't report when speech began, take off an allowance for its recognition delay (setting).
     const now = performance.now(), seen = !!(VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now);
@@ -1452,7 +1471,9 @@ async function voiceMatch(){
     say(ok ? 'Done. If the second was quieter, slide up; if louder, slide down. Then press Match again.' : 'The microphone could not start, so there is nothing to compare.');
   } finally { voiceStop(); await voiceSettled(); try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); voiceMatching = false; }
 }
-document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); if (e.target.id === 'vMatch') voiceMatch(); if (e.target.id === 'vCal') voiceCalibrate(); });
+document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); if (e.target.id === 'vMatch') voiceMatch(); if (e.target.id === 'vCal') voiceCalibrate();
+  if (e.target.id === 'vLogBtn'){ const o = $('vLogOut'); o.classList.remove('hidden'); const f = d => { const x = new Date(d); return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')+':'+String(x.getSeconds()).padStart(2,'0'); };
+    o.textContent = VOICE.log.length ? VOICE.log.slice(-14).map(l => `${f(l.t)}  “${l.text}”${l.fin ? '' : ' …'}  ${l.action}`).join('\n') : 'Nothing heard yet. Turn on Answer by voice and practice a few questions.'; } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) voiceStop(); else if (T.phase === 'answering') voiceListen(); });
 
 function goToStartScreen(){
