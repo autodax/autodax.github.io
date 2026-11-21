@@ -130,6 +130,7 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
   beyond the states; check on the phone after changing it.
   Even after a full release the lock screen still lists the app, like any music app that has played
   (iOS keeps the last media app there). Steve accepted that; don't spend more effort trying to remove it.
+- All screens share one scrolling area (`main`). Coming back from a long Settings page could leave the Train screen blank or scrolled off the top, so `showView()` resets the scroll to the top (and briefly hides overflow to stop iOS momentum). Not reproducible in headless Chrome; confirm on the phone.
 - Web Audio is muted by the silent switch unless routed as playback (`navigator.audioSession`
   plus a looping silent audio element). Web apps pause when the screen locks, so Car mode keeps
   the screen on. Web MIDI isn't available on iOS.
