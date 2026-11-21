@@ -253,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.11';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.12';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1234,14 +1234,14 @@ function renderProgress(){
   ALL7.forEach(d => { const st = S.deg[d]; const a = st ? accOf(st.r.slice(-20)) : null;
     const tm = st && st.t.length ? (st.t.slice().sort((x,y)=>x-y)[Math.floor(st.t.length/2)]/1000).toFixed(1)+'s' : '–';
     bars += `<div class="d">${d}</div><div class="b"><i style="width:${a===null?0:a*100}%;background:${a===null?'':a>=.9?'var(--good)':a>=.7?'var(--accent)':'var(--bad)'}"></i></div><div class="p">${a===null?'–':(a*100).toFixed(0)+'%'}</div><div class="tm">${tm}</div>`; });
-  const confs = topConfusions(6);
+  const confs = topConfusionPairs(6);
   $('v-prog').innerHTML = `
     <div class="stats" style="margin-top:6px">
       <div class="stat"><b>${dayStreak()}</b><span>Day streak</span></div>
       <div class="stat"><b>${S.total}</b><span>Answered</span></div>
       <div class="stat"><b>${S.bestStreak}</b><span>Best run</span></div>
     </div>
-    <h2>Trouble spots</h2><div class="card">${confs.length ? confs.map(c => `<div class="row"><div class="lab">You hear <b>${c.a}</b> as <b>${c.b}</b></div><div class="sub">${c.v.toFixed(1)}× recently</div></div>`).join('')
+    <h2>Trouble spots</h2><div class="card">${confs.length ? confs.map(c => `<div class="row"><div class="lab">You mix up <b>${c.a}</b> and <b>${c.b}</b></div><div class="sub">${c.v.toFixed(1)}× recently</div></div>`).join('')
       : '<div class="row"><div class="sub">No repeated mix-ups yet. When you confuse two degrees, they’ll show here and get drilled more often.</div></div>'}</div>
     <h2>Scale degrees · last 20 · typical speed</h2><div class="card"><div class="degbars">${bars}</div></div>
     <h2>Levels</h2><div class="card">${lv}</div>

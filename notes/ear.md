@@ -64,7 +64,7 @@ Shown as "coming later": minor & modes, chromatic notes, chord tones, sing-back,
 
 Mastery: last 20 answers (15 for phrases) at ≥90% (80% for phrases), every degree ≥75% recently,
 typical correct answer under the speed limit (2 s from the start of the tone by default, adjustable). About 30% of questions
-drill the most-confused pair; about 20% are review from mastered levels.
+drill the most-confused pair (5→6 and 6→5 are pooled into one 5–6 pair, both for drilling in Train and Car modes and in the Progress → Trouble spots list; `topConfusionPairs()`); about 20% are review from mastered levels.
 
 ## Research summary (searched Nov 2026; thin evidence, treat as hints)
 
