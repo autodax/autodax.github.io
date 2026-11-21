@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.5';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.6';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -323,7 +323,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, errorSound: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
+  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, errorSound: true, showTime: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
   tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -841,7 +841,7 @@ async function grade(){
     if (!ok) document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
   }
   if (q.input === 'piano') markPianoResult(q, res);
-  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`) + '', 'good');
+  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), (S.settings.showTime === false ? '' : (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`)), 'good');
   else if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${q.input==='piano' ? noteName(T.ans[0].midi,q.key) : T.ans[0].label} · tap Compare to hear both`, 'bad');
   else setMsg('Not quite', `Correct: ${q.labels.join(' ')}`, 'bad');
   $('bCompare').disabled = !(q.len === 1 && !ok);
@@ -1028,7 +1028,7 @@ function updateHeader(){
   const done = S.mastered[S.current] !== undefined;
   $('hBarL').textContent = done ? 'Mastered: practicing' : m.n < m.W ? `Mastery: ${m.n}/${m.W} answers` : `Accuracy ${(m.acc*100).toFixed(0)}% (need ${(m.target*100)|0}%)`;
   $('hBarR').textContent = done || m.n < m.W/2 ? '' : (!m.degOk ? 'needs work: ' + m.degs.filter(x=>!x.ok).map(x=>x.d).join(' ')
-    : (!m.speedOk && isFinite(m.med)) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
+    : (!m.speedOk && isFinite(m.med) && S.settings.showTime !== false) ? `speed ${(m.med/1000).toFixed(1)}s, goal ${m.limit.toFixed(1)}s` : '');
   const td = S.days[today()] || 0;
   $('hToday').textContent = td >= S.settings.dailyGoal ? `Today ${td} · goal ✓` : `Today ${td}/${S.settings.dailyGoal}`;
 }
@@ -1082,6 +1082,7 @@ function renderSettings(){
     <h2>Training</h2><div class="card">
       ${optStep('roundLen','Questions per round','Key and octave change together, and only between rounds (at least 10)', s.roundLen, 10, 30, 1, '')}
       ${optSelect('cadenceEvery','Cadence','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
+      ${optToggle('showTime','Show response time','Show how fast each answer was, with a nudge when it is slow. Mastery still counts speed either way', s.showTime !== false)}
       ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the start of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
       ${optSelect('tempo','Playback speed','', s.tempo, [[0.8,'Slow'],[1,'Normal'],[1.25,'Fast']])}
