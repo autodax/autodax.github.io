@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.10';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.11';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -420,7 +420,7 @@ const A = {
     const AC = window.AudioContext || window.webkitAudioContext;
     this.ctx = new AC();
     const comp = this.ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3;
-    this.master = this.ctx.createGain(); this.master.gain.value = S.settings.volume;
+    this.master = this.ctx.createGain(); this.master.gain.value = masterGain();
     this.master.connect(comp).connect(this.ctx.destination);
   },
   async start(){
@@ -488,6 +488,8 @@ function kill(token){ if (!token) return; token.dead = true; for (const [id,res]
 // iPhone: route Web Audio as media playback so the ringer/silent switch doesn't mute it.
 // With voice answers on, the session is put in play-and-record mode from the start, so iOS doesn't switch modes
 // (and glitch the sound) at the moment the microphone turns on.
+// With voice answers on the iPhone plays quieter, so the notes get a boost (setting, default louder).
+const masterGain = () => S.settings.volume * (S.settings.voiceOn ? (S.settings.voiceBoost || 1.5) : 1);
 const audioType = () => (S.settings.voiceOn && (window.SpeechRecognition || window.webkitSpeechRecognition)) ? 'play-and-record' : 'playback';
 function unlockIOS(){
   try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){}
@@ -767,7 +769,7 @@ async function nextQuestion(){
   if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(500, token); if (token.dead) return;
     try { if (A.ctx && A.ctx.state !== 'running') await A.ctx.resume(); } catch(e){} }
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
-  T.phase = 'answering'; lockPad(false);
+  T.phase = 'answering'; T.voiceOpen = performance.now(); lockPad(false);
   const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
   T.start = performance.now() + (q.len === 1 ? 0 : (q.len-1)*noteDur*1000);
   T.qEnd = performance.now() + q.len*noteDur*1000;
@@ -787,7 +789,7 @@ function onAnswer(a){
 }
 
 async function grade(){
-  const q = T.q; T.phase = 'feedback'; lockPad(true); voiceStop();   // VOICE
+  const q = T.q; T.phase = 'feedback'; lockPad(true);
   const t = Math.max(0, performance.now() - T.start);
   kill(T.aux);
   const res = q.labels.map((l,i) => q.input === 'piano' ? mod(T.ans[i].midi,12) === mod(q.midi[i],12) : T.ans[i].label === l);
@@ -832,7 +834,6 @@ async function grade(){
 
   const token = T.token = newToken();
   // let the question finish sounding before resolving
-  await voiceSettled(); if (token.dead) return;   // VOICE
   await wait(Math.max(0, T.qEnd - performance.now()), token); if (token.dead) return;
   if (!ok && q.len > 1){
     await wait(250, token); if (token.dead) return;
@@ -1079,6 +1080,7 @@ function renderSettings(){
     </div>
     <h2>Voice (experiment)</h2><div class="card">
       ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
+      ${optSelect('voiceBoost','Note loudness with voice','The phone plays quieter while the microphone is on', s.voiceBoost || 1.5, [[1,'Normal'],[1.5,'Louder'],[2.2,'Much louder'],[3,'Loudest']])}
       <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
     </div>
     <h2>Sound</h2><div class="card">
@@ -1163,7 +1165,7 @@ document.addEventListener('change', e => {
     const id = sel.dataset.opt, raw = sel.value;
     if (id === '_skip'){ const n = +raw; if (n > S.unlocked){ for (let i=0;i<n;i++) if (S.mastered[i] === undefined) S.mastered[i] = 'skipped';
         S.unlocked = n; S.current = n; save(); updateHeader(); toast(`Unlocked through L${n+1}`); } else sel.value = S.unlocked; return; }
-    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); return;
+    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); if (id === 'voiceBoost' && A.master) A.master.gain.value = masterGain(); return;
   }
   if (e.target.id === 'fImport'){
     const f = e.target.files[0]; if (!f) return;
@@ -1171,12 +1173,12 @@ document.addEventListener('change', e => {
      .catch(() => toast('That file could not be read'));
   }
 });
-document.addEventListener('input', e => { if (e.target.id === 'volRange'){ S.settings.volume = +e.target.value; if (A.master) A.master.gain.value = S.settings.volume; save(); } });
+document.addEventListener('input', e => { if (e.target.id === 'volRange'){ S.settings.volume = +e.target.value; if (A.master) A.master.gain.value = masterGain(); save(); } });
 document.addEventListener('click', e => {
   const tg = e.target.closest('[data-tog]');
   if (tg){ const id = tg.dataset.tog;
     setPath(id, !getPath(id));
-    if (id === 'voiceOn'){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} }
+    if (id === 'voiceOn'){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); if (!getPath(id)) voiceStop(); }
     tg.classList.toggle('on'); return; }
   const sb = e.target.closest('.stepper button');
   if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = st.dataset.unit;
@@ -1348,9 +1350,9 @@ function voiceStart(onNumber, onStatus){
   const rec = VOICE.rec = new SR(); VOICE.on = true;
   VOICE.ready = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; res(); } };
     rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
-  rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = false; rec.maxAlternatives = 4;
+  rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 4;
   rec.onresult = e => {
-    const alts = []; for (const r of e.results) for (let i=0;i<r.length;i++) alts.push(r[i].transcript);
+    const alts = []; for (let k = e.resultIndex || 0; k < e.results.length; k++){ const r = e.results[k]; for (let i=0;i<r.length;i++) alts.push(r[i].transcript); }
     const n = voiceParse(alts); VOICE.fails = 0;
     onStatus && onStatus(n ? `Heard “${alts[0].trim()}” → ${n}` : `Heard “${(alts[0]||'').trim()}” (no number in it)`);
     if (n) onNumber(n);
@@ -1378,11 +1380,11 @@ function voiceStop(){
 const voiceSettled = () => VOICE.stopP || Promise.resolve();
 // During a question: listen only when voice is on and the question is answered with the number pad.
 function voiceListen(){
-  if (!S.settings.voiceOn || !T.q || T.q.input !== 'numbers'){ voiceStop(); return; }
+  if (!S.settings.voiceOn){ voiceStop(); return null; }   // the mic stays on from the first question until you stop
   if (VOICE.on && VOICE.rec) return;
   VOICE.fails = 0;
   const ok = voiceStart(n => {
-    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers') return;
+    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers' || performance.now() - (T.voiceOpen || 0) < 350) return;
     const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b) return;
     T.tapped = b; onAnswer({ label: String(n) });
   }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
@@ -1396,6 +1398,7 @@ function voiceTest(){
   setTimeout(() => { if (st && /Listening/.test(st.textContent)){ say('Nothing heard yet. If a permission prompt appeared, allow it and try again.'); } }, 8000);
 }
 document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) voiceStop(); else if (T.phase === 'answering') voiceListen(); });
 
 function goToStartScreen(){
   kill(T.token); kill(T.aux); T.phase = 'idle'; voiceStop();   // VOICE
