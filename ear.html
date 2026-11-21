@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.1';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.2';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -830,8 +830,8 @@ async function grade(){
     if (!ok) document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
   }
   if (q.input === 'piano') markPianoResult(q, res);
-  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`) + (T.ans[T.ans.length-1].vdbg ? ' · ' + T.ans[T.ans.length-1].vdbg : ''), 'good');
-  else if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${q.input==='piano' ? noteName(T.ans[0].midi,q.key) : T.ans[0].label} · tap Compare to hear both` + (T.ans[0].vdbg ? ' · ' + T.ans[0].vdbg : ''), 'bad');
+  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`) + '', 'good');
+  else if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${q.input==='piano' ? noteName(T.ans[0].midi,q.key) : T.ans[0].label} · tap Compare to hear both`, 'bad');
   else setMsg('Not quite', `Correct: ${q.labels.join(' ')}`, 'bad');
   $('bCompare').disabled = !(q.len === 1 && !ok);
 
@@ -1401,8 +1401,7 @@ function voiceListen(){
     // If Safari doesn't report when speech began, take off an allowance for its recognition delay (setting).
     const now = performance.now(), seen = !!(VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now);
     const lag = (S.settings.voiceLag ?? 1.3) * 1000, at = seen ? VOICE.speechAt : now - lag; VOICE.speechAt = 0;
-    const vdbg = seen ? `speech start seen, recognized ${Math.round(now - at)} ms later` : `no speech-start signal; raw ${((now - T.start)/1000).toFixed(1)}s minus ${(lag/1000).toFixed(1)}s allowance`;
-    T.tapped = b; onAnswer({ label: String(n), at, vdbg });
+    T.tapped = b; onAnswer({ label: String(n), at });
   }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
   return ok ? VOICE.ready : null;
 }
