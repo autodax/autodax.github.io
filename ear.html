@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.9';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.10';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -392,7 +392,7 @@ const A = {
     clearTimeout(this.relTimer);
     if (!this.released) return;
     this.released = false;
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+    try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){}
     makeSilent();
     if (!this.ctx){ this.build(); this.decodeAll(); }
     if (this.ctx.state !== 'running') this.ctx.resume().catch(()=>{});
@@ -486,8 +486,11 @@ function newToken(){ return { dead:false, timers:[] }; }
 function kill(token){ if (!token) return; token.dead = true; for (const [id,res] of token.timers){ clearTimeout(id); res(); } token.timers = []; }
 
 // iPhone: route Web Audio as media playback so the ringer/silent switch doesn't mute it.
+// With voice answers on, the session is put in play-and-record mode from the start, so iOS doesn't switch modes
+// (and glitch the sound) at the moment the microphone turns on.
+const audioType = () => (S.settings.voiceOn && (window.SpeechRecognition || window.webkitSpeechRecognition)) ? 'play-and-record' : 'playback';
 function unlockIOS(){
-  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+  try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){}
   makeSilent();
 }
 function makeSilent(){
@@ -761,7 +764,8 @@ async function nextQuestion(){
   }
   T.sinceCad++;
   const vr = voiceListen();   // VOICE: the mic takes a moment to switch on; wait for it before any sound
-  if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(250, token); if (token.dead) return; }
+  if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(500, token); if (token.dead) return;
+    try { if (A.ctx && A.ctx.state !== 'running') await A.ctx.resume(); } catch(e){} }
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
   T.phase = 'answering'; lockPad(false);
   const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
@@ -1172,6 +1176,7 @@ document.addEventListener('click', e => {
   const tg = e.target.closest('[data-tog]');
   if (tg){ const id = tg.dataset.tog;
     setPath(id, !getPath(id));
+    if (id === 'voiceOn'){ try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} }
     tg.classList.toggle('on'); return; }
   const sb = e.target.closest('.stepper button');
   if (sb){ const st = sb.parentElement, id = st.dataset.step, inc = +st.dataset.inc, unit = st.dataset.unit;
@@ -1339,6 +1344,7 @@ function voiceStart(onNumber, onStatus){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR){ onStatus && onStatus('This browser has no speech recognition.'); return false; }
   voiceStop();
+  try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch(e){}
   const rec = VOICE.rec = new SR(); VOICE.on = true;
   VOICE.ready = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; res(); } };
     rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
