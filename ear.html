@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.8';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.9';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -760,9 +760,10 @@ async function nextQuestion(){
     await wait(380, token); if (token.dead) return;
   }
   T.sinceCad++;
+  const vr = voiceListen();   // VOICE: the mic takes a moment to switch on; wait for it before any sound
+  if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(250, token); if (token.dead) return; }
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
   T.phase = 'answering'; lockPad(false);
-  voiceListen();   // VOICE
   const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
   T.start = performance.now() + (q.len === 1 ? 0 : (q.len-1)*noteDur*1000);
   T.qEnd = performance.now() + q.len*noteDur*1000;
@@ -827,6 +828,7 @@ async function grade(){
 
   const token = T.token = newToken();
   // let the question finish sounding before resolving
+  await voiceSettled(); if (token.dead) return;   // VOICE
   await wait(Math.max(0, T.qEnd - performance.now()), token); if (token.dead) return;
   if (!ok && q.len > 1){
     await wait(250, token); if (token.dead) return;
@@ -1322,7 +1324,7 @@ $('bBegin').addEventListener('click', async () => {
 /* ===== VOICE ANSWERS (experiment) =====================================================
    Say a scale number instead of tapping. Easy to remove: delete this block, the "Voice" card in renderSettings,
    and the three hook lines marked VOICE (nextQuestion, grade, goToStartScreen). */
-const VOICE = { rec:null, on:false, fails:0, mic:null };
+const VOICE = { rec:null, on:false, fails:0, mic:null, ready:null, stopP:null };
 const VOICE_WORDS = { one:1, won:1, '1':1, two:2, to:2, too:2, '2':2, three:3, tree:3, '3':3, four:4, for:4, fore:4, '4':4, five:5, '5':5, six:6, '6':6, seven:7, '7':7 };
 const voiceSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 function voiceParse(alts){
@@ -1338,6 +1340,8 @@ function voiceStart(onNumber, onStatus){
   if (!SR){ onStatus && onStatus('This browser has no speech recognition.'); return false; }
   voiceStop();
   const rec = VOICE.rec = new SR(); VOICE.on = true;
+  VOICE.ready = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; res(); } };
+    rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
   rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = false; rec.maxAlternatives = 4;
   rec.onresult = e => {
     const alts = []; for (const r of e.results) for (let i=0;i<r.length;i++) alts.push(r[i].transcript);
@@ -1346,6 +1350,7 @@ function voiceStart(onNumber, onStatus){
     if (n) onNumber(n);
   };
   rec.onerror = e => {
+    VOICE.readyFin && VOICE.readyFin();
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){ VOICE.on = false; VOICE.fails = 99; onStatus && onStatus('Speech or microphone permission was refused, so voice answers cannot work here.'); }
     else if (e.error === 'audio-capture'){ VOICE.on = false; VOICE.fails = 99; onStatus && onStatus('No microphone could be used.'); }
     else if (e.error !== 'no-speech' && e.error !== 'aborted'){ VOICE.fails++; onStatus && onStatus(`Voice error: ${e.error}`); }
@@ -1354,17 +1359,28 @@ function voiceStart(onNumber, onStatus){
   try { rec.start(); voiceMic(true); } catch(e){ VOICE.on = false; onStatus && onStatus('Could not start listening.'); return false; }
   return true;
 }
-function voiceStop(){ VOICE.on = false; const r = VOICE.rec; VOICE.rec = null; if (r){ try { r.abort(); } catch(e){} } voiceMic(false); }
+// Stopping also takes a moment while iOS switches the audio back; voiceSettled() lets the app wait for that.
+function voiceStop(){
+  VOICE.on = false; const r = VOICE.rec; VOICE.rec = null; voiceMic(false);
+  if (r){
+    VOICE.stopP = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; setTimeout(res, 350); } };
+      r.onend = fin; r.onerror = fin; r.onresult = null; setTimeout(fin, 900); });
+    try { r.abort(); } catch(e){}
+  }
+  return VOICE.stopP || Promise.resolve();
+}
+const voiceSettled = () => VOICE.stopP || Promise.resolve();
 // During a question: listen only when voice is on and the question is answered with the number pad.
 function voiceListen(){
   if (!S.settings.voiceOn || !T.q || T.q.input !== 'numbers'){ voiceStop(); return; }
   if (VOICE.on && VOICE.rec) return;
   VOICE.fails = 0;
-  voiceStart(n => {
+  const ok = voiceStart(n => {
     if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers') return;
     const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b) return;
     T.tapped = b; onAnswer({ label: String(n) });
   }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
+  return ok ? VOICE.ready : null;
 }
 function voiceTest(){
   const st = $('vStatus'); const say = t => { if (st) st.textContent = t; };
