@@ -135,9 +135,7 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 
 ## Pending ideas (not yet decided or built)
 
-- Functional Ear Trainer features Steve wants to compare against: separate cadence and note
-  tempos, a "give up" button, auto-advance choices (after correct / mistake / giving up), octave
-  markers on answers, more resolution styles and speed. (Keyboard input on any level is built.)
+- Functional Ear Trainer features Steve wants to compare against: auto-advance choices (after correct / mistake / giving up) and octave markers on answers. (Keyboard input on any level, cadence styles, resolution styles, separate cadence/notes/resolution speeds, and the Give up button are built.)
 - Keyboard levels: whether to require the exact octave, and a landscape keyboard with about
   three octaves. Steve will decide when he reaches the keyboard levels.
 - Minor keys and modes, chromatic notes, chords, sing-back, rhythm in dictation.

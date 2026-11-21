@@ -67,8 +67,8 @@ nav button.on{color:var(--accent)}
 .slot.no{background:rgba(217,137,90,.18);color:var(--bad)}
 .slot.hl{border-color:var(--accent)}
 .slot small{font-size:11px;font-weight:600;color:var(--text);opacity:.85}
-.tools{display:flex;gap:8px;margin-top:12px}
-.tool{flex:1;background:var(--panel2);border-radius:10px;padding:10px 4px;font-size:14px;color:var(--dim)}
+.tools{display:flex;gap:6px;margin-top:12px}
+.tool{flex:1;background:var(--panel2);border-radius:10px;padding:10px 2px;font-size:13px;color:var(--dim);white-space:nowrap}
 .tool:active{background:var(--line)}
 .tool[disabled]{opacity:.35}
 .pad{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px;margin-top:14px}
@@ -186,6 +186,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
         <div class="tools">
           <button class="tool" id="bCadence">Cadence</button>
           <button class="tool" id="bReplay">Replay</button>
+          <button class="tool" id="bGiveUp" disabled>Give up</button>
           <button class="tool" id="bCompare" disabled>Compare</button>
           <button class="tool" id="bStop">Stop</button>
         </div>
@@ -252,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.9';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.10';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -340,7 +341,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
   cadenceEvery: 5, cadenceType: 'I-IV-V-I', resStyle: 'nearest', roundLen: 12, autoNext: true, showFeedback: true, speedLimit: 2, timingV3: 1, errorSound: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
-  tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
+  tempo: 1, cadenceTempo: 1, noteTempo: 1, resTempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
 function freshState(){
@@ -352,6 +353,11 @@ function normalize(s){
   const f = freshState();
   // Speed goal reset (Nov 2026): 2 seconds counted from the start of the tone is a good response.
   if (s.settings && !s.settings.timingV3 && s.settings.speedLimit) s.settings.speedLimit = 2;
+  // Carry over legacy single tempo setting if the three separate speeds aren't set yet
+  if (s.settings && s.settings.tempo && s.settings.cadenceTempo === undefined){
+    const leg = s.settings.tempo === 0.8 ? 0.75 : s.settings.tempo === 1.25 ? 1.3 : 1;
+    s.settings.cadenceTempo = leg; s.settings.noteTempo = leg; s.settings.resTempo = leg;
+  }
   s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
   return Object.assign(f, s);
 }
@@ -699,21 +705,23 @@ function masteryInfo(lvl){
    TRAIN MODE
    ===================================================================== */
 const $ = id => document.getElementById(id);
-const tempo = () => S.settings.tempo;
-const ev = (notes, dur, vel) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / tempo(), vel });
-const cadenceEvents = (k, oct=0) => { const cs = cadence(k, oct, S.settings.cadenceType || 'I-IV-V-I'); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62)); };
+const cadenceTempo = () => S.settings.cadenceTempo || 1;
+const noteTempo = () => S.settings.noteTempo || 1;
+const resTempo = () => S.settings.resTempo || 1;
+const ev = (notes, dur, vel, spd) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / (spd || noteTempo()), vel });
+const cadenceEvents = (k, oct=0) => { const cs = cadence(k, oct, S.settings.cadenceType || 'I-IV-V-I'); return cs.map((c,i) => ev(c, i === cs.length - 1 ? 1.25 : 0.72, c.length === 1 ? 0.78 : 0.62, cadenceTempo())); };
 
 async function playCadence(key, token, oct=0){ await A.seq(cadenceEvents(key, oct), token); }
 async function playQuestionNotes(q, token, onStep){
   const d = q.len === 1 ? 1.1 : 0.62;
-  await A.seq(q.midi.map(m => ev(m, d, 0.85)), token, onStep);
+  await A.seq(q.midi.map(m => ev(m, d, 0.85, noteTempo())), token, onStep);
 }
 // With lightPad, the number pad lights up in step with the notes: 1 2 3 4 on the top row resolve right to left,
 // 5 6 7 and the upper 1 on the bottom row resolve left to right.
 const clearPadLights = () => document.querySelectorAll('#tPad .res-lit, #tPiano .res-lit').forEach(b => b.classList.remove('res-lit'));
 async function playResolution(s, key, token, lightPad){
   const path = resolution(s), base = s - mod(s,7);
-  const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8));
+  const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8, resTempo()));
   const slots = path.map(x => x === base+7 ? 7 : mod(x,7));
   // On the keyboard, shift the path by octaves only if a note isn't on the keys showing (e.g. replaying your wrong answer).
   const mids = path.map(x => posMidi(x,key));
@@ -801,7 +809,7 @@ async function nextQuestion(){
   kill(T.token); kill(T.aux); A.stopAll(); const token = T.token = newToken();
   const q = makeQuestion(); T.q = q; T.ans = []; T.results = null;
   T.phase = 'playing';
-  $('bGo').classList.add('hidden'); $('bCompare').disabled = true;
+  $('bGo').classList.add('hidden'); $('bCompare').disabled = true; $('bGiveUp').disabled = true;
   setKeyLabel(q.key); setChip(q); renderPad(q); renderSlots(q); lockPad(true);
   // VOICE: the first time, the mic takes a moment to switch on and iOS changes audio mode; do that before any sound (even the cadence)
   const vr = voiceListen();
@@ -816,8 +824,8 @@ async function nextQuestion(){
   }
   T.sinceCad++;
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
-  T.phase = 'answering'; T.voiceOpen = performance.now(); lockPad(false);
-  const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
+  T.phase = 'answering'; T.voiceOpen = performance.now(); lockPad(false); $('bGiveUp').disabled = false;
+  const noteDur = (q.len === 1 ? 1.1 : 0.62) / noteTempo();
   T.start = performance.now() + (q.len === 1 ? 0 : (q.len-1)*noteDur*1000);   // response time counts from the START of the tone (of the last note, for phrases)
   T.qEnd = performance.now() + q.len*noteDur*1000;
   await playQuestionNotes(q, token);
@@ -836,7 +844,7 @@ function onAnswer(a){
 }
 
 async function grade(){
-  const q = T.q; T.phase = 'feedback'; lockPad(true);
+  const q = T.q; T.phase = 'feedback'; lockPad(true); $('bGiveUp').disabled = true;
   const lastAt = T.ans.length ? T.ans[T.ans.length-1].at : 0, t = Math.max(0, (lastAt || performance.now()) - T.start);
   kill(T.aux);
   const res = q.labels.map((l,i) => q.input === 'piano' ? mod(T.ans[i].midi,12) === mod(q.midi[i],12) : T.ans[i].label === l);
@@ -932,6 +940,47 @@ async function compare(){
   if (gs !== undefined){ setMsg(`Your answer: ${posLabel(gs)}`, '', 'bad'); await A.seq([ev(posMidi(gs,q.key),1.0,0.85)], token); if (token.dead) return; await playResolution(gs, q.key, token, true); if (token.dead) return; await wait(500, token); }
   setMsg(`The note: ${q.labels[0]}`, '', 'good'); await A.seq([ev(q.midi[0],1.0,0.85)], token); if (token.dead) return; await playResolution(q.pos[0], q.key, token, true);
   if (!token.dead) showNext();
+}
+async function giveUp(){
+  if (T.phase !== 'answering' || !T.q) return;
+  const q = T.q; T.phase = 'feedback'; lockPad(true);
+  $('bGiveUp').disabled = true; $('bCompare').disabled = true;
+  kill(T.token); kill(T.aux); A.stopAll(); clearVoicePending();
+  const res = q.labels.map(() => false); T.results = res;
+  const lvl = q.lvl;
+  pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok: false, t: 0, r: q.review ? 1 : 0 }, 40);
+  S.levelDeg[lvl] = S.levelDeg[lvl] || {};
+  q.labels.forEach(l => {
+    pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], false, 12);
+    S.deg[l] = S.deg[l] || {r:[], t:[]};
+    pushCap(S.deg[l].r, false, 30);
+  });
+  S.total++; S.days[today()] = (S.days[today()] || 0) + 1;
+  SY.sincePush = (SY.sincePush || 0) + 1; if (SY.sincePush >= 10) syncSoon();
+  T.streak = 0; $('tStreak').textContent = '';
+  save();
+  renderSlots(q, res);
+  if (q.input === 'numbers' && q.len === 1){
+    document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
+  }
+  if (q.input === 'piano' && q.len === 1){
+    const el = $('tPiano');
+    const want = el.querySelector(`[data-m="${q.midi[0]}"]`) || [...el.querySelectorAll('[data-m]')].find(k => mod(+k.dataset.m,12) === mod(q.midi[0],12));
+    want && want.classList.add('k-ok');
+  }
+  if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, 'Listen to the note and resolution', 'bad');
+  else setMsg(`Answer: ${q.labels.join(' ')}`, 'Listen to the phrase and resolution', 'bad');
+  const token = T.token = newToken();
+  await wait(200, token); if (token.dead) return;
+  await playQuestionNotes(q, token, q.len > 1 ? i => highlightSlot(i) : undefined); if (token.dead) return;
+  if (q.len > 1) highlightSlot(-1);
+  await wait(250, token); if (token.dead) return;
+  await playResolution(q.pos[q.pos.length-1], q.key, token, true); if (token.dead) return;
+  updateHeader();
+  if (S.days[today()] === S.settings.dailyGoal){ showGoalReached(); return; }
+  if (breakDue()){ showBreak(); return; }
+  if (S.settings.autoNext){ await wait(650, token); if (!token.dead && activeView === 'train') nextQuestion(); else if (!token.dead) showNext(); }
+  else showNext();
 }
 function nearestPos(label, near){ let best, bd = 99; for (let s = near-7; s <= near+7; s++) if (posLabel(s) === label && Math.abs(s-near) < bd){ bd = Math.abs(s-near); best = s; } return best; }
 
@@ -1088,7 +1137,7 @@ function resetTrainIdle(){
   setTimeout(applyUpdateIfIdle, 300);
   T.q = null; T.ans = []; renderSlots(null); setChip(null); lockPad(true); renderPad(null);
   setMsg('Ready', 'Tap Start to begin'); $('bGo').textContent = 'Start'; $('bGo').classList.remove('hidden');
-  $('bCompare').disabled = true; T.cadKey = null; T.cadOct = null; T.sinceCad = 99;
+  $('bCompare').disabled = true; $('bGiveUp').disabled = true; T.cadKey = null; T.cadOct = null; T.sinceCad = 99;
 }
 function toast(t){ const el = $('toast'); el.textContent = t;
   // sit just above the tab bar, clear of the Start button
@@ -1128,7 +1177,9 @@ function renderSettings(){
       ${optToggle('showFeedback','Response timing','Show response time and speed nudges on correct answers', s.showFeedback !== false)}
       ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the start of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
-      ${optSelect('tempo','Playback speed','', s.tempo, [[0.8,'Slow'],[1,'Normal'],[1.25,'Fast']])}
+      ${optSelect('cadenceTempo','Cadence speed','', s.cadenceTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
+      ${optSelect('noteTempo','Notes speed','', s.noteTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
+      ${optSelect('resTempo','Resolution speed','', s.resTempo || 1, [[0.75,'Slow'],[1,'Normal'],[1.3,'Fast'],[1.65,'Very fast']])}
       ${optToggle('autoNext','Auto-advance','Go to the next question after the resolution', s.autoNext)}
       ${optSelect('dailyGoal','Daily goal','', s.dailyGoal, [[30,'30 answers'],[60,'60 answers'],[100,'100 answers'],[150,'150 answers']])}
       ${optSelect('breakEvery','Break reminder','Short sessions help you learn more than long ones', s.breakEvery, [[0,'Off'],[5,'After 5 minutes'],[10,'After 10 minutes'],[15,'After 15 minutes'],[20,'After 20 minutes']])}
@@ -1213,6 +1264,7 @@ $('bCadence').addEventListener('click', async () => {
   await playCadence(k, token, T.q ? T.q.oct : 0); if (token.dead) return;
   if (T.q && T.phase === 'answering'){ await wait(300, token); if (!token.dead) await playQuestionNotes(T.q, token); }
 });
+$('bGiveUp').addEventListener('click', giveUp);
 $('bCompare').addEventListener('click', compare);
 $('bInput').addEventListener('click', toggleInput);
 $('bStop').addEventListener('click', () => { kill(T.token); kill(T.aux); A.stopAll(); T.phase = 'idle'; resetTrainIdle(); updateHeader(); toast('Stopped. Progress is saved.'); goToStartScreen(); });
