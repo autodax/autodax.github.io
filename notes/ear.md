@@ -39,6 +39,7 @@ to melodic dictation.
 - Piano sound: Salamander full quality (chosen by ear over Splendid Grand and MusyngKite).
 - Response time is counted from the START of the tone (the last note's start for phrases); the goal is 2 seconds, the default speed limit (setting "Speed for mastery"). Steve first asked for end-of-tone timing, then found it too short and set 2 s from the tone start as the goal (flag `timingV3` resets old settings to 2 once). Voice answers count to when speech began (`onspeechstart`); if Safari doesn't report it, a "voice delay allowance" (`voiceLag`, default 1.3 s, slider) is subtracted from the recognized time. (The on-screen timing readout was removed once it was calibrated; calibration stays in Settings → Voice. Steve's phone, Nov 21 2026: Safari in the home-screen app NEVER reports speech start, so the allowance always applies; raw recognized times were 2.0–2.8 s for instant answers, so the default is now 1.3 s. Settings → Voice → Measure the delay: tap and say "one" together, 3 rounds, sets the allowance from the average). Times saved earlier used a mix of the two methods.
 - Cadence types (Settings → Training → Cadence type, `cadenceType`; from the other app's list): I-IV-V-I (default), V7-I, ii7-V7-I, I, IM7, several tonics, tonic. Resolution styles (`resStyle`): step to the nearest tonic (default), always step down to the tonic below, jump straight to the nearest tonic, none. Both apply to Train and Car mode (`cadence()`, `resolution()`).
+- Separate speeds (Settings → Training): Cadence speed, Note speed, Resolution speed (`cadSpeed`, `noteSpeed`, `resSpeed`: Slow 0.7 / Normal 1 / Fast 1.4 / Very fast 2), multiplied with the overall Playback speed (`spd()`, `ev()`). The response-time start follows the note speed.
 - Response time display: Settings → Show response time (`showTime`, default on) turns off the time shown after a correct answer, the "aim for under…" nudge, and the speed hint in the header. Mastery still counts speed (Steve doesn't like the messages).
 - Wrong answer: a short low error tone (`A.error()`), a pause (~0.45 s), then the correct note (replayed phrase for phrases) and the resolution. Setting "Error sound" in Settings → Sound (default on).
 - Pentatonic first: levels 1–2 use only 1 2 3 5 6; 4 and 7 come after (levels 3–4).
@@ -134,8 +135,8 @@ adaptive engine, Train mode, Car mode, UI (header, Settings, Progress), sync, bo
 ## Pending ideas (not yet decided or built)
 
 - Functional Ear Trainer features Steve wants to compare against: separate cadence and note
-  tempos, a "give up" button, auto-advance choices (after correct / mistake / giving up), octave
-  markers on answers, resolution speed. (Keyboard input, cadence types and resolution styles are built.)
+  tempos (built), a "give up" button, auto-advance choices (after correct / mistake / giving up), octave
+  markers on answers. (Keyboard input, cadence types and resolution styles are built.)
 - Keyboard levels: whether to require the exact octave, and a landscape keyboard with about
   three octaves. Steve will decide when he reaches the keyboard levels.
 - Minor keys and modes, chromatic notes, chords, sing-back, rhythm in dictation.
