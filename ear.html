@@ -97,6 +97,7 @@ nav button.on{color:var(--accent)}
 .key-dot{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;width:8px;height:8px;border-radius:50%;background:var(--accent2);pointer-events:none}
 .bk .key-dot{bottom:22px}
 .wk.down{background:#d8d2c2}.bk.down{background:#444851}
+.wk.res-lit{background:#9dc2ff}.bk.res-lit{background:#5a86ee}
 .wk.k-ok{background:#bfe3ff}.bk.k-ok{background:#3f7fc4}
 .wk.k-no{background:#f0c9ae}.bk.k-no{background:#a8602f}
 
@@ -251,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.5';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.6';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -658,12 +659,17 @@ async function playQuestionNotes(q, token, onStep){
 }
 // With lightPad, the number pad lights up in step with the notes: 1 2 3 4 on the top row resolve right to left,
 // 5 6 7 and the upper 1 on the bottom row resolve left to right.
-const clearPadLights = () => document.querySelectorAll('#tPad .deg.res-lit').forEach(b => b.classList.remove('res-lit'));
+const clearPadLights = () => document.querySelectorAll('#tPad .res-lit, #tPiano .res-lit').forEach(b => b.classList.remove('res-lit'));
 async function playResolution(s, key, token, lightPad){
   const path = resolution(s), base = s - mod(s,7);
   const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8));
   const slots = path.map((x,i) => (i > 0 && x === base+7) ? 7 : mod(x,7));
-  const onStep = lightPad ? i => { clearPadLights(); const b = $('tPad').children[slots[i]]; if (b) b.classList.add('res-lit'); } : undefined;
+  // On the keyboard, shift the whole path by octaves so every note lands on the keys that are showing (C4 to E5).
+  const mids = path.map(x => posMidi(x,key));
+  const shift = [0,12,-12,24,-24].find(k => mids.every(m => m+k >= 60 && m+k <= 76)) ?? 0;
+  const onStep = lightPad ? i => { clearPadLights();
+    const b = $('tPiano').classList.contains('hidden') ? $('tPad').children[slots[i]] : $('tPiano').querySelector(`[data-m="${mids[i]+shift}"]`);
+    if (b) b.classList.add('res-lit'); } : undefined;
   try { await A.seq(evs, token, onStep); }
   finally { if (lightPad) clearPadLights(); }
 }
