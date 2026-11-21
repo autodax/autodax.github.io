@@ -253,7 +253,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.10';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.11';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1207,6 +1207,7 @@ function renderSettings(){
     </div>
     <h2>Levels</h2><div class="card">
       ${optSelect('_skip','Skip ahead','If you already know earlier material', S.unlocked, LEVELS.map((L,i) => [i, `Unlock through L${i+1}`]))}
+      <div class="row"><div><div class="lab">Undo skipping</div><div class="sub">Levels you skipped (not earned) go back to unmastered, and levels above your highest earned one lock again. Your stats are kept.</div></div><button class="tool" id="bUnskip">Undo</button></div>
     </div>
     <h2>Sync across devices</h2><div class="card">${syncCardHTML()}</div>
     <h2>Your data</h2><div class="card">
@@ -1312,6 +1313,16 @@ document.addEventListener('click', e => {
   if (e.target.id === 'bSyncConnect'){ const v = $('gTok').value.trim(); if (v) syncConnect(v); return; }
   if (e.target.id === 'bSyncNow'){ syncNow(); return; }
   if (e.target.id === 'bSyncOff'){ if (confirm('Stop syncing on this device? Your gist on GitHub is kept.')){ SY = {}; saveSync(); renderSettings(); toast('Sync is off on this device'); } return; }
+  if (e.target.id === 'bUnskip'){
+    const sk = Object.keys(S.mastered).filter(k => S.mastered[k] === 'skipped');
+    if (!sk.length){ toast('No skipped levels'); return; }
+    if (!confirm('Mark the skipped levels as not yet mastered and lock the levels above your highest earned one? Your stats are kept.')) return;
+    sk.forEach(k => delete S.mastered[k]);
+    const earned = Object.keys(S.mastered).map(Number);
+    S.unlocked = earned.length ? Math.min(LEVELS.length-1, Math.max(...earned) + 1) : 0;
+    S.current = Math.min(S.current, S.unlocked);
+    save(); updateHeader(); renderSettings(); resetTrainIdle(); toast(`Back to level ${S.current+1}`); return;
+  }
   if (e.target.id === 'bExport'){ exportProgress().then(() => renderSettings()); return; }
   if (e.target.id === 'bReset'){ if (confirm('Erase all progress and settings?')){ S = freshState(); save(); updateHeader(); renderSettings(); resetTrainIdle(); toast('Reset'); } }
 });
