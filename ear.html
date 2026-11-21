@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.6';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.7';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -277,16 +277,31 @@ function tonicMidi(pc){ const t = 60 + pc; return t > 66 ? t - 12 : t; }
 function posMidi(s, keyPc, scale='major'){ const st = SCALES[scale].steps; return tonicMidi(keyPc) + 12*Math.floor(s/7) + st[mod(s,7)]; }
 function posLabel(s, scale='major'){ return SCALES[scale].labels[mod(s,7)]; }
 // Resolve to the NEAREST tonic: 1-4 step down, 5-7 step up (5 is 3 steps from the upper tonic, 4 from the lower)
-function resolution(s){
+// Styles (setting resStyle): nearest = step to the nearest tonic; down = always step down to the tonic below;
+// direct = jump straight to the nearest tonic; none = no resolution is played.
+function resolution(s, style){
+  style = style || (S.settings && S.settings.resStyle) || 'nearest';
   const d = mod(s,7), base = s - d, path = [s];
-  if (d === 0) return path;
-  if (d <= 3) for (let x = s-1; x >= base; x--) path.push(x);
+  if (d === 0 || style === 'none') return path;
+  if (style === 'direct') { path.push(d <= 3 ? base : base+7); return path; }
+  if (style === 'down' || d <= 3) for (let x = s-1; x >= base; x--) path.push(x);
   else for (let x = s+1; x <= base+7; x++) path.push(x);
   return path;
 }
-function cadence(pc, oct=0){
+// Cadence types (setting cadenceType). Each is a list of chords (or single notes) that ends on the tonic.
+function cadence(pc, oct=0, type){
+  type = type || (S.settings && S.settings.cadenceType) || 'I-IV-V-I';
   const t = tonicMidi(pc) + 12*oct;
-  return [[t-12,t,t+4,t+7],[t-7,t,t+5,t+9],[t-5,t-1,t+2,t+7],[t-12,t,t+4,t+7]];
+  const I = [t-12,t,t+4,t+7], IV = [t-7,t,t+5,t+9], V = [t-5,t-1,t+2,t+7], V7 = [t-5,t-1,t+2,t+5], ii7 = [t-10,t-3,t,t+5];
+  switch (type){
+    case 'V7-I': return [V7, I];
+    case 'ii7-V7-I': return [ii7, V7, I];
+    case 'I': return [I];
+    case 'IM7': return [[t-12,t+4,t+7,t+11]];
+    case 'several tonics': return [[t-12],[t],[t+12],[t]];
+    case 'tonic': return [[t]];
+    default: return [I, IV, V, I];
+  }
 }
 
 /* =====================================================================
@@ -323,7 +338,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, errorSound: true, showTime: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
+  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, errorSound: true, showTime: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level', cadenceType: 'I-IV-V-I', resStyle: 'nearest',
   tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -668,7 +683,7 @@ function masteryInfo(lvl){
 const $ = id => document.getElementById(id);
 const tempo = () => S.settings.tempo;
 const ev = (notes, dur, vel) => ({ notes: Array.isArray(notes) ? notes : [notes], dur: dur / tempo(), vel });
-const cadenceEvents = (k, oct=0) => cadence(k, oct).map((c,i) => ev(c, i === 3 ? 1.25 : 0.72, 0.62));
+const cadenceEvents = (k, oct=0) => cadence(k, oct).map((c,i,a) => ev(c, i === a.length-1 ? 1.25 : 0.72, 0.62));
 
 async function playCadence(key, token, oct=0){ await A.seq(cadenceEvents(key, oct), token); }
 async function playQuestionNotes(q, token, onStep){
@@ -679,6 +694,7 @@ async function playQuestionNotes(q, token, onStep){
 // 5 6 7 and the upper 1 on the bottom row resolve left to right.
 const clearPadLights = () => document.querySelectorAll('#tPad .res-lit, #tPiano .res-lit').forEach(b => b.classList.remove('res-lit'));
 async function playResolution(s, key, token, lightPad){
+  if ((S.settings.resStyle || 'nearest') === 'none') return;
   const path = resolution(s), base = s - mod(s,7);
   const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8));
   const slots = path.map((x,i) => (i > 0 && x === base+7) ? 7 : mod(x,7));
@@ -1082,6 +1098,8 @@ function renderSettings(){
     <h2>Training</h2><div class="card">
       ${optStep('roundLen','Questions per round','Key and octave change together, and only between rounds (at least 10)', s.roundLen, 10, 30, 1, '')}
       ${optSelect('cadenceEvery','Cadence','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
+      ${optSelect('cadenceType','Cadence type','The chords that set the key', s.cadenceType, [['I-IV-V-I','I-IV-V-I'],['V7-I','V7-I'],['ii7-V7-I','ii7-V7-I'],['I','I'],['IM7','IM7'],['several tonics','Several tonics'],['tonic','Tonic']])}
+      ${optSelect('resStyle','Resolution','What plays after your answer', s.resStyle, [['nearest','Step to the nearest tonic'],['down','Step down to the tonic below'],['direct','Jump straight to the tonic'],['none','None']])}
       ${optToggle('showTime','Show response time','Show how fast each answer was, with a nudge when it is slow. Mastery still counts speed either way', s.showTime !== false)}
       ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the start of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
