@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.14';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.15';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -830,8 +830,8 @@ async function grade(){
     if (!ok) document.querySelectorAll(`.deg[data-d="${q.labels[0]}"]`).forEach(r => r.classList.add('reveal'));
   }
   if (q.input === 'piano') markPianoResult(q, res);
-  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`, 'good');
-  else if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${q.input==='piano' ? noteName(T.ans[0].midi,q.key) : T.ans[0].label} · tap Compare to hear both`, 'bad');
+  if (ok) setMsg(pick(['Yes!','Nice','Right','Got it','Exactly']), (lim && t > lim*1000 ? `Correct, but aim for under ${lim.toFixed(1)}s (${secs}s)` : `${secs}s`) + (T.ans[T.ans.length-1].vdbg ? ' · ' + T.ans[T.ans.length-1].vdbg : ''), 'good');
+  else if (q.len === 1) setMsg(`It was ${q.input==='piano' ? noteName(q.midi[0], q.key) + ' (' + q.labels[0] + ')' : q.labels[0]}`, `You answered ${q.input==='piano' ? noteName(T.ans[0].midi,q.key) : T.ans[0].label} · tap Compare to hear both` + (T.ans[0].vdbg ? ' · ' + T.ans[0].vdbg : ''), 'bad');
   else setMsg('Not quite', `Correct: ${q.labels.join(' ')}`, 'bad');
   $('bCompare').disabled = !(q.len === 1 && !ok);
 
@@ -1084,6 +1084,7 @@ function renderSettings(){
     <h2>Voice (experiment)</h2><div class="card">
       ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
       <div class="row"><div><div class="lab">Note loudness with voice</div><div class="sub" id="vBoostTxt">${(s.voiceBoost || 1.5).toFixed(1)}× · the phone plays quieter while the mic is on</div></div><input type="range" min="1" max="4" step="0.1" value="${s.voiceBoost || 1.5}" id="voiceBoostRange"></div>
+      <div class="row"><div><div class="lab">Voice delay allowance</div><div class="sub" id="vLagTxt">${(s.voiceLag ?? 0.8).toFixed(1)} s · taken off the time when Safari doesn't say when you began speaking</div></div><input type="range" min="0" max="2" step="0.1" value="${s.voiceLag ?? 0.8}" id="voiceLagRange"></div>
       <div class="row"><div><div class="lab">Match volume</div><div class="sub">Plays a chord with the mic off, then on. Slide until they sound the same, then press again</div></div><button class="tool" id="vMatch">Match</button></div>
       <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
     </div>
@@ -1178,6 +1179,7 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('input', e => {
+  if (e.target.id === 'voiceLagRange'){ S.settings.voiceLag = +e.target.value; $('vLagTxt').textContent = S.settings.voiceLag.toFixed(1) + " s · taken off the time when Safari doesn't say when you began speaking"; save(); }
   if (e.target.id === 'voiceBoostRange'){ S.settings.voiceBoost = +e.target.value; $('vBoostTxt').textContent = S.settings.voiceBoost.toFixed(1) + '× · the phone plays quieter while the mic is on'; if (A.master) A.master.gain.value = masterGain(); save(); }
   if (e.target.id === 'volRange'){ S.settings.volume = +e.target.value; if (A.master) A.master.gain.value = masterGain(); save(); } });
 document.addEventListener('click', e => {
@@ -1394,8 +1396,11 @@ function voiceListen(){
     if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers' || performance.now() - (T.voiceOpen || 0) < 350) return;
     const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b) return;
     // the response time runs to when the speech began, not to when it was recognized
-    const now = performance.now(), at = (VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now) ? VOICE.speechAt : now; VOICE.speechAt = 0;
-    T.tapped = b; onAnswer({ label: String(n), at });
+    // If Safari doesn't report when speech began, take off an allowance for its recognition delay (setting).
+    const now = performance.now(), seen = !!(VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now);
+    const lag = (S.settings.voiceLag ?? 0.8) * 1000, at = seen ? VOICE.speechAt : now - lag; VOICE.speechAt = 0;
+    const vdbg = seen ? `speech start seen, recognized ${Math.round(now - at)} ms later` : `no speech-start signal; raw ${((now - T.start)/1000).toFixed(1)}s minus ${(lag/1000).toFixed(1)}s allowance`;
+    T.tapped = b; onAnswer({ label: String(n), at, vdbg });
   }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
   return ok ? VOICE.ready : null;
 }
