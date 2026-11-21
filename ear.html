@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.7';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.8';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -762,6 +762,7 @@ async function nextQuestion(){
   T.sinceCad++;
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
   T.phase = 'answering'; lockPad(false);
+  voiceListen();   // VOICE
   const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
   T.start = performance.now() + (q.len === 1 ? 0 : (q.len-1)*noteDur*1000);
   T.qEnd = performance.now() + q.len*noteDur*1000;
@@ -781,7 +782,7 @@ function onAnswer(a){
 }
 
 async function grade(){
-  const q = T.q; T.phase = 'feedback'; lockPad(true);
+  const q = T.q; T.phase = 'feedback'; lockPad(true); voiceStop();   // VOICE
   const t = Math.max(0, performance.now() - T.start);
   kill(T.aux);
   const res = q.labels.map((l,i) => q.input === 'piano' ? mod(T.ans[i].midi,12) === mod(q.midi[i],12) : T.ans[i].label === l);
@@ -1070,6 +1071,10 @@ function renderSettings(){
       ${optToggle('labelKeys','Note names on keys','Turn off once you know the keyboard', s.labelKeys)}
       ${optToggle('markTonic','Mark the tonic','Dot on the key’s home note', s.markTonic)}
     </div>
+    <h2>Voice (experiment)</h2><div class="card">
+      ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
+      <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
+    </div>
     <h2>Sound</h2><div class="card">
       <div class="row"><div class="lab">Volume</div><input type="range" min="0.2" max="1.2" step="0.05" value="${s.volume}" id="volRange"></div>
       <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander Grand Piano by Alexander Holm (CC BY 3.0)'}</div></div></div>
@@ -1314,8 +1319,64 @@ $('bBegin').addEventListener('click', async () => {
   A.fetching.then(failed => { if (failed > SAMPLE_LIST.length*0.4) toast('Piano samples could not load, so a simple synth is playing instead'); });
 });
 // Stop, "Done for today" and "Take a break": let go of the audio channel and go back to the start screen.
+/* ===== VOICE ANSWERS (experiment) =====================================================
+   Say a scale number instead of tapping. Easy to remove: delete this block, the "Voice" card in renderSettings,
+   and the three hook lines marked VOICE (nextQuestion, grade, goToStartScreen). */
+const VOICE = { rec:null, on:false, fails:0, mic:null };
+const VOICE_WORDS = { one:1, won:1, '1':1, two:2, to:2, too:2, '2':2, three:3, tree:3, '3':3, four:4, for:4, fore:4, '4':4, five:5, '5':5, six:6, '6':6, seven:7, '7':7 };
+const voiceSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+function voiceParse(alts){
+  for (const t of alts){ for (const w of String(t).toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)){ if (VOICE_WORDS[w]) return VOICE_WORDS[w]; } }
+  return 0;
+}
+function voiceMic(on){
+  if (!VOICE.mic){ const m = document.createElement('span'); m.className = 'chip'; m.textContent = '🎤'; m.style.display = 'none'; $('bInput').before(m); VOICE.mic = m; }
+  VOICE.mic.style.display = on ? '' : 'none';
+}
+function voiceStart(onNumber, onStatus){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ onStatus && onStatus('This browser has no speech recognition.'); return false; }
+  voiceStop();
+  const rec = VOICE.rec = new SR(); VOICE.on = true;
+  rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = false; rec.maxAlternatives = 4;
+  rec.onresult = e => {
+    const alts = []; for (const r of e.results) for (let i=0;i<r.length;i++) alts.push(r[i].transcript);
+    const n = voiceParse(alts); VOICE.fails = 0;
+    onStatus && onStatus(n ? `Heard “${alts[0].trim()}” → ${n}` : `Heard “${(alts[0]||'').trim()}” (no number in it)`);
+    if (n) onNumber(n);
+  };
+  rec.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){ VOICE.on = false; VOICE.fails = 99; onStatus && onStatus('Speech or microphone permission was refused, so voice answers cannot work here.'); }
+    else if (e.error === 'audio-capture'){ VOICE.on = false; VOICE.fails = 99; onStatus && onStatus('No microphone could be used.'); }
+    else if (e.error !== 'no-speech' && e.error !== 'aborted'){ VOICE.fails++; onStatus && onStatus(`Voice error: ${e.error}`); }
+  };
+  rec.onend = () => { if (VOICE.rec === rec && VOICE.on && VOICE.fails < 4) setTimeout(() => { try { if (VOICE.rec === rec && VOICE.on) rec.start(); } catch(e){} }, 250); else if (VOICE.rec === rec) voiceMic(false); };
+  try { rec.start(); voiceMic(true); } catch(e){ VOICE.on = false; onStatus && onStatus('Could not start listening.'); return false; }
+  return true;
+}
+function voiceStop(){ VOICE.on = false; const r = VOICE.rec; VOICE.rec = null; if (r){ try { r.abort(); } catch(e){} } voiceMic(false); }
+// During a question: listen only when voice is on and the question is answered with the number pad.
+function voiceListen(){
+  if (!S.settings.voiceOn || !T.q || T.q.input !== 'numbers'){ voiceStop(); return; }
+  if (VOICE.on && VOICE.rec) return;
+  VOICE.fails = 0;
+  voiceStart(n => {
+    if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers') return;
+    const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b) return;
+    T.tapped = b; onAnswer({ label: String(n) });
+  }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
+}
+function voiceTest(){
+  const st = $('vStatus'); const say = t => { if (st) st.textContent = t; };
+  if (!voiceSupported()){ say('This browser has no speech recognition, so voice answers are not possible here.'); return; }
+  say('Listening… say a number from 1 to 7.');
+  voiceStart(n => { voiceStop(); }, msg => { say(msg); if (/Heard/.test(msg)) voiceStop(); });
+  setTimeout(() => { if (st && /Listening/.test(st.textContent)){ say('Nothing heard yet. If a permission prompt appeared, allow it and try again.'); } }, 8000);
+}
+document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); });
+
 function goToStartScreen(){
-  kill(T.token); kill(T.aux); T.phase = 'idle';
+  kill(T.token); kill(T.aux); T.phase = 'idle'; voiceStop();   // VOICE
   A.release();
   $('bBegin').disabled = false; $('bBegin').textContent = 'Tap to begin';
   $('loadTxt').textContent = 'Stopped. Progress is saved.';
