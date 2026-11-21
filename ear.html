@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.13';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.14';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -323,7 +323,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV2: 1, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
+  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
   tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -334,8 +334,8 @@ function freshState(){
 let S = load();
 function normalize(s){
   const f = freshState();
-  // Response time now starts when the tone ends (it used to start with the tone), so older speed limits shrink by about the tone's length.
-  if (s.settings && !s.settings.timingV2 && s.settings.speedLimit){ s.settings.speedLimit = ({2:1,3:2,4:3,6:4})[s.settings.speedLimit] ?? Math.max(1, s.settings.speedLimit - 1); }
+  // Speed goal reset (Nov 2026): 2 seconds counted from the start of the tone is a good response.
+  if (s.settings && !s.settings.timingV3 && s.settings.speedLimit) s.settings.speedLimit = 2;
   s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
   return Object.assign(f, s);
 }
@@ -774,10 +774,9 @@ async function nextQuestion(){
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
   T.phase = 'answering'; T.voiceOpen = performance.now(); lockPad(false);
   const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
-  T.start = performance.now() + q.len*noteDur*1000;   // response time counts from the END of the tone(s); corrected to the real end below
+  T.start = performance.now() + (q.len === 1 ? 0 : (q.len-1)*noteDur*1000);   // response time counts from the START of the tone (of the last note, for phrases)
   T.qEnd = performance.now() + q.len*noteDur*1000;
   await playQuestionNotes(q, token);
-  if (!token.dead && T.phase === 'answering' && T.q === q) T.start = performance.now();   // the tone really ended now
 }
 function lockPad(on){ $('tPad').classList.toggle('locked', on); }
 
@@ -1070,7 +1069,7 @@ function renderSettings(){
     <h2>Training</h2><div class="card">
       ${optStep('roundLen','Questions per round','Key and octave change together, and only between rounds (at least 10)', s.roundLen, 10, 30, 1, '')}
       ${optSelect('cadenceEvery','Cadence','How often to replay the key (always on a key change)', s.cadenceEvery, [[1,'Every question'],[3,'Every 3 questions'],[5,'Every 5 questions'],[10,'Every 10 questions'],[0,'Only on key change']])}
-      ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the end of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
+      ${optSelect('speedLimit','Speed for mastery','Typical correct answer must be this quick, counted from the start of the tone', s.speedLimit, [[0,'Off'],[1,'1 second'],[1.5,'1.5 seconds'],[2,'2 seconds'],[3,'3 seconds'],[4,'4 seconds'],[6,'6 seconds']])}
       ${optSelect('reviewPct','Review mix','Questions from earlier levels, for confidence', s.reviewPct, [[0,'None'],[10,'10%'],[20,'20%'],[30,'30%']])}
       ${optSelect('tempo','Playback speed','', s.tempo, [[0.8,'Slow'],[1,'Normal'],[1.25,'Fast']])}
       ${optToggle('autoNext','Auto-advance','Go to the next question after the resolution', s.autoNext)}
@@ -1084,7 +1083,8 @@ function renderSettings(){
     </div>
     <h2>Voice (experiment)</h2><div class="card">
       ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
-      ${optSelect('voiceBoost','Note loudness with voice','The phone plays quieter while the microphone is on', s.voiceBoost || 1.5, [[1,'Normal'],[1.5,'Louder'],[2.2,'Much louder'],[3,'Loudest']])}
+      <div class="row"><div><div class="lab">Note loudness with voice</div><div class="sub" id="vBoostTxt">${(s.voiceBoost || 1.5).toFixed(1)}× · the phone plays quieter while the mic is on</div></div><input type="range" min="1" max="4" step="0.1" value="${s.voiceBoost || 1.5}" id="voiceBoostRange"></div>
+      <div class="row"><div><div class="lab">Match volume</div><div class="sub">Plays a chord with the mic off, then on. Slide until they sound the same, then press again</div></div><button class="tool" id="vMatch">Match</button></div>
       <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
     </div>
     <h2>Sound</h2><div class="card">
@@ -1169,7 +1169,7 @@ document.addEventListener('change', e => {
     const id = sel.dataset.opt, raw = sel.value;
     if (id === '_skip'){ const n = +raw; if (n > S.unlocked){ for (let i=0;i<n;i++) if (S.mastered[i] === undefined) S.mastered[i] = 'skipped';
         S.unlocked = n; S.current = n; save(); updateHeader(); toast(`Unlocked through L${n+1}`); } else sel.value = S.unlocked; return; }
-    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); if (id === 'voiceBoost' && A.master) A.master.gain.value = masterGain(); return;
+    const v = isNaN(+raw) ? raw : +raw; setPath(id, v); updateHeader(); if (id === 'answerWith' && !(T.q && T.phase !== 'idle')) renderPad(null); return;
   }
   if (e.target.id === 'fImport'){
     const f = e.target.files[0]; if (!f) return;
@@ -1177,7 +1177,9 @@ document.addEventListener('change', e => {
      .catch(() => toast('That file could not be read'));
   }
 });
-document.addEventListener('input', e => { if (e.target.id === 'volRange'){ S.settings.volume = +e.target.value; if (A.master) A.master.gain.value = masterGain(); save(); } });
+document.addEventListener('input', e => {
+  if (e.target.id === 'voiceBoostRange'){ S.settings.voiceBoost = +e.target.value; $('vBoostTxt').textContent = S.settings.voiceBoost.toFixed(1) + '× · the phone plays quieter while the mic is on'; if (A.master) A.master.gain.value = masterGain(); save(); }
+  if (e.target.id === 'volRange'){ S.settings.volume = +e.target.value; if (A.master) A.master.gain.value = masterGain(); save(); } });
 document.addEventListener('click', e => {
   const tg = e.target.closest('[data-tog]');
   if (tg){ const id = tg.dataset.tog;
@@ -1404,7 +1406,26 @@ function voiceTest(){
   voiceStart(n => { voiceStop(); }, msg => { say(msg); if (/Heard/.test(msg)) voiceStop(); });
   setTimeout(() => { if (st && /Listening/.test(st.textContent)){ say('Nothing heard yet. If a permission prompt appeared, allow it and try again.'); } }, 8000);
 }
-document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); });
+// Plays one chord with the mic off, then the same chord with the mic on at the boosted loudness, so the two can be compared by ear.
+let voiceMatching = false;
+async function voiceMatch(){
+  if (voiceMatching) return; voiceMatching = true;
+  const st = $('vStatus'), say = t => { if (st) st.textContent = t; }, token = newToken();
+  const chord = [ev([60,64,67], 1.2, 0.8)], boost = S.settings.voiceBoost || 1.5;
+  try {
+    voiceStop(); await voiceSettled();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+    A.engage(); if (A.master) A.master.gain.value = S.settings.volume;
+    say('1 of 2: mic OFF…'); await A.seq(chord, token); await wait(900, token);
+    say('2 of 2: mic ON…');
+    const ok = voiceStart(() => {}, null);
+    if (ok){ await VOICE.ready; await wait(700, token); }
+    if (A.master) A.master.gain.value = S.settings.volume * boost;
+    await A.seq(chord, token); await wait(400, token);
+    say(ok ? 'Done. If the second was quieter, slide up; if louder, slide down. Then press Match again.' : 'The microphone could not start, so there is nothing to compare.');
+  } finally { voiceStop(); await voiceSettled(); try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); voiceMatching = false; }
+}
+document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); if (e.target.id === 'vMatch') voiceMatch(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) voiceStop(); else if (T.phase === 'answering') voiceListen(); });
 
 function goToStartScreen(){
