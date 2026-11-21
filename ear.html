@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.8';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.9';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -352,6 +352,7 @@ function normalize(s){
   // Speed goal reset (Nov 2026): 2 seconds counted from the start of the tone is a good response.
   if (s.settings && !s.settings.timingV3 && s.settings.speedLimit) s.settings.speedLimit = 2;
   s.settings = Object.assign(f.settings, s.settings||{}); if (!(s.settings.roundLen >= 10)) s.settings.roundLen = 12; s.settings.car = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SETTINGS.car)), (s.settings&&s.settings.car)||{});
+  s.conf = poolConf(s.conf);
   return Object.assign(f, s);
 }
 function load(){
@@ -585,6 +586,9 @@ function degWeight(label, lvl){
   if (acc !== null) w += 3 * (1 - acc);     // weak degree: more practice
   return w;
 }
+// Mix-ups are pooled by pair: hearing 4 as 5 and 5 as 4 count toward the same 4 ↔ 5 pair (key "4>5", sorted).
+const confKey = (x, y) => [String(x), String(y)].sort().join('>');
+function poolConf(c){ const o = {}; for (const k in (c||{})){ const [a,b] = k.split('>'), nk = confKey(a,b); o[nk] = (o[nk]||0) + c[k]; } return o; }
 function topConfusions(n=5, within){
   return Object.entries(S.conf)
     .map(([k,v]) => { const [a,b] = k.split('>'); return {a,b,v}; })
@@ -831,7 +835,7 @@ async function grade(){
   const lvl = q.lvl;
   pushCap(S.hist[lvl] = S.hist[lvl] || [], { ok, t: Math.round(t), r: q.review ? 1 : 0 }, 40);
   S.levelDeg[lvl] = S.levelDeg[lvl] || {};
-  for (const k in S.conf){ S.conf[k] *= 0.985; if (S.conf[k] < 0.05) delete S.conf[k]; }
+  for (const k in S.conf){ S.conf[k] *= 0.995; if (S.conf[k] < 0.05) delete S.conf[k]; }   // one mix-up stays in play for about 20 answers, repeats much longer
   q.labels.forEach((l,i) => {
     pushCap(S.levelDeg[lvl][l] = S.levelDeg[lvl][l] || [], res[i], 12);
     S.deg[l] = S.deg[l] || {r:[], t:[]};
@@ -839,7 +843,7 @@ async function grade(){
     if (res[i] && q.len === 1) pushCap(S.deg[l].t, Math.round(t), 20);
     if (!res[i]){
       const given = q.input === 'piano' ? (pcToLabel(T.ans[i].midi, q.key) || '♯/♭') : T.ans[i].label;
-      S.conf[l + '>' + given] = (S.conf[l + '>' + given] || 0) + 1;
+      const ck = confKey(l, given); S.conf[ck] = (S.conf[ck] || 0) + 1;
     }
   });
   S.total++; S.days[today()] = (S.days[today()] || 0) + 1;
@@ -873,6 +877,11 @@ async function grade(){
     await wait(S.settings.errorSound !== false ? 0 : 250, token); if (token.dead) return;
     await playQuestionNotes(q, token, i => highlightSlot(i)); if (token.dead) return;
     highlightSlot(-1); await wait(250, token); if (token.dead) return;
+  } else if (!ok){
+    // single note: hear the correct note sustained on its own, then a breath, before the quick resolution steps
+    await wait(S.settings.errorSound !== false ? 0 : 250, token); if (token.dead) return;
+    await A.seq([ev(q.midi[0], 1.1, 0.85, spd('noteSpeed'))], token); if (token.dead) return;
+    await wait(350, token);
   } else await wait(150, token);
   if (token.dead) return;
   await playResolution(q.pos[q.pos.length-1], q.key, token, true);
@@ -1009,7 +1018,9 @@ async function carLoop(token){
     for (let i = 0; i < c.per && !token.dead; i++){
       const degs = carDegrees(); const range = CAR_RANGES[c.range] || R1;
       const lvl = Math.min(S.current, LEVELS.length-1);
-      const label = weightedPick(degs, degs.map(d => (S.levelDeg[lvl] && S.levelDeg[lvl][d] ? degWeight(d,lvl) : 1) * (d === last ? 0.3 : 1)));
+      const cf = topConfusions(3, degs);
+      const label = (cf.length && Math.random() < 0.3) ? (Math.random() < 0.5 ? cf[Math.floor(Math.random()*cf.length)].a : cf[Math.floor(Math.random()*cf.length)].b)
+        : weightedPick(degs, degs.map(d => (S.levelDeg[lvl] && S.levelDeg[lvl][d] ? degWeight(d,lvl) : 1) * (d === last ? 0.3 : 1)));
       const ps = positionsFor(label, range); const s = ps[Math.floor(Math.random()*ps.length)]; last = label;
       $('cBig').textContent = '?'; $('cStatus').textContent = `Note ${i+1} of ${c.per}`;
       await A.seq([ev(posMidi(s,key), 1.1, 0.85, spd('noteSpeed'))], token); if (token.dead) return;
@@ -1144,7 +1155,7 @@ function renderSettings(){
       <div class="row"><div><div class="lab" style="color:var(--bad)">Reset everything</div></div><button class="tool" style="flex:none;padding:8px 14px;color:var(--bad)" id="bReset">Reset</button></div>
     </div>
     <p class="note">${SY.token ? 'Progress is saved on this device and synced to a private gist in your GitHub account.' : 'Progress is saved on this device. Export now and then so it isn’t lost if Safari clears website data.'}</p>
-    <p class="note" style="text-align:center;color:var(--faint)">Version ${APP_VERSION}<br><span style="font-size:11px">${diagText()}</span></p>`;
+    <p class="note" style="text-align:center;color:var(--faint)">Version ${APP_VERSION}</p>`;
 }
 function renderProgress(){
   const m = masteryInfo(S.current);
@@ -1169,7 +1180,7 @@ function renderProgress(){
       <div class="stat"><b>${S.total}</b><span>Answered</span></div>
       <div class="stat"><b>${S.bestStreak}</b><span>Best run</span></div>
     </div>
-    <h2>Trouble spots</h2><div class="card">${confs.length ? confs.map(c => `<div class="row"><div class="lab">You hear <b>${c.a}</b> as <b>${c.b}</b></div><div class="sub">${c.v.toFixed(1)}× recently</div></div>`).join('')
+    <h2>Trouble spots</h2><div class="card">${confs.length ? confs.map(c => `<div class="row"><div class="lab">You mix up <b>${c.a}</b> and <b>${c.b}</b></div><div class="sub">${c.v.toFixed(1)}× recently</div></div>`).join('')
       : '<div class="row"><div class="sub">No repeated mix-ups yet. When you confuse two degrees, they’ll show here and get drilled more often.</div></div>'}</div>
     <h2>Scale degrees · last 20 · typical speed</h2><div class="card"><div class="degbars">${bars}</div></div>
     <h2>Levels</h2><div class="card">${lv}</div>
@@ -1390,6 +1401,7 @@ function voiceLogAdd(k, text, fin, action){
 }
 const VOICE_WORDS = { one:1, won:1, '1':1, two:2, to:2, too:2, '2':2, three:3, tree:3, '3':3, four:4, for:4, fore:4, '4':4, five:5, '5':5, six:6, '6':6, seven:7, '7':7 };
 const voiceSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+function voiceParseAll(t){ const o = []; for (const w of String(t).toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)) if (VOICE_WORDS[w]) o.push(VOICE_WORDS[w]); return o; }
 function voiceParse(alts){
   for (const t of alts){ for (const w of String(t).toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)){ if (VOICE_WORDS[w]) return VOICE_WORDS[w]; } }
   return 0;
@@ -1408,7 +1420,7 @@ function voiceStart(onNumber, onStatus){
     rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
   rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 4;
   rec.onspeechstart = () => { VOICE.speechAt = performance.now(); };
-  rec.onstart = () => { VOICE.first = {}; VOICE.used = -1; };   // result numbers start again from 0 in each listening session
+  rec.onstart = () => { VOICE.first = {}; VOICE.used = -1; VOICE.cons = {}; };   // result numbers start again from 0 in each listening session
   rec.onresult = e => {
     VOICE.fails = 0;
     // Only the top guess of each result counts (lower-ranked guesses led to wrong numbers), and each result can answer once.
@@ -1417,7 +1429,7 @@ function voiceStart(onNumber, onStatus){
       if (!VOICE.first) VOICE.first = {};
       if (VOICE.first[k] === undefined) VOICE.first[k] = now;
       onStatus && onStatus(n ? `Heard “${top}” → ${n}` : `Heard “${top}” (no number in it)`);
-      if (n) onNumber(n, { k, first: VOICE.first[k], final: r.isFinal, text: top });
+      if (n) onNumber(n, { k, first: VOICE.first[k], final: r.isFinal, text: top, all: voiceParseAll(top) });
       else voiceLogAdd(k, top, r.isFinal, 'no number');
     }
   };
@@ -1449,9 +1461,23 @@ function voiceListen(){
   VOICE.fails = 0;
   const ok = voiceStart((n, info) => {
     const lagMs = (S.settings.voiceLag ?? 1.3) * 1000, log = a => voiceLogAdd(info.k, info.text, info.final, a);
-    if (info.k <= VOICE.used){ log('ignored (final of what it already answered)'); return; }
+    const phrase = T.q && T.q.len > 1;
+    if (!phrase && info.k <= VOICE.used){ log('ignored (final of what it already answered)'); return; }
     if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers'){ log(`ignored (not waiting for an answer)`); return; }
     if (info.first - lagMs < (T.voiceOpen || 0) - 300){ log('ignored (spoken before this question)'); return; }
+    if (phrase){
+      // Phrases: every number in one breath counts, in order ("one three five"); later words in the same utterance continue it.
+      VOICE.cons = VOICE.cons || {}; let c = VOICE.cons[info.k] || 0; const all = info.all || [n];
+      if (all.length <= c){ log('ignored (already answered)'); return; }
+      const now = performance.now(), seen = !!(VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now);
+      const at = seen ? VOICE.speechAt : now - lagMs; VOICE.speechAt = 0;
+      for (; c < all.length && T.phase === 'answering' && T.ans.length < T.q.len; c++){
+        const bb = document.querySelector(`#tPad .deg[data-d="${all[c]}"]:not(.off)`);
+        if (!bb){ log(`ignored (${all[c]} is not on this level)`); continue; }
+        log(`ANSWERED ${all[c]}`); T.tapped = bb; onAnswer({ label: String(all[c]), at });
+      }
+      VOICE.cons[info.k] = all.length; return;
+    }
     const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b){ log(`ignored (${n} is not on this level)`); return; }
     VOICE.used = info.k; log(`ANSWERED ${n}`);
     // the response time runs to when the speech began, not to when it was recognized
@@ -1529,11 +1555,6 @@ function safeInsets(){
   const d = document.createElement('div');
   d.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
   document.body.appendChild(d); const cs = getComputedStyle(d); const r = [parseFloat(cs.paddingTop)||0, parseFloat(cs.paddingBottom)||0]; d.remove(); return r;
-}
-function diagText(){
-  const [t,b] = safeInsets(); const app = $('app').getBoundingClientRect();
-  const nav = $('nav').getBoundingClientRect(), vv = window.visualViewport;
-  return `view ${innerWidth}×${innerHeight} · screen ${screen.width}×${screen.height} · doc ${document.documentElement.clientHeight} · vv ${vv ? Math.round(vv.height) + '@' + vv.scale : '-'} · app ${Math.round(app.top)}–${Math.round(app.bottom)} · nav ${Math.round(nav.top)}–${Math.round(nav.bottom)} · safe ${t}/${b} · dpr ${devicePixelRatio} · ${isStandalone() ? 'home-screen' : 'browser'}${navigator.standalone ? ' (s)' : ''}`;
 }
 // Undo any leftover zoom (iOS zooms in on form fields and can keep it in home-screen apps)
 function resetZoom(){ const vp = $('vp'); const c = vp.content; vp.content = c + ', x=1'; vp.content = c; }
