@@ -1,46 +1,123 @@
-/* Ear Trainer offline support. Serves ear.html, its icons and the piano sounds from the phone's storage
-   when there is no signal, and keeps them fresh when there is. It ignores every other page on this site. */
-const APP = 'ear-app-v1';            // ear.html, manifest, icons
-const SAMPLES = 'music-samples-v2';  // piano sounds (same cache the app itself uses)
-const NOTES = [21,24,27,30,33,36,39,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84,87,90,93,96,99,102,105,108];
-const PAGES = ['/ear.html', '/ear/manifest.json', '/ear/icon-180.png', '/ear/icon-512.png'];
-const WAIT_MS = 3000;                // how long to wait for the network before using the saved copy
+"use strict";
+const SW_VERSION = '2026-11-21.7';
+const APP_CACHE = 'ear-app-' + SW_VERSION;
+const SAMPLE_CACHE = 'music-samples-v2';
 
-self.addEventListener('install', e => {
-  e.waitUntil((async () => {
-    const app = await caches.open(APP);
-    await Promise.all(PAGES.map(async u => { try { await app.add(new Request(u, {cache:'reload'})); } catch(_){} }));
-    const smp = await caches.open(SAMPLES);
-    await Promise.all(NOTES.map(async n => { const u = `/ear/piano/${n}.m4a`;
-      try { if (!(await smp.match(u))) await smp.add(u); } catch(_){} }));
-    self.skipWaiting();
-  })());
-});
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+const APP_SHELL = [
+  'ear.html',
+  'ear/manifest.json',
+  'ear/icon-180.png?v=5',
+  'ear/icon-512.png?v=5'
+];
 
-// Network first (so updates arrive), but fall back to the saved copy when offline or too slow.
-function networkFirst(e, key){
-  return (async () => {
-    const cache = await caches.open(APP);
-    const net = fetch(e.request, {cache:'no-store'}).then(async r => { if (r && r.ok) await cache.put(key, r.clone()); return r; });
-    e.waitUntil(net.catch(() => {}));   // keep refreshing the saved copy even after a slow answer
-    const slow = new Promise(res => setTimeout(() => res(null), WAIT_MS));
-    try { const r = await Promise.race([net, slow]); if (r) return r; } catch(_){}
-    const hit = await cache.match(key);
-    return hit || net;
-  })();
+// All 30 Salamander Grand Piano samples (MIDI 21..108, every 3 semitones)
+const PIANO_SAMPLES = [];
+for (let m = 21; m <= 108; m += 3) {
+  PIANO_SAMPLES.push('ear/piano/' + m + '.m4a');
 }
 
-self.addEventListener('fetch', e => {
-  const req = e.request, url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== location.origin) return;
-  const p = url.pathname;
-  if (p === '/ear.html') return e.respondWith(networkFirst(e, '/ear.html'));
-  if (p === '/ear/manifest.json' || p === '/ear/icon-180.png' || p === '/ear/icon-512.png') return e.respondWith(networkFirst(e, p));
-  if (p.startsWith('/ear/piano/')) return e.respondWith((async () => {
-    const cache = await caches.open(SAMPLES), hit = await cache.match(p);
-    if (hit) return hit;
-    const r = await fetch(req); if (r && r.ok) cache.put(p, r.clone()); return r;
+const resolveUrl = path => new URL(path, self.registration.scope).href;
+
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const appCache = await caches.open(APP_CACHE);
+    await Promise.allSettled(
+      APP_SHELL.map(async path => {
+        const req = new Request(resolveUrl(path), { cache: 'reload' });
+        const res = await fetch(req);
+        if (res && res.ok) await appCache.put(resolveUrl(path), res);
+      })
+    );
+
+    // Warm the shared piano sample cache so offline playback works right after first install
+    const sampleCache = await caches.open(SAMPLE_CACHE);
+    await Promise.allSettled(
+      PIANO_SAMPLES.map(async path => {
+        const url = resolveUrl(path);
+        const hit = await sampleCache.match(url);
+        if (hit) return;
+        const res = await fetch(url);
+        if (res && res.ok) await sampleCache.put(url, res);
+      })
+    );
+
+    await self.skipWaiting();
   })());
-  // anything else (the other apps on this site) is left alone
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(k => k.startsWith('ear-app-') && k !== APP_CACHE)
+        .map(k => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  const scopePath = new URL(self.registration.scope).pathname;
+  const relPath = url.pathname.startsWith(scopePath)
+    ? url.pathname.slice(scopePath.length)
+    : null;
+
+  // Only handle Ear Trainer files; leave other apps on this site untouched
+  if (relPath === null) return;
+  const isEarPage = relPath === 'ear.html';
+  const isPianoSample = relPath.startsWith('ear/piano/') && relPath.endsWith('.m4a');
+  const isEarAsset = relPath.startsWith('ear/');
+  if (!isEarPage && !isEarAsset) return;
+
+  // Let version checks bypass the cache so updates are always detected promptly
+  if (isEarPage && url.searchParams.has('check')) return;
+
+  // 1. Piano samples: cache-first from music-samples-v2 (shared with ear.html)
+  if (isPianoSample) {
+    event.respondWith((async () => {
+      const cache = await caches.open(SAMPLE_CACHE);
+      const hit = await cache.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res && res.ok) await cache.put(req, res.clone());
+      return res;
+    })());
+    return;
+  }
+
+  // 2. ear.html: network-first when online (updates cache), instant cached fallback offline
+  if (isEarPage) {
+    event.respondWith((async () => {
+      const cache = await caches.open(APP_CACHE);
+      const canonical = resolveUrl('ear.html');
+      try {
+        const res = await fetch(req);
+        if (res && res.ok) await cache.put(canonical, res.clone());
+        return res;
+      } catch (e) {
+        const cached = await cache.match(canonical, { ignoreSearch: true });
+        if (cached) return cached;
+        throw e;
+      }
+    })());
+    return;
+  }
+
+  // 3. Icons & manifest under ear/: cache-first, refresh in background
+  event.respondWith((async () => {
+    const cache = await caches.open(APP_CACHE);
+    const hit = await cache.match(req, { ignoreSearch: true });
+    const fetchPromise = fetch(req).then(res => {
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    }).catch(() => null);
+    return hit || (await fetchPromise);
+  })());
 });
