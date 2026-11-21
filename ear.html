@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.3';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.4';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1411,8 +1411,8 @@ function voiceListen(){
   VOICE.fails = 0;
   const ok = voiceStart((n, info) => {
     const lagMs = (S.settings.voiceLag ?? 1.3) * 1000, log = a => voiceLogAdd(info.k, info.text, info.final, a);
+    if (info.k <= VOICE.used){ log('ignored (final of what it already answered)'); return; }
     if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers'){ log(`ignored (not waiting for an answer)`); return; }
-    if (info.k <= VOICE.used){ log('ignored (that utterance already answered)'); return; }
     if (info.first - lagMs < (T.voiceOpen || 0) - 300){ log('ignored (spoken before this question)'); return; }
     const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b){ log(`ignored (${n} is not on this level)`); return; }
     VOICE.used = info.k; log(`ANSWERED ${n}`);
