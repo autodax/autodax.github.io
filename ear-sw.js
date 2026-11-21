@@ -1,5 +1,5 @@
 "use strict";
-const SW_VERSION = '2026-11-21.7';
+const SW_VERSION = '2026-11-21.9';
 const APP_CACHE = 'ear-app-' + SW_VERSION;
 const SAMPLE_CACHE = 'music-samples-v2';
 
