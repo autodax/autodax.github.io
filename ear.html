@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.4';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.5';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -323,7 +323,7 @@ const roundLen = () => Math.max(10, S.settings.roundLen || 12);   // questions p
    ===================================================================== */
 const STORE = 'music.ear.v1';
 const DEFAULT_SETTINGS = {
-  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
+  cadenceEvery: 5, roundLen: 12, autoNext: true, speedLimit: 2, timingV3: 1, errorSound: true, reviewPct: 20, labelKeys: true, markTonic: true, answerWith: 'level',
   tempo: 1, volume: 0.85, dailyGoal: 60, breakEvery: 10,
   car: { per: 5, pause: 2, gap: 1.5, keyMode: 'random', degrees: 'level', range: 'one' }
 };
@@ -461,6 +461,17 @@ const A = {
     for (const e of events){ starts.push(t); for (const m of e.notes) this.note(m, t, e.dur*0.95, e.vel ?? 0.8); t += e.dur; }
     if (onStep) starts.forEach((st,i) => setTimeout(() => { if (!token || !token.dead) onStep(i); }, Math.max(0,(st - this.now())*1000)));
     await wait((t - this.now())*1000, token);
+  },
+  // A short low "wrong" tone: two slightly clashing low saw waves through a low-pass filter.
+  async error(token){
+    this.engage(); if (!this.ctx) return;
+    if (this.ctx.state !== 'running') await this.ctx.resume().catch(()=>{});
+    const ctx = this.ctx, t = this.now() + 0.06, g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 420; g.connect(f); f.connect(this.master);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.32);
+    const oscs = [98, 103.5].map(fr => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fr; o.connect(g); o.start(t); o.stop(t + 0.35); return o; });
+    const rec = { src: oscs[0], g }; this.live.add(rec); oscs[0].onended = () => this.live.delete(rec);
+    await wait(400, token);
   },
   stopAll(){
     const t = this.ctx ? this.now() : 0;
@@ -838,8 +849,10 @@ async function grade(){
   const token = T.token = newToken();
   // let the question finish sounding before resolving
   await wait(Math.max(0, T.qEnd - performance.now()), token); if (token.dead) return;
+  // wrong answer: a short low error tone, a pause, then the correct note(s) and the resolution
+  if (!ok && S.settings.errorSound !== false){ await A.error(token); if (token.dead) return; await wait(450, token); if (token.dead) return; }
   if (!ok && q.len > 1){
-    await wait(250, token); if (token.dead) return;
+    await wait(S.settings.errorSound !== false ? 0 : 250, token); if (token.dead) return;
     await playQuestionNotes(q, token, i => highlightSlot(i)); if (token.dead) return;
     highlightSlot(-1); await wait(250, token); if (token.dead) return;
   } else await wait(150, token);
@@ -1093,6 +1106,7 @@ function renderSettings(){
       <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
     </div>
     <h2>Sound</h2><div class="card">
+      ${optToggle('errorSound','Error sound','On a wrong answer: a short low tone, a pause, then the correct note and its resolution', s.errorSound !== false)}
       <div class="row"><div class="lab">Volume</div><input type="range" min="0.2" max="1.2" step="0.05" value="${s.volume}" id="volRange"></div>
       <div class="row"><div><div class="lab">Piano</div><div class="sub">${A.synth ? 'Samples unavailable: using a simple synth' : 'Salamander Grand Piano by Alexander Holm (CC BY 3.0)'}</div></div></div>
     </div>
