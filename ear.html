@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.15';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.1';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -1084,7 +1084,9 @@ function renderSettings(){
     <h2>Voice (experiment)</h2><div class="card">
       ${optToggle('voiceOn','Answer by voice','Say the number instead of tapping (number-pad questions only)', s.voiceOn)}
       <div class="row"><div><div class="lab">Note loudness with voice</div><div class="sub" id="vBoostTxt">${(s.voiceBoost || 1.5).toFixed(1)}× · the phone plays quieter while the mic is on</div></div><input type="range" min="1" max="4" step="0.1" value="${s.voiceBoost || 1.5}" id="voiceBoostRange"></div>
-      <div class="row"><div><div class="lab">Voice delay allowance</div><div class="sub" id="vLagTxt">${(s.voiceLag ?? 0.8).toFixed(1)} s · taken off the time when Safari doesn't say when you began speaking</div></div><input type="range" min="0" max="2" step="0.1" value="${s.voiceLag ?? 0.8}" id="voiceLagRange"></div>
+      <div class="row"><div><div class="lab">Voice delay allowance</div><div class="sub" id="vLagTxt">${(s.voiceLag ?? 1.3).toFixed(1)} s · taken off the time when Safari doesn't say when you began speaking</div></div><input type="range" min="0" max="3" step="0.1" value="${s.voiceLag ?? 1.3}" id="voiceLagRange"></div>
+      <div class="row"><div><div class="lab">Measure the delay</div><div class="sub">Three rounds: tap the button and say “one” at the same moment</div></div><button class="tool" id="vCal">Measure</button></div>
+      <div class="row"><button class="tool hidden" id="vCalTap" style="width:100%;padding:18px">Tap here while saying “one”</button></div>
       <div class="row"><div><div class="lab">Match volume</div><div class="sub">Plays a chord with the mic off, then on. Slide until they sound the same, then press again</div></div><button class="tool" id="vMatch">Match</button></div>
       <div class="row"><div><div class="lab">Test voice</div><div class="sub" id="vStatus">Tap Test, then say a number from 1 to 7</div></div><button class="tool" id="vTest">Test</button></div>
     </div>
@@ -1398,7 +1400,7 @@ function voiceListen(){
     // the response time runs to when the speech began, not to when it was recognized
     // If Safari doesn't report when speech began, take off an allowance for its recognition delay (setting).
     const now = performance.now(), seen = !!(VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now);
-    const lag = (S.settings.voiceLag ?? 0.8) * 1000, at = seen ? VOICE.speechAt : now - lag; VOICE.speechAt = 0;
+    const lag = (S.settings.voiceLag ?? 1.3) * 1000, at = seen ? VOICE.speechAt : now - lag; VOICE.speechAt = 0;
     const vdbg = seen ? `speech start seen, recognized ${Math.round(now - at)} ms later` : `no speech-start signal; raw ${((now - T.start)/1000).toFixed(1)}s minus ${(lag/1000).toFixed(1)}s allowance`;
     T.tapped = b; onAnswer({ label: String(n), at, vdbg });
   }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
@@ -1410,6 +1412,27 @@ function voiceTest(){
   say('Listening… say a number from 1 to 7.');
   voiceStart(n => { voiceStop(); }, msg => { say(msg); if (/Heard/.test(msg)) voiceStop(); });
   setTimeout(() => { if (st && /Listening/.test(st.textContent)){ say('Nothing heard yet. If a permission prompt appeared, allow it and try again.'); } }, 8000);
+}
+// Measures how long Safari takes to recognize a spoken number: you tap and say "one" at the same moment, three times.
+let VCAL = null;
+function voiceCalibrate(){
+  const st = $('vStatus'), say = t => { if (st) st.textContent = t; }, btn = $('vCal'), tap = $('vCalTap');
+  const done = () => { VCAL = null; voiceStop(); btn.textContent = 'Measure'; tap.classList.add('hidden'); };
+  if (VCAL){ done(); say('Stopped.'); return; }
+  if (!voiceSupported()){ say('This browser has no speech recognition.'); return; }
+  const lags = []; VCAL = { tapAt: 0, timer: null }; btn.textContent = 'Cancel'; say('Starting the microphone…');
+  const ok = voiceStart(n => {
+    if (!VCAL || !VCAL.tapAt) return;
+    clearTimeout(VCAL.timer); lags.push(performance.now() - VCAL.tapAt); VCAL.tapAt = 0;
+    if (lags.length < 3){ say(`Heard it (${(lags[lags.length-1]/1000).toFixed(1)} s). Round ${lags.length + 1} of 3: tap and say “one”.`); return; }
+    const avg = lags.reduce((a,b) => a + b, 0) / lags.length / 1000, v = Math.min(3, Math.max(0, Math.round(avg * 10) / 10));
+    S.settings.voiceLag = v; save(); const r = $('voiceLagRange'); if (r) r.value = v; const t = $('vLagTxt'); if (t) t.textContent = v.toFixed(1) + " s · taken off the time when Safari doesn't say when you began speaking";
+    done(); say(`Measured ${lags.map(x => (x/1000).toFixed(1)).join(', ')} s. Voice delay allowance set to ${v.toFixed(1)} s.`);
+  }, msg => { if (/refused|No microphone|Could not/.test(msg)){ done(); say(msg); } });
+  if (!ok){ done(); return; }
+  VOICE.ready.then(() => { if (!VCAL) return; tap.classList.remove('hidden'); say('Round 1 of 3: tap the button below and say “one” at the same moment.'); });
+  tap.onpointerdown = () => { if (!VCAL) return; VCAL.tapAt = performance.now(); say('Listening…'); clearTimeout(VCAL.timer);
+    VCAL.timer = setTimeout(() => { if (VCAL){ VCAL.tapAt = 0; say('Nothing recognized. Tap and say “one” again.'); } }, 6000); };
 }
 // Plays one chord with the mic off, then the same chord with the mic on at the boosted loudness, so the two can be compared by ear.
 let voiceMatching = false;
@@ -1430,7 +1453,7 @@ async function voiceMatch(){
     say(ok ? 'Done. If the second was quieter, slide up; if louder, slide down. Then press Match again.' : 'The microphone could not start, so there is nothing to compare.');
   } finally { voiceStop(); await voiceSettled(); try { if (navigator.audioSession) navigator.audioSession.type = audioType(); } catch(e){} if (A.master) A.master.gain.value = masterGain(); voiceMatching = false; }
 }
-document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); if (e.target.id === 'vMatch') voiceMatch(); });
+document.addEventListener('click', e => { if (e.target.id === 'vTest') voiceTest(); if (e.target.id === 'vMatch') voiceMatch(); if (e.target.id === 'vCal') voiceCalibrate(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) voiceStop(); else if (T.phase === 'answering') voiceListen(); });
 
 function goToStartScreen(){
