@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.6';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.7';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -664,9 +664,10 @@ async function playResolution(s, key, token, lightPad){
   const path = resolution(s), base = s - mod(s,7);
   const evs = path.map((x,i) => ev(posMidi(x,key), i === path.length-1 ? 0.9 : 0.42, 0.8));
   const slots = path.map((x,i) => (i > 0 && x === base+7) ? 7 : mod(x,7));
-  // On the keyboard, shift the whole path by octaves so every note lands on the keys that are showing (C4 to E5).
+  // On the keyboard, shift the path by octaves only if a note isn't on the keys showing (e.g. replaying your wrong answer).
   const mids = path.map(x => posMidi(x,key));
-  const shift = [0,12,-12,24,-24].find(k => mids.every(m => m+k >= 60 && m+k <= 76)) ?? 0;
+  const keysM = [...$('tPiano').querySelectorAll('[data-m]')].map(k => +k.dataset.m), kLo = Math.min(...keysM), kHi = Math.max(...keysM);
+  const shift = [0,12,-12,24,-24].find(k => mids.every(m => m+k >= kLo && m+k <= kHi)) ?? 0;
   const onStep = lightPad ? i => { clearPadLights();
     const b = $('tPiano').classList.contains('hidden') ? $('tPad').children[slots[i]] : $('tPiano').querySelector(`[data-m="${mids[i]+shift}"]`);
     if (b) b.classList.add('res-lit'); } : undefined;
@@ -692,14 +693,24 @@ function renderPad(q){
   const usePiano = (q ? q.input : inputFor(LEVELS[S.current])) === 'piano';
   updateInputBtn(usePiano);
   pad.classList.toggle('hidden', usePiano); piano.classList.toggle('hidden', !usePiano);
-  if (usePiano){ renderPiano(q ? q.key : (T.roundKey || 0)); return; }
+  if (usePiano){ renderPiano(q ? q.key : (T.roundKey || 0), q); return; }
   const active = q ? LEVELS[q.lvl].degrees : LEVELS[S.current].degrees;
   // 1–7 plus the upper 1, so the pad reads as a full octave in two rows of four
   pad.innerHTML = [...ALL7, '1'].map(d => `<button class="deg ${d==='1'?'tonic':''} ${active.includes(d)?'':'off'}" data-d="${d}">${d}</button>`).join('');
 }
 // Keyboard: C up to E of the next octave, covers every pitch in any key.
-function renderPiano(key){
-  const lo = 60, hi = 76, el = $('tPiano');
+// The keys shown always include both home notes (1 and the upper 1) and every note the question and its resolution
+// play, so the note you hear is always on the keyboard to tap (padded out to white keys at both ends).
+function pianoWindow(key, q){
+  const t = posMidi(q ? 7*q.oct : 0, key); let lo = t, hi = t + 12;
+  if (q){ const all = [...q.midi]; q.pos.forEach(x => resolution(x).forEach(r => all.push(posMidi(r,key))));
+    lo = Math.min(lo, ...all); hi = Math.max(hi, ...all); }
+  while ([1,3,6,8,10].includes(mod(lo,12))) lo--;
+  while ([1,3,6,8,10].includes(mod(hi,12))) hi++;
+  return [lo, hi];
+}
+function renderPiano(key, q){
+  const [lo, hi] = pianoWindow(key, q), el = $('tPiano');
   const whites = []; for (let m = lo; m <= hi; m++) if (![1,3,6,8,10].includes(m%12)) whites.push(m);
   const ww = 100 / whites.length; let html = '';
   const lab = m => S.settings.labelKeys ? `<span class="key-lab">${noteName(m,key)}</span>` : '';
@@ -849,7 +860,7 @@ function markPianoResult(q, res){
   el.querySelectorAll('.k-ok,.k-no').forEach(k => k.classList.remove('k-ok','k-no'));
   if (q.len !== 1) return;
   const given = el.querySelector(`[data-m="${T.ans[0].midi}"]`); given && given.classList.add(res[0] ? 'k-ok' : 'k-no');
-  if (!res[0]){ const want = [...el.querySelectorAll('[data-m]')].find(k => mod(+k.dataset.m,12) === mod(q.midi[0],12)); want && want.classList.add('k-ok'); }
+  if (!res[0]){ const want = el.querySelector(`[data-m="${q.midi[0]}"]`) || [...el.querySelectorAll('[data-m]')].find(k => mod(+k.dataset.m,12) === mod(q.midi[0],12)); want && want.classList.add('k-ok'); }
 }
 
 async function compare(){
