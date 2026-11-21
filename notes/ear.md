@@ -15,6 +15,7 @@ to melodic dictation.
   `ear/piano/README.md` and in the app's Settings.
 - `ear/icon-180.png`, `ear/icon-512.png`: blue eighth note (one flag) on pure black (was orange). Icon links carry `?v=5`; bump it when the icon changes.
 - `ear/manifest.json`: home-screen web app settings.
+- `ear-sw.js` (site root, so it can cover `/ear.html`): offline support. On first load it saves `ear.html`, the icons and all 30 piano sounds on the phone (cache `ear-app-v1`; sounds go in `music-samples-v2`, the app's own sample cache). `ear.html` is network-first with a 3 s wait, then the saved copy, so updates still arrive through `APP_VERSION` and the app opens with no signal. It ignores every other page on the site. If the piano files or icons change, bump `APP_` cache name `ear-app-v1` (and the note list) in `ear-sw.js`.
 
 ## Decisions (Steve's)
 

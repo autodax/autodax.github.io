@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-21.9';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-21.10';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -496,6 +496,8 @@ const A = {
   }
 };
 try { caches.delete('music-samples-v1'); } catch(e){}   // old sample set
+// Offline support: a service worker keeps ear.html and the piano sounds on the phone (see ear-sw.js).
+try { if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('ear-sw.js').catch(() => {})); } catch(e){}
 async function fetchFirst(urls){
   let err; for (const u of urls){ try { return await fetchCached(u); } catch(e){ err = e; } } throw err;
 }
