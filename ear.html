@@ -252,7 +252,7 @@ input[type=range]{padding:0;accent-color:var(--accent);width:46%}
 
 <script>
 "use strict";
-const APP_VERSION = '2026-11-20.11';   // bump on every release so installed copies update themselves
+const APP_VERSION = '2026-11-20.12';   // bump on every release so installed copies update themselves
 /* =====================================================================
    MUSIC THEORY DATA
    Built from data so minor keys, modes, chromatic notes and chords can be
@@ -757,6 +757,10 @@ async function nextQuestion(){
   T.phase = 'playing';
   $('bGo').classList.add('hidden'); $('bCompare').disabled = true;
   setKeyLabel(q.key); setChip(q); renderPad(q); renderSlots(q); lockPad(true);
+  // VOICE: the first time, the mic takes a moment to switch on and iOS changes audio mode; do that before any sound (even the cadence)
+  const vr = voiceListen();
+  if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(500, token); if (token.dead) return;
+    try { if (A.ctx && A.ctx.state !== 'running') await A.ctx.resume(); } catch(e){} }
   const needCad = q.key !== T.cadKey || q.oct !== T.cadOct || T.sinceCad >= (S.settings.cadenceEvery || 999);
   if (needCad){
     setMsg(T.cadKey !== null && q.key !== T.cadKey ? `New key: ${KEYS[q.key].name}` : T.cadKey !== null && q.oct !== T.cadOct ? (q.oct > T.cadOct ? 'Up an octave' : 'Down an octave') : `Key of ${KEYS[q.key].name}`, 'Listen to the cadence…');
@@ -765,9 +769,6 @@ async function nextQuestion(){
     await wait(380, token); if (token.dead) return;
   }
   T.sinceCad++;
-  const vr = voiceListen();   // VOICE: the mic takes a moment to switch on; wait for it before any sound
-  if (vr){ setMsg('Getting the microphone ready…', ''); await vr; if (token.dead) return; await wait(500, token); if (token.dead) return;
-    try { if (A.ctx && A.ctx.state !== 'running') await A.ctx.resume(); } catch(e){} }
   setMsg(q.len === 1 ? 'What do you hear?' : `Name all ${q.len} notes`, q.input === 'piano' ? 'Play it on the keyboard' : '');
   T.phase = 'answering'; T.voiceOpen = performance.now(); lockPad(false);
   const noteDur = (q.len === 1 ? 1.1 : 0.62) / tempo();
@@ -790,7 +791,7 @@ function onAnswer(a){
 
 async function grade(){
   const q = T.q; T.phase = 'feedback'; lockPad(true);
-  const t = Math.max(0, performance.now() - T.start);
+  const lastAt = T.ans.length ? T.ans[T.ans.length-1].at : 0, t = Math.max(0, (lastAt || performance.now()) - T.start);
   kill(T.aux);
   const res = q.labels.map((l,i) => q.input === 'piano' ? mod(T.ans[i].midi,12) === mod(q.midi[i],12) : T.ans[i].label === l);
   const ok = res.every(Boolean);
@@ -1350,7 +1351,8 @@ function voiceStart(onNumber, onStatus){
   const rec = VOICE.rec = new SR(); VOICE.on = true;
   VOICE.ready = new Promise(res => { let d = false; const fin = () => { if (!d){ d = true; res(); } };
     rec.onaudiostart = fin; setTimeout(fin, 2500); VOICE.readyFin = fin; });
-  rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 4;
+  rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 4;
+  rec.onspeechstart = () => { VOICE.speechAt = performance.now(); };
   rec.onresult = e => {
     const alts = []; for (let k = e.resultIndex || 0; k < e.results.length; k++){ const r = e.results[k]; for (let i=0;i<r.length;i++) alts.push(r[i].transcript); }
     const n = voiceParse(alts); VOICE.fails = 0;
@@ -1386,7 +1388,9 @@ function voiceListen(){
   const ok = voiceStart(n => {
     if (T.phase !== 'answering' || !T.q || T.q.input !== 'numbers' || performance.now() - (T.voiceOpen || 0) < 350) return;
     const b = document.querySelector(`#tPad .deg[data-d="${n}"]:not(.off)`); if (!b) return;
-    T.tapped = b; onAnswer({ label: String(n) });
+    // the response time runs to when the speech began, not to when it was recognized
+    const now = performance.now(), at = (VOICE.speechAt && VOICE.speechAt >= T.voiceOpen - 50 && VOICE.speechAt <= now) ? VOICE.speechAt : now; VOICE.speechAt = 0;
+    T.tapped = b; onAnswer({ label: String(n), at });
   }, msg => { if (/refused|No microphone/.test(msg)){ S.settings.voiceOn = false; save(); toast(msg); } });
   return ok ? VOICE.ready : null;
 }
