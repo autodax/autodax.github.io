@@ -23,7 +23,7 @@ Never put personal details in the repo: no addresses, account numbers, balances,
 
 | Project | Files | Notes |
 |---|---|---|
-| Ear Trainer | `ear.html`, `ear/` | @notes/ear.md |
+| Ear Trainer | moved to its own repo, `autodax/ear` (https://autodax.github.io/ear/). The old `ear.html` and `ear/` here are kept only until Steve switches his home-screen icon, then removed. | Notes live in the `ear` repo |
 | Retirement apps (Wizard, Roth planner, tax estimator, withdrawal calculator) | `wizard*.html`, `roth*.html`, `tax*.html`, `spend*.html`, `index.html` | @notes/retirement.md |
 
 Keep work on one project from touching another project's files.
