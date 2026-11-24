@@ -12,8 +12,7 @@ Never put personal details in the repo: no addresses, account numbers, balances,
 - Steve doesn't read code. Describe changes in plain language: what he'll see and do, not how
   it's built. Don't paste code into replies.
 - Ask clarifying questions in plain text, never as pop-up multiple-choice dialogs.
-- He uses an iPhone (Safari, and apps saved to the home screen as web apps). Mobile-first. He also uses the retirement Wizard on a Mac (desktop browser), so changes to those apps
-  must work at desktop widths too; the iPhone-only tweaks (115% scale, locked viewport) must not affect the Mac.
+- He uses an iPhone (Safari, and apps saved to the home screen as web apps). Mobile-first.
 - When a choice is visual (icons, layouts, sounds), show a few options side by side before
   committing to one.
 - Do the work, test it, and push it; then say briefly what changed and anything he must do
@@ -24,7 +23,7 @@ Never put personal details in the repo: no addresses, account numbers, balances,
 | Project | Files | Notes |
 |---|---|---|
 | Ear Trainer | moved to its own repo, `autodax/ear` (https://autodax.github.io/ear/). Nothing of it remains here except a tiny `ear-sw.js` that clears old phones' saved copy; delete it in a few months. | Notes live in the `ear` repo |
-| Retirement apps (Wizard, Roth planner, tax estimator, withdrawal calculator) | `wizard*.html`, `roth*.html`, `tax*.html`, `spend*.html`, `index.html` | @notes/retirement.md |
+| Retirement apps (Wizard, Roth planner, tax estimator, withdrawal calculator) | moved to its own repo, autodax/money | Live at https://autodax.github.io/money/ ; notes are in that repo |
 
 Keep work on one project from touching another project's files.
 
